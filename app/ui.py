@@ -83,7 +83,7 @@ PREDICATE_LABELS: Dict[str, str] = {
 }
 
 STAT_LABELS: Dict[str, str] = {
-    "nodes": "节点",
+    "nodes": "实体节点",
     "rels": "关系",
     "relationships": "关系",
     "edges": "关系",
@@ -662,7 +662,7 @@ def _render_stats(runtime: Runtime) -> None:
         node_total = source_total = None
     if node_total is not None and source_total is not None:
         st.caption(
-            f"图谱总节点 {node_total + source_total} = 实体节点 {node_total} + 来源 {source_total}（来源亦为图节点）"
+            f"图谱节点 {node_total + source_total} = 实体节点 {node_total} + 来源 {source_total}（来源亦为图节点）"
         )
     if data_files:
         st.caption("数据文件：" + "、".join(data_files))
@@ -885,7 +885,12 @@ def _evidence_cards_html(ordered: Sequence[Evidence], cited_set: set) -> str:
         )
         if value:
             head += f'<span class="ev-val">{_esc(value)}</span>'
-        location = f'<div class="ev-loc">定位：{_esc(ev.locator)}</div>' if ev.locator else ""
+        location = ""
+        if ev.locator:
+            locator_text = str(ev.locator).strip()
+            # 条文/条款型 locator（如「7.3 冷藏条件」「5.2 码垛」）用「条款：」，其余用「定位：」
+            locator_label = "条款" if re.match(r"^\d+(\.\d+)*\s*", locator_text) else "定位"
+            location = f'<div class="ev-loc">{locator_label}：{_esc(locator_text)}</div>'
         quote = f'<div class="ev-quote">“{_esc(ev.quote)}”</div>' if ev.quote else ""
         parts.append(
             f'<div class="{card_class}"><div class="ev-head">{head}</div>'
@@ -911,6 +916,7 @@ def _table_rows(ordered: Sequence[Evidence]) -> List[Dict[str, Any]]:
                 "三元组": f"{ev.subject} —{predicate}→ {ev.object}",
                 "值": _fmt_value(ev) or "—",
                 "来源": sources,
+                "定位（条款）": str(ev.locator or "—"),
                 "状态": "已核验" if str(ev.status) == "verified" else "待核验",
                 "置信": _fmt_conf(ev.confidence),
             }
@@ -1095,6 +1101,8 @@ def render_result(result: AnswerResult, *, show_cypher: bool, large: bool) -> No
         meta = getattr(result, "llm_meta", None)
         if isinstance(meta, dict) and meta:
             st.json(meta)
+        elif str(getattr(result, "mode", "")) == "llm":
+            st.caption("无（本轮命中 LLM 缓存，未重新调用 DeepSeek；耗时已显著缩短）")
         else:
             st.caption("无（离线模板模式，未调用 DeepSeek）。")
         st.markdown("**原始告警码（warnings）**")
@@ -1259,6 +1267,8 @@ def main() -> None:
                     help=f"点击提问：{full_question}",
                 ):
                     st.session_state["pending_question"] = full_question
+                    # 示例按钮视为「独立演示问题」：不承接上一轮实体（多轮追问只在手动输入时生效）
+                    st.session_state["pending_example"] = True
                     _rerun()
 
     auto_question = st.session_state.pop("auto_ask", None)
@@ -1269,9 +1279,10 @@ def main() -> None:
         asked = typed.strip()
 
     if asked:
+        standalone = bool(st.session_state.pop("pending_example", False))
         last_for_ctx = st.session_state.get("last_result")
         ctx = None
-        if last_for_ctx is not None and getattr(last_for_ctx, "entities", None):
+        if not standalone and last_for_ctx is not None and getattr(last_for_ctx, "entities", None):
             ctx = {
                 "intent": getattr(last_for_ctx, "intent", ""),
                 "entities": [

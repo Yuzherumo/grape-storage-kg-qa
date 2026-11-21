@@ -134,7 +134,7 @@ DeepSeek 走 OpenAI 兼容接口：`base_url=https://api.deepseek.com`，`model=
 |---|---|
 | 顶部徽标（后端/模型/离线） | `store.name`、`llm.available`、`AnswerResult.mode` |
 | 答案三段 | `answer`（Markdown）+ `steps`（编号列表）+ `cited_ids`（高亮 `[E#]`） |
-| 证据表 | `evidence[]`：eid/subject/predicate/object/value+unit/source_titles/status/confidence |
+| 证据表 | `evidence[]`：eid/subject/predicate/object/value+unit/source_titles/status/confidence/**locator（定位/条款列）** |
 | 依据角标 | `cited_ids` ∩ 证据 `eid`；未引用证据灰显 |
 | 告警条 | `warnings[]`（`out_of_range` 黄、`unsourced_number:*` 黄、`no_evidence` 红） |
 | 查询详情（折叠） | `query_cypher[]`、`elapsed_ms`、`llm_meta` |
