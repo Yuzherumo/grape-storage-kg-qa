@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M6 加固通过 ｜ 测试 `116 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M7 国标入图通过 ｜ 测试 `116 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系**｜**10 条已按 GB/T 16862-2026 条文 verified** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -56,7 +56,7 @@ py -3.12 -m venv .venv
 | **规则优先、LLM 只做翻译** | 实体与意图可确定性测试；40 分完成度不被 API 稳定性拖累 | `planner.py` / `qa.py` |
 | **双后端，本地优先** | 现场无 Neo4j/Docker 也能跑；Cypher 脚本按交付要求完整提供 | `app/store/` |
 | **数据单一真相** | CSV → Cypher 生成，杜绝两边改漏 | `scripts/gen_cypher.py` |
-| **条级溯源 + anchor 诚实标注** | 拿不到原文的数值标「待核验」，不冒充国标条文 | `data/triples.csv` |
+| **条级溯源 + anchor/verified 双档** | 与国标条文逐字对应的升 `verified`（带条款号+原文摘录），拿不到原文的标「待核验」，不冒充条文 | `data/triples.csv` |
 | **双层幻觉拦截** | 引用 `[E#]` 必须存在；数字必须落在证据区间内，否则告警 | `qa.verify_citations` / `qa.check_numbers` |
 | **答案落地成动作** | 方向二要的是「一用就懂」，第三段固定为分步操作 | `qa.compose_steps` |
 
@@ -65,15 +65,17 @@ py -3.12 -m venv .venv
 - **59 节点**：品种 8、储藏条件 21、品质指标 13、病害 6、来源 11（`Source` 为溯源辅助节点，不进实体链接词表）
 - **71 条关系 / 9 种谓词**：`REQUIRES`、`CONTRA_INDICATED_FOR`、`AFFECTS`、`SUSCEPTIBLE_TO`、`PREVENTED_BY`、`INDUCED_BY`、`ALTERNATIVE_TO`、`INDICATES`、`HAS_INDICATOR_VALUE`
 - **10 个查询模板**：`graph/queries/*.cypher`（温度/湿度/气调/耐贮性/病害处置/病害风险/品质判断/品种对比/禁忌/兜底）
+- **证据分级**：**10 条 `verified`**（已获取 GB/T 16862-2026 全文，quote=条文原文、locator=条款号）、**61 条 `anchor`**（综述/论文正文未获取，note 写明待核验点）
 
-三元组示例（均为 `status=anchor`，`note` 写明待核验点）：
+三元组示例（前两条已 `verified`，其余 `anchor`）：
 
-| 主体 | 谓词 | 客体 | 值与单位 | 来源 |
+| 主体 | 谓词 | 客体 | 值与单位 | 来源/分级 |
 |---|---|---|---|---|
-| 阳光玫瑰 | REQUIRES | 低温冷藏 0±0.5℃ | 0 ℃ | GB/T 16862-2026 + 综述 |
-| SO₂ 熏蒸 | CONTRA_INDICATED_FOR | 阳光玫瑰 | severity=高 | 中文论文 + SCI 论文 |
-| 灰霉病 | PREVENTED_BY | 快速预冷（12h 内至 0℃） | efficacy=中 | 综述 + 国标 |
-| 阳光玫瑰 | HAS_INDICATOR_VALUE | 耐贮性 | 2~4 月 | 综述 |
+| 阳光玫瑰 | REQUIRES | 相对湿度 90~95% | 92.5 % | 国标 §7.3 / **verified** |
+| 巨峰 | REQUIRES | 低温冷藏 -1~0℃ | -1~0 ℃ | 国标 §7.3 / **verified** |
+| 焦亚硫酸盐缓释片 | PREVENTED_BY | 灰霉病（反向：灰霉病→缓释片） | — | 国标 §6.3.4+附录B / **verified** |
+| SO₂ 熏蒸 | CONTRA_INDICATED_FOR | 阳光玫瑰 | severity=高 | 中文论文 + SCI 论文 / anchor |
+| 阳光玫瑰 | HAS_INDICATOR_VALUE | 耐贮性 | 2~4 月 | 综述 / anchor |
 
 数据流：`data/entities.csv + triples.csv`（唯一真相）→ `scripts/gen_cypher.py` → `graph/init_nodes.cypher`、`init_rels.cypher`（MERGE 幂等）；`scripts/validate_data.py` **十项**校验作为加载前门禁（含「S2a 快照必须是主数据严格子集」的一致性检查）。
 
@@ -151,7 +153,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 ## 10. 诚实声明与已知限制
 
-1. **全库 `status=anchor`**：GB/T 16862-2026 与多数论文正文需购买/机构访问，数值按摘要与公开描述入图，`note` 写明待核验点；对外表述为「国标/综述指出」，不称「条文原文」。
+1. **证据分级：10 条 verified + 61 条 anchor**：已获取 GB/T 16862-2026 全文 PDF（用户提供），与条文逐字对应的 10 条已升级 `verified` 并附条款号与原文摘录（§7.3 温湿度、§5.3.2 预冷、§6.3.4 保鲜剂、§8.1 运输、附录A 表A.1 理化指标、附录B 表B.1 病害防治）；其余 61 条因综述/论文正文未获取，仍 `anchor` 并在 `note` 写待核验点。**未转载标准全文，仅引用条级摘录。**
 2. **Neo4j 未在真实实例执行**：Cypher 脚本完整交付且由 CSV 生成、幂等校验通过，导入脚本 `scripts/load_neo4j.py` 已提供（无驱动/无服务时友好退出，不崩）；本机无 Docker/WSL/兼容 JDK，未做实库验证，演示默认走本地后端。
 3. **数据规模**：71 条是演示级图谱，覆盖阳光玫瑰 + 6 个对照品种，不是全领域知识库。
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。

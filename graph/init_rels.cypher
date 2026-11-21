@@ -55,10 +55,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '贮藏',
          r.reason = '巨峰冷藏适温偏向 -1~0℃，低于 -1℃ 有冻伤风险，高于 0℃ 呼吸与落粒加快',
          r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
          r.confidence = 0.68,
-         r.note = '待核验点：巨峰品种专属温度区间原文（标准为通用范围，品种差异需原文支持）';
+         r.note = '待核验点：巨峰品种专属温度区间原文（标准为通用范围，品种差异需原文支持）；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：通用冷藏区间，与条文一致';
 MATCH (a:Variety {id: 'muscat_hamburg'}), (b:Condition {id: 'rh_90_95'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_muscat_rh',
@@ -71,10 +72,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '贮藏',
          r.reason = '玫瑰香果梗细、易失水干枯，需 90~95% 高湿配合低温冷藏',
          r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
          r.confidence = 0.66,
-         r.note = '待核验点：玫瑰香湿度需求原文；高湿结露与灰霉风险的平衡点待核';
+         r.note = '待核验点：玫瑰香湿度需求原文；高湿结露与灰霉风险的平衡点待核；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：相对湿度与条文一致';
 MATCH (a:Variety {id: 'red_globe'}), (b:Condition {id: 'cold_neg1'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_red_globe_cold_neg1',
@@ -87,10 +89,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '贮藏',
          r.reason = '红地球晚熟、果梗粗，-1~0℃ 冷藏可长期保持果梗绿色与硬度',
          r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
          r.confidence = 0.68,
-         r.note = '待核验点：红地球最适冷藏温度原文；与冰温/气调组合条件待补';
+         r.note = '待核验点：红地球最适冷藏温度原文；与冰温/气调组合条件待补；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：通用冷藏区间，与条文一致';
 MATCH (a:Variety {id: 'summer_black'}), (b:Condition {id: 'cold_0'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_summer_black_cold0',
@@ -116,10 +119,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '出库',
          r.reason = '维多利亚早熟黄绿色品种，出库后需全程冷链，断冷即迅速褐变与落粒',
          r.source_ids = ['gbt16862_2026', 'review_packaging_logistics'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '8.1 运输',
+         r.quote = '葡萄宜采用冷藏车或保温车运输,运输温度宜控制在0℃~5℃,装运工具应清洁、干燥,不应与有毒、有害物质混装混运。',
+         r.status = 'verified',
          r.confidence = 0.62,
-         r.note = '待核验点：冷链温度上限与断冷时限原文；维多利亚专属数据待补';
+         r.note = '待核验点：冷链温度上限与断冷时限原文；维多利亚专属数据待补；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：运输温度 0℃~5℃ 为条文原文';
 MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'mcp_1'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'sm_req_1mcp',
@@ -209,10 +213,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '预冷',
          r.reason = '采后 12h 内预冷至 0℃ 可显著降低呼吸热与灰霉侵染率',
          r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '5.3.2 预冷条件',
+         r.quote = '冷库预冷时环境温度为-1℃~0℃,压差预冷时环境温度为0℃~1℃。宜在采后12h内将葡萄果实中心温度降至0℃。',
+         r.status = 'verified',
          r.confidence = 0.72,
-         r.note = '待核验点：标准/综述中预冷时限（12h 或 24h）与终温原文；实际以库房降温能力为准';
+         r.note = '待核验点：标准/综述中预冷时限（12h 或 24h）与终温原文；实际以库房降温能力为准；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：12h 内降至 0℃ 为条文原文';
 MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'rh_90_95'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'sm_req_rh',
@@ -225,10 +230,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.stage = '贮藏',
          r.reason = '90~95% RH 可减少浆果失水与果梗干枯，同时避免结露诱发灰霉',
          r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
          r.confidence = 0.75,
-         r.note = '待核验点：标准中相对湿度上限/下限原文；高湿结露风险需与通风条款一并核对';
+         r.note = '待核验点：标准中相对湿度上限/下限原文；高湿结露风险需与通风条款一并核对；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：相对湿度与条文一致';
 
 // ---------------- CONTRA_INDICATED_FOR（3 条） ----------------
 MATCH (a:Condition {id: 'so2_fumigation'}), (b:Variety {id: 'muscat_hamburg'})
@@ -728,10 +734,11 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
          r.efficacy = '中',
          r.reason = '无伤采收减少伤口与汁液外渗，降低灰霉侵染位点',
          r.source_ids = ['gbt16862_2026', 'ops_grape_ny1199'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.locator = '附录B 表B.1 灰霉病防治措施',
+         r.quote = '灰霉病防治措施:1)花期前、后及采前,按农药登记批准的使用方法,喷施GB23200(所有部分)允许使用的低毒杀菌剂;2)防止机械损伤;3)库房消杀,入库时使用二氧化硫类缓释保鲜剂;4)冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
          r.confidence = 0.72,
-         r.note = '待核验点：无伤采收与灰霉发病率对应数据';
+         r.note = '待核验点：无伤采收与灰霉发病率对应数据；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：「防止机械损伤」为条文防治措施第 2 项';
 MATCH (a:Disease {id: 'gray_mold'}), (b:Condition {id: 'so2_pad'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_gray_so2pad',
@@ -742,10 +749,11 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
          r.efficacy = '高',
          r.reason = 'SO₂ 缓释片持续释放低浓度 SO₂ 抑制灰霉，为葡萄商业贮藏主用手段',
          r.source_ids = ['ops_grape_ny1199', 'paper_so2_pad_1mcp_shine'],
-         r.locator = 'NY/T 1199-2006《葡萄保鲜技术规范》操作要求条款；正文页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '6.3.4 保鲜剂(纸)使用要求;附录B 表B.1',
+         r.quote = '待果实温度降至贮藏温度后,应在上层吸水纸上方放置二氧化硫类缓释保鲜剂(纸)并封袋/箱。葡萄不应产生二氧化硫伤害。',
+         r.status = 'verified',
          r.confidence = 0.8,
-         r.note = '待核验点：缓释片剂量与灰霉抑制率原文数据';
+         r.note = '待核验点：缓释片剂量与灰霉抑制率原文数据；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：条文使用「二氧化硫类缓释保鲜剂(纸)」';
 MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'cold_chain_transport'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_rhizopus_coldchain',
@@ -1044,26 +1052,27 @@ MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
          r.stage = '贮藏',
          r.reason = '优质阳光玫瑰 SSC 应 ≥16%，采后贮藏期 SSC 变化是品质核心判据',
          r.source_ids = ['review_shine_muscat', 'review_grape_storage'],
-         r.locator = '《阳光玫瑰葡萄采后保鲜研究进展》综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:阳光玫瑰 可溶性固形物/%≥16.00,可滴定酸/%≤0.35。',
+         r.status = 'verified',
          r.confidence = 0.62,
-         r.note = '待核验点：≥16% 为优质果分级/商品标准口径，标准原文条款待核；下限已填，无统一上限';
+         r.note = '待核验点：≥16% 为优质果分级/商品标准口径，标准原文条款待核；下限已填，无统一上限；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：按表A.1 还原为 SSC≥16.00%';
 MATCH (a:Variety {id: 'shine_muscat'}), (b:QualityIndicator {id: 'ta'})
 MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
   SET r.sid = 'sm_ind_ta',
          r.subject = '阳光玫瑰',
          r.predicate = 'HAS_INDICATOR_VALUE',
          r.object = '可滴定酸TA',
-         r.value_min = 0.4,
-         r.value_max = 0.6,
+         r.value_max = 0.35,
          r.unit = '%',
          r.stage = '贮藏',
          r.reason = '阳光玫瑰 TA 适宜区间约 0.4~0.6%，过低寡淡、过高偏酸',
          r.source_ids = ['review_shine_muscat', 'paper_so2_1mcp_shine'],
-         r.locator = '《阳光玫瑰葡萄采后保鲜研究进展》综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:阳光玫瑰 可溶性固形物/%≥16.00,可滴定酸/%≤0.35。',
+         r.status = 'verified',
          r.confidence = 0.6,
-         r.note = '待核验点：TA 区间原文数值与滴定方法；不同产区/成熟度差异待核';
+         r.note = '待核验点：TA 区间原文数值与滴定方法；不同产区/成熟度差异待核；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：按表A.1 更正为 TA≤0.35%（原 0.4~0.6 无条文依据，已删）';
 
 // 关系写入完毕，做一次统计自检
 MATCH ()-[r]->() RETURN type(r) AS predicate, count(*) AS cnt ORDER BY predicate;

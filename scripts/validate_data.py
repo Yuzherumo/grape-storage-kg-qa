@@ -415,6 +415,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         empty_q = [i for i, r in enumerate(rows, 2) if not (r.get("quote") or "").strip()]
         if empty_q:
             rep.warn(8, f"{sheet_name} 有 {len(empty_q)} 行 quote 为空（status=anchor 时须在 note 写明待核验点，已有人工核对）")
+        # verified 必须能引用原文摘录；anchor 空 quote 必须在 note 声明待核验
+        for i, r in enumerate(rows, 2):
+            st = (r.get("status") or "").strip()
+            q = (r.get("quote") or "").strip()
+            note = r.get("note") or ""
+            if st == "verified" and len(q) < 8:
+                rep.err(8, f"{sheet_name} 第{i}行 status=verified 但 quote 为空/过短（verified 必须可引用原文）")
+            if st == "anchor" and not q and "待核验" not in note:
+                rep.warn(8, f"{sheet_name} 第{i}行 anchor 且 quote 为空，note 未写「待核验」")
 
     # ============================================================ 检查 9
     name_to_labels: Dict[str, set] = {}

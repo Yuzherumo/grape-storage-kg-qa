@@ -3,7 +3,7 @@
 > 由 `scripts/eval_qa.py` 自动生成（离线模式：`allow_llm=False`，不联网、不需 API key）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\eval_qa.py`
 
-- 生成时间：2026-11-21 20:18:30
+- 生成时间：2026-11-21 20:26:55
 - 后端：`local`；图谱统计：`{'backend': 'local', 'nodes': 48, 'rels': 71, 'varieties': 8, 'conditions': 21, 'indicators': 13, 'diseases': 6, 'sources': 11, 'unresolved_edges': 0, 'data_files': ['triples_shine_muscat.csv', 'triples.csv']}`
 - 总判定：**PASS** —— 核心题 5/5 通过；越界探针 1/1 通过；口语变体意图命中 12/12（门槛 10）；实体命中 12/12
 
@@ -15,7 +15,7 @@
 冷库里葡萄长白毛了怎么办？ | disease_control | 6 | 11 | 是 | 通过 | 3 | 通过
 葡萄发软掉粒是咋回事？ | quality_indicator | 1 | 3 | 是 | 通过 | 1 | 通过
 用 SO₂ 熏阳光玫瑰行不行？ | contraindication | 3 | 7 | 是 | 通过 | 2 | 通过
-阳光玫瑰和巨峰哪个更能放？ | variety_compare | 6 | 10 | 是 | 通过 | 3 | 通过
+阳光玫瑰和巨峰哪个更能放？ | variety_compare | 6 | 11 | 是 | 通过 | 3 | 通过
 -18℃ 冻起来能存一年吗？ | temperature | 6 | 9 | 是 | out_of_range（预期） | 3 | 通过
 
 ## 表 2：12 条农户口语变体（意图路由命中）

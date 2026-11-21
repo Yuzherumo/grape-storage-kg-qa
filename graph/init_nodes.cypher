@@ -111,7 +111,7 @@ MERGE (n:Condition {id: 'cold_0'})
          n.unit = '℃',
          n.stage = '贮藏',
          n.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         n.note = '鲜食葡萄冷藏基准温度区间';
+         n.note = '鲜食葡萄冷藏基准温度区间；国标7.3通用冷藏区间为-1℃~0℃（verified）；0±0.5℃为文献/工程口径，anchor，见 sm_req_cold0。';
 MERGE (n:Condition {id: 'cold_neg1'})
   SET n.label = 'Condition',
          n.name = '低温冷藏 -1~0℃',
@@ -122,7 +122,7 @@ MERGE (n:Condition {id: 'cold_neg1'})
          n.unit = '℃',
          n.stage = '贮藏',
          n.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         n.note = '部分品种可用的更低冷藏温度';
+         n.note = '部分品种可用的更低冷藏温度；与GB/T 16862-2026 7.3「-1℃~0℃」一致，相关三元组已 verified。';
 MERGE (n:Condition {id: 'ice_temp'})
   SET n.label = 'Condition',
          n.name = '冰温贮藏 -0.5~0℃',
@@ -144,7 +144,7 @@ MERGE (n:Condition {id: 'rh_90_95'})
          n.unit = '%',
          n.stage = '贮藏',
          n.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         n.note = '减少失水与果梗干枯';
+         n.note = '减少失水与果梗干枯；与GB/T 16862-2026 7.3「相对湿度90%~95%」一致，相关三元组已 verified。';
 MERGE (n:Condition {id: 'rh_low'})
   SET n.label = 'Condition',
          n.name = '低湿环境 RH<90%',
@@ -196,7 +196,7 @@ MERGE (n:Condition {id: 'so2_fumigation'})
          n.category = '化学',
          n.stage = '贮藏',
          n.source_ids = ['gbt16862_2026', 'paper_so2_1mcp_shine', 'paper_so2_pad_1mcp_shine'],
-         n.note = '传统葡萄保鲜手段，但对阳光玫瑰易致漂白与风味劣变';
+         n.note = '传统葡萄保鲜手段，但对阳光玫瑰易致漂白与风味劣变；国标6.3.4仅规范二氧化硫类缓释保鲜剂，未写熏蒸方式；熏蒸风险依据3.1「二氧化硫伤害」定义+文献，仍 anchor。';
 MERGE (n:Condition {id: 'so2_pad'})
   SET n.label = 'Condition',
          n.name = '焦亚硫酸盐缓释片',
@@ -204,7 +204,7 @@ MERGE (n:Condition {id: 'so2_pad'})
          n.category = '化学',
          n.stage = '贮藏',
          n.source_ids = ['paper_so2_pad_1mcp_shine', 'ops_grape_ny1199'],
-         n.note = '市场常用SO2类保鲜剂形式';
+         n.note = '市场常用SO2类保鲜剂形式；与GB/T 16862-2026 6.3.4「二氧化硫类缓释保鲜剂(纸)」一致，已 verified。';
 MERGE (n:Condition {id: 'mcp_1'})
   SET n.label = 'Condition',
          n.name = '1-MCP 处理',
@@ -228,7 +228,7 @@ MERGE (n:Condition {id: 'precool_fast'})
          n.category = '采后操作',
          n.stage = '预冷',
          n.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         n.note = '采后12h内降至0℃可显著减轻灰霉与失水';
+         n.note = '采后12h内降至0℃可显著减轻灰霉与失水；与GB/T 16862-2026 5.3.2「宜在采后12h内将果实中心温度降至0℃」一致，已 verified。';
 MERGE (n:Condition {id: 'no_damage_harvest'})
   SET n.label = 'Condition',
          n.name = '无伤采收',
@@ -236,7 +236,7 @@ MERGE (n:Condition {id: 'no_damage_harvest'})
          n.category = '采后操作',
          n.stage = '预冷',
          n.source_ids = ['gbt16862_2026', 'ops_grape_ny1199'],
-         n.note = '减少伤口即减少侵染位点';
+         n.note = '减少伤口即减少侵染位点；与GB/T 16862-2026 4.2.3/附录B「轻采轻放、防止机械损伤」一致，相关防治三元组已 verified。';
 MERGE (n:Condition {id: 'mechanical_injury'})
   SET n.label = 'Condition',
          n.name = '机械伤',
@@ -280,7 +280,7 @@ MERGE (n:Condition {id: 'cold_chain_transport'})
          n.category = '采后操作',
          n.stage = '出库',
          n.source_ids = ['gbt16862_2026', 'review_packaging_logistics'],
-         n.note = '出库至销售全程不断冷';
+         n.note = '出库至销售全程不断冷；与GB/T 16862-2026 8.1「运输温度0℃~5℃」一致，已 verified。';
 MERGE (n:Condition {id: 'wound'})
   SET n.label = 'Condition',
          n.name = '伤口',
@@ -376,7 +376,7 @@ MERGE (n:QualityIndicator {id: 'ssc'})
          n.direction = 'higher_better',
          n.method = '手持折光仪',
          n.source_ids = ['review_shine_muscat', 'review_grape_storage'],
-         n.note = '阳光玫瑰优质果通常≥16%';
+         n.note = '阳光玫瑰优质果通常≥16%；阳光玫瑰 SSC≥16.00% 与GB/T 16862-2026 附录A 表A.1一致，已 verified。';
 MERGE (n:QualityIndicator {id: 'ta'})
   SET n.label = 'QualityIndicator',
          n.name = '可滴定酸TA',
@@ -385,7 +385,7 @@ MERGE (n:QualityIndicator {id: 'ta'})
          n.direction = 'target',
          n.method = 'NaOH滴定法',
          n.source_ids = ['paper_so2_1mcp_shine', 'review_shine_muscat'],
-         n.note = '过高偏酸、过低寡淡';
+         n.note = '过高偏酸、过低寡淡；阳光玫瑰 TA≤0.35% 与GB/T 16862-2026 附录A 表A.1一致；原0.4~0.6%无条文依据已更正。';
 MERGE (n:QualityIndicator {id: 'firmness'})
   SET n.label = 'QualityIndicator',
          n.name = '硬度',
@@ -463,7 +463,7 @@ MERGE (n:Source {id: 'gbt16862_2026'})
          n.type = '国标',
          n.doi_url = 'https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=FC4C3274BF7AE61A5DDB9203CC0E249B',
          n.access = 'paywalled',
-         n.note = 'P0权威来源。2026-03-31发布、2026-10-01实施，主管/归口：中华全国供销合作总社；openstd提供在线预览。正文条款页码待获取原文后补locator。';
+         n.note = 'P0权威来源。2026-03-31发布、2026-10-01实施，代替GB/T 16862-2008；已获取标准全文PDF（用户提供，pdfminer提取文本），7.3/5.3.2/6.3.4/8.1/附录A/附录B 条文已用于升级 verified。';
 MERGE (n:Source {id: 'review_grape_storage'})
   SET n.title = '鲜食葡萄采后保鲜技术研究进展',
          n.authors = '郑瑞帆',

@@ -29,7 +29,7 @@ stage, effect, level, severity, efficacy, reason, source_ids, locator, quote, st
 ```
 - `predicate ∈` `REQUIRES / CONTRA_INDICATED_FOR / AFFECTS / SUSCEPTIBLE_TO / PREVENTED_BY / INDUCED_BY / ALTERNATIVE_TO / INDICATES / HAS_INDICATOR_VALUE`
 - `source_ids` 分号分隔多值。**B 组（CONTRA_INDICATED_FOR）、G 组（ALTERNATIVE_TO）、H 组（INDICATES）必须 ≥2 个来源**；确只有 1 篇支撑时 `note` 必须写「单来源，建议后续实验验证」。
-- `status ∈ {verified, anchor}`；`confidence ∈ [0,1]`；`locator` 必填；`quote` 允许为空（anchor），但此时 `note` 必须说明待核验点。
+- `status ∈ {verified, anchor}`；`confidence ∈ [0,1]`；`locator` 必填；`verified` **必须**有可引用的 `quote`（校验器检查 8 强制），`anchor` 允许空 quote 但 `note` 必须说明待核验点。
 - 类型-谓词组合：`REQUIRES`(Variety→Condition)、`CONTRA_INDICATED_FOR`(Condition→Variety)、`AFFECTS`(Condition→QualityIndicator)、`SUSCEPTIBLE_TO`(Variety→Disease)、`PREVENTED_BY`(Disease→Condition)、`INDUCED_BY`(Disease→Condition)、`ALTERNATIVE_TO`(Condition→Condition)、`INDICATES`(QualityIndicator→Disease)、`HAS_INDICATOR_VALUE`(Variety→QualityIndicator)。
 
 ### 1.3 `data/sources.csv`
