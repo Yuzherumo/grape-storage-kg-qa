@@ -449,13 +449,15 @@ def verify_citations(answer: str, evidence: Sequence[Evidence]) -> Tuple[List[st
 
 # ------------------------------------------------------------------ 越界检测
 def detect_out_of_range(question: str, evidence: Sequence[Evidence]) -> bool:
+    """只在问题里出现「带温度单位的数字」时判越界（避免把 1-MCP 的 1 误当温度）。"""
     q = normalize_question(question)
     temps = [e for e in evidence if e.unit == "℃"]
     if not temps:
         return False
     lo = min((e.value_min if e.value_min is not None else e.value or 0.0) for e in temps)
     hi = max((e.value_max if e.value_max is not None else e.value or 0.0) for e in temps)
-    for m in re.findall(r"-?\d+(?:\.\d+)?", q):
+    # 归一化后「零下18度」→「-18度」，只认带 度/℃ 的数字
+    for m in re.findall(r"(-?\d+(?:\.\d+)?)\s*(?:℃|°C|度)", q):
         try:
             v = float(m)
         except ValueError:

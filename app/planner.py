@@ -111,6 +111,12 @@ def route(question: str, hits: Sequence[EntityHit]) -> Tuple[str, float, List[Tu
     # 命中「条文型操作条件」（包装/入库量/堆码/温度波动/销售/档案…）→ 实体中心检索
     if any(h.node_id in R.OPERATION_CONDITIONS for h in hits) and "CONTRA_INDICATED_FOR" not in scores:
         return R.DEFAULT_INTENT, 0.6, []
+    # 全是条件实体 + 比较/区别/影响类问句（如「冰温贮藏和冷藏比怎么样」「高浓度CO2有什么问题」）→ 实体中心检索
+    if hits and all(h.label == "Condition" for h in hits) and any(
+        k in q for k in ("比", "对比", "区别", "哪个好", "怎么样", "有什么不同",
+                         "有什么问题", "有什么影响", "有什么作用", "影响")
+    ):
+        return R.DEFAULT_INTENT, 0.6, []
     # 「因果/关系」问句 + 命中病害 → 病害风险意图（回答「结露诱发灰霉」，而不是给处置清单）
     if any(h.label == "Disease" for h in hits) and any(
         k in q for k in ("有什么关系", "有啥关系", "什么关系", "为什么", "咋会", "怎么引起", "什么原因", "诱因")

@@ -14,7 +14,7 @@ rh_90_95,Condition,相对湿度 90~95%,湿度90;高湿;加湿;90湿度,湿度,90
 rh_low,Condition,低湿环境 RH<90%,低湿;干冷;湿度不够,湿度,0,90,%,贮藏,,,,,,,,,,gbt16862_2026;review_grape_storage,失重与果梗褐变风险升高
 ca_o2,Condition,气调 O₂ 3~5%,气调;低氧;O2 3~5%;降氧;O2;氧气,气调,3,5,%,贮藏,,,,,,,,,,review_packaging_logistics;review_grape_storage,低氧抑制呼吸但需防无氧呼吸
 ca_co2,Condition,气调 CO₂ 1~3%,二氧化碳;CO2 1~3%;气调CO2;CO2,气调,1,3,%,贮藏,,,,,,,,,,review_packaging_logistics;review_grape_storage,适宜CO2抑制灰霉但过量致伤害
-high_co2,Condition,高 CO₂ >5%,高二氧化碳;CO2伤害;二氧化碳伤害,气调,5,10,%,贮藏,,,,,,,,,,review_packaging_logistics;review_grape_storage,易致果肉褐变与异味
+high_co2,Condition,高 CO₂ >5%,高二氧化碳;CO2伤害;二氧化碳伤害;高浓度二氧化碳;过高二氧化碳;CO2过高;高CO2,气调,5,10,%,贮藏,,,,,,,,,,review_packaging_logistics;review_grape_storage,易致果肉褐变与异味
 so2_fumigation,Condition,SO₂ 熏蒸,二氧化硫;熏硫;硫熏;SO2熏蒸,化学,,,,贮藏,,,,,,,,,,gbt16862_2026;paper_so2_1mcp_shine;paper_so2_pad_1mcp_shine,传统葡萄保鲜手段，但对阳光玫瑰易致漂白与风味劣变；国标6.3.4仅规范二氧化硫类缓释保鲜剂，未写熏蒸方式；熏蒸风险依据3.1「二氧化硫伤害」定义+文献，仍 anchor。
 so2_pad,Condition,焦亚硫酸盐缓释片,保鲜片;缓释片;焦亚硫酸钠;SO2缓释,化学,,,,贮藏,,,,,,,,,,paper_so2_pad_1mcp_shine;ops_grape_ny1199,市场常用SO2类保鲜剂形式；与GB/T 16862-2026 6.3.4「二氧化硫类缓释保鲜剂(纸)」一致，已 verified。
 mcp_1,Condition,1-MCP 处理,1-MCP;1甲基环丙烯;乙烯抑制剂;MCP,化学,,,,贮藏,,,,,,,,,,paper_so2_1mcp_shine;paper_so2_pad_1mcp_shine,乙烯作用抑制剂，常与SO2/气调联用

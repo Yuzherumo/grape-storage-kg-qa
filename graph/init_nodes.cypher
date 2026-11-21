@@ -181,7 +181,7 @@ MERGE (n:Condition {id: 'ca_co2'})
 MERGE (n:Condition {id: 'high_co2'})
   SET n.label = 'Condition',
          n.name = '高 CO₂ >5%',
-         n.aliases = ['高二氧化碳', 'CO2伤害', '二氧化碳伤害'],
+         n.aliases = ['高二氧化碳', 'CO2伤害', '二氧化碳伤害', '高浓度二氧化碳', '过高二氧化碳', 'CO2过高', '高CO2'],
          n.category = '气调',
          n.value_min = 5,
          n.value_max = 10,
