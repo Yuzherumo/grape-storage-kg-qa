@@ -1,0 +1,10 @@
+# 版权声明（LICENSE）
+
+本作品《鲜食葡萄储藏知识图谱 × DeepSeek 问答》由参赛团队原创开发，用于「农客松 2026」比赛提交与评审。
+
+- 著作权归参赛团队所有；主办方与合作方在赛事宣传展示范围内享有非商业使用权。
+- 未经著作权人书面许可，任何第三方不得复制、分发、商用或二次发布本作品（含代码、图谱数据、文档）。
+- 本作品引用的标准与论文仅保留题录与条级摘录（见 `docs/sources.md`），其著作权归原权利人；相关 PDF 原文不随作品分发。
+- 第三方开源依赖（streamlit / openai / pandas / python-dotenv / pytest / kuzu 等）遵循各自许可证。
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.

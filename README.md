@@ -22,11 +22,10 @@
 ## 2. 30 秒跑起来
 
 ```powershell
-# 1) 首次：创建虚拟环境并装依赖（本机 Python 3.12；见 docs/env_check.md）
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+# 1) 首次：一键安装环境（自动找 Python 3.10+、建 .venv、装依赖、跑数据/Cypher 校验）
+.\install.ps1
 
-# 2) 一键启动（自动做数据校验 → 图谱自检 → 起服务）
+# 2) 一键启动（数据十项校验 → Cypher 静态校验 → 图谱自检 → 起服务）
 .\run.ps1
 #    → http://127.0.0.1:8501
 
@@ -34,8 +33,11 @@ py -3.12 -m venv .venv
 .\run.ps1 -Check
 ```
 
+> 打包/换机器：`.\scripts\make_release.ps1` 生成不含密钥与 PDF 的干净快照（见 [packaging.md](docs/packaging.md)）。
+> `install.ps1` 已处理「打包版 Python 无 ensurepip」的情况（改用基础解释器的 `pip --python` 安装）。
+
 没有 API Key 也能完整演示：系统自动进入**离线模板模式**，答案仍带 `[E#]` 引用、来源与分步动作。
-要启用 DeepSeek 在线生成：把 key 填进 `.env` 的 `DEEPSEEK_API_KEY`（见 `.env.example`）。
+要启用 DeepSeek 在线生成：把 key 填进 `.env` 的 `DEEPSEEK_API_KEY`（见 `.env.example`；`.env` 不进仓库、不进交付包）。
 
 ## 3. 架构与关键设计
 
@@ -123,10 +125,12 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 ```
 .
-├─ run.ps1                     # 一键启动（数据校验 → 图谱自检 → Streamlit）
-├─ requirements.txt / .env.example / pytest.ini / README.md
+├─ install.ps1                 # 一键装环境（自动处理无 pip 的打包版 Python）
+├─ run.ps1                     # 一键启动（数据校验 → Cypher 校验 → 图谱自检 → Streamlit）
+├─ LICENSE                     # 版权声明（团队所有，赛事评审使用）
+├─ requirements.txt / pyproject.toml / pytest.ini / .env.example / README.md
 ├─ data/                       # 唯一数据源
-│  ├─ entities.csv             # 48 个实体节点（含农户口语别名、病害症状）
+│  ├─ entities.csv             # 58 个实体节点（含农户口语别名、病害症状）
 │  ├─ triples.csv              # 108 条三元组（61 verified / 47 anchor）
 │  ├─ triples_shine_muscat.csv # 20 条阳光玫瑰核心三元组（M1 门禁产物）
 │  ├─ sources.csv              # 16 条来源（国标/5 篇综述/论文/行业标准）
@@ -135,17 +139,21 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 │  └─ schema.json              # 类型/谓词枚举、分组与双来源规则
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
-├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable.ps1
+├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable / make_release
 ├─ tests/                      # 120 个测试（118 passed / 2 skipped，含 M6/M8 回归）
-└─ docs/                       # api / spec / sources / eval_results / neo4j_verify / demo_script / submission / ai_usage
+├─ docs/                       # api / spec / sources / eval_results / neo4j_verify / packaging / demo_script / submission / ai_usage
+├─ .refs/                      # 本机文献 PDF（gitignore，不随包分发）
+└─ dist/                       # 打包产物（gitignore）
 ```
 
 ## 9. 命令速查
 
 | 目的 | 命令 |
 |---|---|
+| 安装环境（首次） | `.\install.ps1`（`-Force` 重建 venv） |
 | 一键启动 | `.\run.ps1` |
 | 只自检 | `.\run.ps1 -Check` |
+| **打包交付快照** | `.\scripts\make_release.ps1 -Version v1.0`（可选 `-WithGitBundle`） |
 | 数据十项校验 | `.\.venv\Scripts\python.exe scripts\validate_data.py` |
 | Cypher 静态校验（标签/关系/参数/计数） | `.\.venv\Scripts\python.exe scripts\validate_cypher.py` |
 | 嵌入式 openCypher 实跑（Kùzu，无需 Neo4j） | `.\.venv\Scripts\python.exe scripts\verify_cypher_engine.py` |
@@ -175,9 +183,12 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 |---|---|
 | 在线 Demo | `.\run.ps1` → `http://127.0.0.1:8501` |
 | 200 字简介 | `docs/submission.md` |
-| 代码仓库 | 本仓库（git 历史） |
-| 图谱与 Cypher 快照 | `data/`、`graph/`（ANS 作品快照可直接打包） |
+| 代码仓库 / 干净快照 | `.\scripts\make_release.ps1` → `dist/*.zip`（含 MANIFEST + SHA256；可选 git bundle） |
+| 图谱与 Cypher 快照 | 已包含在上面的 zip 中（`data/`、`graph/`） |
 | 原创与 AI 使用说明 | `docs/ai_usage.md` |
-| 3 分钟录屏脚本 | `docs/demo_script.md` |
+| 3 分钟录屏脚本 | `docs/demo_script.md`（视频待录） |
 | 评测证据 | `docs/eval_results.md` |
 | 来源清单 | `docs/sources.md` |
+| 打包规则说明 | `docs/packaging.md`（白名单/排除项/评审运行步骤） |
+
+> 交付包**不含** `.env`（真实 key）与 `*.pdf`（第三方文献原件）；文献 PDF 统一放本机 `.refs/`，仅题录与条级摘录随包分发。

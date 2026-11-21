@@ -5,6 +5,8 @@ __pycache__/
 .tmp/
 .pipcache/
 .tools/
+.refs/
+dist/
 .venv-install.log
 .pytest_cache/
 pytest-cache-files-*/
