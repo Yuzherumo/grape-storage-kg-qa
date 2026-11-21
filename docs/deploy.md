@@ -1,5 +1,19 @@
 # 公网 Demo 部署指南（docs/deploy.md）
 
+## 已部署实例（2026-11-21）
+
+| 项 | 值 |
+|---|---|
+| 平台 | 魔搭 ModelScope 创空间（免费 CPU 2vCPU/8GB，Streamlit SDK） |
+| 应用直达地址 | **https://yuzherumo-grape-storage-kg-qa.ms.show** |
+| 空间主页 | https://www.modelscope.cn/studios/YUZHERUMO/grape-storage-kg-qa |
+| 状态 | Running（`_stcore/health` = ok，已从外部网络实测） |
+| 代码版本 | 本地 commit `4fbafaf`（网页上传的 23 个运行必需文件） |
+| 环境变量 | `DEEPSEEK_API_KEY`（密文）+ `DEEPSEEK_MODEL` / `DEEPSEEK_BASE_URL` / `GRAPH_BACKEND`（明文） |
+| 说明 | 网页上传未包含 `.streamlit/config.toml`（隐藏目录不便拖拽），主题走平台默认；不影响功能 |
+
+> 注：Streamlit Community Cloud 在该网络登录被 403 拦截（平台反滥用误伤），故改走魔搭；详见下文方案 B。
+
 > 目标：把本地 Streamlit 应用变成一个**评委/投票者能直接打开的 https 链接**。
 > 数据只读（`data/` 约 1MB），不需要数据库、不需要 GPU；无 API Key 时自动走离线模板模式，**任何方案都能跑**。
 

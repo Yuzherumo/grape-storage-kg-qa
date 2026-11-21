@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M9 综述入源 ｜ 测试 `118 passed / 2 skipped` ｜ 图谱 **74 节点 / 108 条关系**｜**61 条 verified（国标条文 51 + 综述原文 10）** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M10 公网 Demo 已上线 ｜ 测试 `118 passed / 2 skipped` ｜ 图谱 **74 节点 / 108 条关系**｜**61 条 verified（国标条文 51 + 综述原文 10）** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 公网 Demo：<https://yuzherumo-grape-storage-kg-qa.ms.show>
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -20,6 +20,10 @@
 | 农技员 / 学生 | 学习对比、写材料要引用 | 「SO₂ 熏蒸对阳光玫瑰安全吗？」 | 禁忌 + 争议来源并列 + 替代方案 |
 
 ## 2. 30 秒跑起来
+
+**在线版（无需安装）**：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间，免费实例，访问慢时等几秒冷启动）
+
+本地版：
 
 ```powershell
 # 1) 首次：一键安装环境（自动找 Python 3.10+、建 .venv、装依赖、跑数据/Cypher 校验）
@@ -190,7 +194,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 | 交付物 | 位置 |
 |---|---|
-| 在线 Demo | 本地 `.\run.ps1` → `http://127.0.0.1:8501`；公网见 `docs/deploy.md`（Streamlit Cloud / 魔搭创空间 / 临时隧道） |
+| 在线 Demo | 公网：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间）；本地 `.\run.ps1` → `http://127.0.0.1:8501`；部署方式见 `docs/deploy.md` |
 | 200 字简介 | `docs/submission.md` |
 | 代码仓库 / 干净快照 | `.\scripts\make_release.ps1` → `dist/*.zip`（含 MANIFEST + SHA256；可选 git bundle） |
 | 图谱与 Cypher 快照 | 已包含在上面的 zip 中（`data/`、`graph/`） |
