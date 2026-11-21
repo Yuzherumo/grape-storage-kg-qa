@@ -24,7 +24,7 @@ if (-not (Test-Path -LiteralPath $venvPy)) {
     exit 1
 }
 
-Write-Host "[1/3] 数据校验（九项）..."
+Write-Host "[1/3] 数据校验（十项）..."
 & $venvPy (Join-Path $ws "scripts\validate_data.py")
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[错误] 数据校验未通过，已中止启动。" -ForegroundColor Red
