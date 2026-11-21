@@ -45,6 +45,7 @@ class Settings:
     ui_port: int = 8501
     ui_large_font: bool = False
     top_k: int = 6
+    llm_timeout: float = 20.0
     raw: dict = field(default_factory=dict)
 
     @property
@@ -79,4 +80,5 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         ui_port=int(_get("UI_PORT", default="8501") or 8501),
         ui_large_font=_get("UI_LARGE_FONT", default="false").lower() in ("1", "true", "yes", "on"),
         top_k=int(_get("UI_TOPK", default="6") or 6),
+        llm_timeout=float(_get("LLM_TIMEOUT", default="20") or 20),
     )

@@ -37,7 +37,7 @@
 ## 4. 复现与核验命令
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\validate_data.py     # 九项校验（含来源外键、双来源规则）
+.\.venv\Scripts\python.exe scripts\validate_data.py     # 十项校验（含来源外键、双来源规则、快照一致性）
 .\.venv\Scripts\python.exe scripts\gen_cypher.py --check # CSV→Cypher 无漂移
 .\.venv\Scripts\python.exe -m pytest tests -q            # 结构/链路/评测测试
 ```

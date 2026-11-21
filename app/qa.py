@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -119,10 +120,14 @@ def _fact(e: Evidence, question_varieties: Sequence[str] = ()) -> str:
     if p == "REQUIRES":
         return f"{e.subject}的适宜条件包含{e.object}"
     if p == "HAS_INDICATOR_VALUE":
-        return f"{e.subject}的{e.object}基线为{_fmt_value(e) or e.object}"
+        val = _fmt_value(e)
+        if val:
+            return f"{e.subject}的{e.object}基线为{val}"
+        return f"图谱未收录{e.subject}的{e.object}具体数值"
     if p == "CONTRA_INDICATED_FOR":
         sev = e.properties.get("severity") or "需注意"
-        return f"{e.object}对{e.subject}属{sev}风险，不宜使用"
+        # 数据方向：条件 -CONTRA_INDICATED_FOR-> 品种（subject=被禁条件，object=品种）
+        return f"{e.subject}对{e.object}属{sev}风险，不宜使用"
     if p == "AFFECTS":
         direction = "下降" if eff == "decrease" else ("上升" if eff == "increase" else "变化")
         return f"{e.subject}会使{e.object}{direction}"
@@ -171,12 +176,20 @@ _STEP_RULES = (
 
 def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> List[str]:
     """由证据派生「现在该做什么」，≤3 步；无证据返回 []。"""
+    if intent == "general":  # 实体中心检索不硬编动作，避免「按腐烂率分拣」这类错位建议
+        return []
     steps: List[str] = []
     for e in evidence:
         cat = e.properties.get("category") or ""
         if e.predicate == "CONTRA_INDICATED_FOR":
-            alt = next((x.object for x in evidence if x.predicate == "ALTERNATIVE_TO"), "")
-            txt = f"不要用 {e.object}"
+            # 数据方向：条件 -CONTRA_INDICATED_FOR-> 品种（subject=被禁条件，object=品种）；
+            # 替代方向：替代条件 -ALTERNATIVE_TO-> 被替代条件（subject=可用的替代）。
+            # 步骤必须指向被禁条件，绝不能生成「不要用 <品种>，改用 <被禁条件>」的反向建议。
+            alt = next(
+                (x.subject for x in evidence if x.predicate == "ALTERNATIVE_TO" and x.object == e.subject),
+                "",
+            )
+            txt = f"不要用 {e.subject}"
             if alt:
                 txt += f"，改用 {alt}"
             steps.append(f"{txt}（[{e.eid}]）")
@@ -224,7 +237,7 @@ def template_answer(
         temp_ev = next((e for e in evidence if e.unit == "℃"), evidence[0])
         head = (
             f"结论：不可行。图谱证据只覆盖 {temp_ev.object} 这一档（[{temp_ev.eid}]），"
-            "远低于葡萄冰点，会冻伤果肉、解冻后很快腐烂。"
+            "你问的温度已超出该区间：低于冰点会冻伤果肉、解冻后很快腐烂。"
         )
         facts = [f"可用的温度区间是 {temp_ev.object}（[{temp_ev.eid}]）"]
     elif intent == "disease_control":
@@ -243,15 +256,27 @@ def template_answer(
     elif intent == "variety_compare":
         vs = [e for e in evidence if e.predicate == "HAS_INDICATOR_VALUE"]
         if len({e.subject for e in vs}) >= 2:
-            head = "结论：" + "；".join(f"{e.subject} {e.object} {_fmt_value(e)}（[{e.eid}]）" for e in vs[:3]) + "。"
+            parts = []
+            for e in vs[:3]:
+                val = _fmt_value(e)
+                if val:
+                    parts.append(f"{e.subject} {e.object} {val}（[{e.eid}]）")
+                else:
+                    parts.append(f"图谱未收录{e.subject}的{e.object}数值（[{e.eid}]）")
+            head = "结论：" + "；".join(parts) + "。"
         else:
             head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
     elif intent == "contraindication":
         c = next((e for e in evidence if e.predicate == "CONTRA_INDICATED_FOR"), None)
-        alt = next((e for e in evidence if e.predicate == "ALTERNATIVE_TO"), None)
+        contra_name = getattr(c, "subject", "") or ""
+        alt = next(
+            (e for e in evidence if e.predicate == "ALTERNATIVE_TO" and e.object == contra_name),
+            None,
+        ) or next((e for e in evidence if e.predicate == "ALTERNATIVE_TO"), None)
         if c:
             sev = c.properties.get("severity") or "需注意"
-            head = f"结论：{c.object} 对 {c.subject} 属于{sev}风险，不建议直接用（[{c.eid}]）。"
+            # 数据方向：条件 -CONTRA_INDICATED_FOR-> 品种，主语应是被禁条件
+            head = f"结论：{c.subject} 对 {c.object} 属于{sev}风险，不建议直接用（[{c.eid}]）。"
             if alt:
                 head += f"可考虑用 {alt.subject} 替代 {alt.object}（[{alt.eid}]）。"
             elif c.properties.get("reason"):
@@ -333,6 +358,10 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
             if f2:
                 fam_ranges.setdefault(f2, []).append((lo, hi))
         _add_bare(text)
+        # 来源标题/来源 id 里的编号（如「NY/T 1199-2006」「gbt16862_2026」）属证据元数据，
+        # 会原样出现在「依据」行中，不应判为编造数字。
+        _add_bare(" ".join(e.source_titles))
+        _add_bare(" ".join(e.source_ids))
         _add_bare(str(e.confidence))  # 依据行里的「置信 0.78」属证据元数据，不算编造
         _add_bare(f"{e.value} {e.value_min} {e.value_max}")  # 结构化数值（如 -0.5~0.5）也是证据数字
     _add_bare(normalize_question(question))
@@ -373,7 +402,12 @@ def verify_citations(answer: str, evidence: Sequence[Evidence]) -> Tuple[List[st
     valid_ids = {e.eid for e in evidence}
     cited = re.findall(r"\[(E\d+)\]", answer or "")
     uniq = [c for c in dict.fromkeys(cited) if c in valid_ids]
-    warnings = [] if uniq else [WARN_NO_CITATION]
+    invalid = [c for c in dict.fromkeys(cited) if c not in valid_ids]
+    warnings: List[str] = [] if uniq else [WARN_NO_CITATION]
+    for cid in invalid:
+        code = f"invalid_citation:{cid}"
+        if code not in warnings:
+            warnings.append(code)
     return uniq, warnings
 
 
@@ -390,7 +424,7 @@ def detect_out_of_range(question: str, evidence: Sequence[Evidence]) -> bool:
             v = float(m)
         except ValueError:
             continue
-        if v < lo - 2 or v > hi + 2:
+        if v < lo - 0.6 or v > hi + 0.6:
             return True
     return False
 
@@ -444,6 +478,27 @@ def _split_llm_text(text: str) -> Tuple[str, List[str]]:
     return head.strip().rstrip("：:"), steps
 
 
+# ------------------------------------------------------------------ 词表缓存
+_CATALOG_CACHE: Dict[str, Any] = {}
+
+
+def _load_catalog_cached(path: str):
+    """按 (路径, mtime) 缓存实体词表，避免每问重建（entities.csv 改动后自动失效）。"""
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0.0
+    key = f"{path}|{mtime}"
+    cached = _CATALOG_CACHE.get(key)
+    if cached is None:
+        from app.linking import load_catalog
+
+        cached = load_catalog(path)
+        _CATALOG_CACHE.clear()
+        _CATALOG_CACHE[key] = cached
+    return cached
+
+
 # ------------------------------------------------------------------ 主流程
 def answer_question(
     question: str,
@@ -467,15 +522,14 @@ def answer_question(
         result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
         return result
 
-    # 1) 实体链接
+    # 1) 实体链接（词表按 mtime 缓存，避免每问重建）
     try:
         from app.config import load_settings as _ls
 
         st = settings or _ls()
-        from app.linking import link_entities, load_catalog
+        from app.linking import link_entities
 
-        catalog = load_catalog(str(st.data_path / "entities.csv"))
-        hits = link_entities(q, catalog)
+        hits = link_entities(q, _load_catalog_cached(str(st.data_path / "entities.csv")))
     except Exception:
         hits = []
     result.entities = hits
@@ -522,7 +576,15 @@ def answer_question(
         result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
         return result
 
-    # 4) 证据整理（去重/截断，eid 由本层分配）
+    # 4) 证据整理：优先「与命中实体相连」的证据，再按 store 分数降序
+    #    （否则「灰霉病和结露」会被通用处置边挤到前面，答非所问）
+    hit_ids_all = {h.node_id for h in hits}
+
+    def _touch_rank(ev: Evidence) -> float:
+        ids = {ev.properties.get("subject_id"), ev.properties.get("object_id")}
+        return 1.0 if (ids & hit_ids_all or ev.subject in hit_ids_all or ev.object in hit_ids_all) else 0.0
+
+    evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
     evidence = _dedupe(evidence)[: max(1, int(k or 6))]
     _assign_eids(evidence)
     result.evidence = evidence
@@ -533,6 +595,28 @@ def answer_question(
 
     if not evidence:
         warnings.append(WARN_NO_EVIDENCE)
+
+    # 4.5) 覆盖校验：typed 意图下证据必须触达命中实体，否则就是「张冠李戴」
+    #      （例：问「维多利亚怎么存」却拿到阳光玫瑰/红地球的耐贮性；问「1-MCP 怎么用」却答 SO₂ 禁忌）
+    if hits and evidence:
+        hit_ids = {h.node_id for h in hits}
+        covered = False
+        for e in evidence:
+            ids = {e.properties.get("subject_id"), e.properties.get("object_id")}
+            if ids & hit_ids or e.subject in hit_ids or e.object in hit_ids:
+                covered = True
+                break
+        if not covered:
+            names = "、".join(dict.fromkeys(h.surface for h in hits))
+            warnings.append(WARN_NO_EVIDENCE)
+            result.evidence = []
+            result.answer = (
+                f"结论：图谱里没有检索到「{names}」与该问题对应的证据，我不拿别的品种或条件来凑答案。\n\n"
+                "依据：图谱未收录该问题对应的三元组（查询命中实体与证据无关联）。\n\n"
+                "可以换一种问法，或改问已收录较多的品种（阳光玫瑰、巨峰、红地球、夏黑）。"
+            )
+            result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
+            return result
 
     # 5) 越界检测
     out_of_range = detect_out_of_range(q, evidence) if evidence else False
@@ -590,23 +674,21 @@ def answer_question(
         if head:
             answer = head
         result.steps = llm_steps[:3] if (result.mode == "llm" and llm_steps) else compose_steps(evidence, intent)
-        if result.mode == "template":
+        result.answer = answer
+        if result.steps:
             result.answer = answer + "\n\n现在该做什么：\n" + "\n".join(
                 f"{i}. {s}" for i, s in enumerate(result.steps, start=1)
             )
-        else:
-            result.answer = answer
-            if result.steps:
-                result.answer = answer + "\n\n现在该做什么：\n" + "\n".join(
-                    f"{i}. {s}" for i, s in enumerate(result.steps, start=1)
-                )
     else:
         result.answer = answer
 
     # 7.5) 步骤可能引用额外证据（如第 3 步引用 E6），最终答案确定后重算引用
-    cited_final, _w = verify_citations(result.answer, evidence)
+    cited_final, cite_warnings = verify_citations(result.answer, evidence)
     if cited_final:
         result.cited_ids = cited_final
+    for code in cite_warnings:
+        if code not in warnings:
+            warnings.append(code)
 
     # 8) 数值校验 + 越界告警
     if out_of_range:

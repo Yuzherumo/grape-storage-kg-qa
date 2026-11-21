@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""data/ 数据校验器（九项检查，中文报告，非 0 退出即失败）。
+"""data/ 数据校验器（十项检查，中文报告，非 0 退出即失败）。
 
 用法：
     python scripts/validate_data.py            # 校验 CSV 与 schema.json
@@ -80,6 +80,7 @@ CHECK_NAMES = {
     7: "阳光玫瑰行数",
     8: "locator 覆盖率",
     9: "实体名称/类型对应",
+    10: "S2a 快照与主数据一致",
 }
 
 NUMERIC_TOL = 1e-9
@@ -144,7 +145,7 @@ def load_schema(rep: Report) -> Dict[str, Any]:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="鲜食葡萄知识图谱数据校验（九项）")
+    parser = argparse.ArgumentParser(description="鲜食葡萄知识图谱数据校验（十项）")
     parser.add_argument("--quiet", action="store_true", help="只输出错误/告警")
     parser.add_argument("--json", action="store_true", help="输出 JSON 结果")
     args = parser.parse_args(argv)
@@ -431,19 +432,31 @@ def main(argv: Optional[List[str]] = None) -> int:
                 if t not in name_to_labels[n]:
                     rep.err(9, f"{sheet_name} 第{i}行 {key}='{n}' 的类型应为 {sorted(name_to_labels[n])}，实际声明 {t}")
 
+    # ============================================================ 检查 10
+    # S2a 快照必须是 triples.csv 的严格子集，防止两文件口径漂移（如 confidence 不一致）
+    main_by_sid = {(r.get("sid") or "").strip(): r for r in triples}
+    for i, r in enumerate(shine, 2):
+        sid = (r.get("sid") or "").strip()
+        main_row = main_by_sid.get(sid)
+        if main_row is None:
+            continue  # 检查 7 已报「未同步进 triples.csv」
+        diff_fields = [k for k in main_row if main_row[k] != r.get(k, "")]
+        if diff_fields:
+            rep.err(10, f"triples_shine_muscat.csv 第{i}行 sid={sid} 与 triples.csv 不一致：{diff_fields[:5]}")
+
     # ============================================================ 输出报告
     total_rows = len(entities) + len(triples) + len(sources)
     if not args.quiet and not args.json:
         print("=" * 72)
-        print("鲜食葡萄采后贮藏知识图谱 · 数据校验报告（九项）")
+        print("鲜食葡萄采后贮藏知识图谱 · 数据校验报告（十项）")
         print(f"数据目录：{DATA}")
         print(f"规模：entities {len(entities)} 行 / triples {len(triples)} 行 / triples_shine_muscat {len(shine)} 行 / sources {len(sources)} 行")
         print("=" * 72)
-        for no in range(1, 10):
+        for no in range(1, 11):
             errs = rep.check_errors(no)
             mark = "✅ 通过" if errs == 0 else f"❌ {errs} 个错误"
             print(f"检查{no} {CHECK_NAMES[no]}：{mark}")
-    for no in range(1, 10):
+    for no in range(1, 11):
         errs = [(c, m) for c, m in rep.errors if c == no]
         for _, msg in errs:
             print(f"[错误][检查{no}] {msg}")
@@ -462,7 +475,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif not args.quiet:
         print("-" * 72)
         if exit_code == 0:
-            print(f"[通过] 九项检查全部通过（错误 0，告警 {len(rep.warnings)}）—— 数据可入库。")
+            print(f"[通过] 十项检查全部通过（错误 0，告警 {len(rep.warnings)}）—— 数据可入库。")
         else:
             print(f"[失败] 共 {len(rep.errors)} 个错误、{len(rep.warnings)} 个告警，请修正后重跑。")
         print(f"总数据行：{total_rows}")

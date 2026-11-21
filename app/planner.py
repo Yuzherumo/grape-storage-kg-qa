@@ -16,8 +16,41 @@ from app.contracts import INTENTS, EntityHit, QuerySpec
 _FULLWIDTH = {ord(c): ord(c) - 0xFEE0 for c in "０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ（）【】～"}
 
 
+_CN_DIGITS = {"零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
+              "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+
+
+def _cn_to_int(text: str) -> int | None:
+    """把 0~99 的中文数字（含「十八」「二十」）转成整数，无法解析返回 None。"""
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+    total, cur = 0, 0
+    for ch in text:
+        if ch == "十":
+            cur = cur or 1
+            total += cur * 10
+            cur = 0
+        elif ch in _CN_DIGITS:
+            cur = _CN_DIGITS[ch]
+        else:
+            return None
+    return total + cur
+
+
+def _negate_zero_below(s: str) -> str:
+    """「零下18度」「零下十八度」「负2度」→ 「-18度」「-2度」。"""
+    def _repl(m: re.Match) -> str:
+        val = _cn_to_int(m.group(1))
+        return f"-{val}" if val is not None else m.group(0)
+    s = re.sub(r"(?:零下|负)([0-9零〇一二两三四五六七八九十]+)", _repl, s)
+    s = re.sub(r"(?:零下|负)(?![0-9])", "-", s)
+    return s
+
+
 def normalize_question(q: str) -> str:
-    """全角转半角、去空白、异体写法归一、句末语气词剥离。"""
+    """全角转半角、去空白、异体写法归一、中文数字/零下转数值、句末语气词剥离。"""
     if not q:
         return ""
     s = unicodedata.normalize("NFKC", str(q))
@@ -25,6 +58,7 @@ def normalize_question(q: str) -> str:
     s = re.sub(r"\s+", "", s)
     for a, b in R.NORMALIZE_MAP.items():
         s = s.replace(a, b)
+    s = _negate_zero_below(s)
     changed = True
     while changed:
         changed = False
@@ -70,6 +104,15 @@ def route(question: str, hits: Sequence[EntityHit]) -> Tuple[str, float, List[Tu
     无任何信号 → general, 0.0。
     """
     scores = score_intents(question, hits)
+    q = normalize_question(question)
+    # 「怎么做/怎么用」+ 命中条件实体 → 实体中心检索（general），避免套错处置清单
+    if hits and any(k in q for k in R.HOWTO_KEYWORDS) and any(h.label == "Condition" for h in hits):
+        return R.DEFAULT_INTENT, 0.5, []
+    # 「因果/关系」问句 + 命中病害 → 病害风险意图（回答「结露诱发灰霉」，而不是给处置清单）
+    if any(h.label == "Disease" for h in hits) and any(
+        k in q for k in ("有什么关系", "有啥关系", "什么关系", "为什么", "咋会", "怎么引起", "什么原因")
+    ):
+        return "disease_risk", 0.6, []
     if not scores:
         return R.DEFAULT_INTENT, 0.0, []
 

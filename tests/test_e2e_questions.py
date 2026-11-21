@@ -188,6 +188,43 @@ def test_low_confidence_question_has_no_evidence_and_warns(store) -> None:
     assert isinstance(result.warnings, list)
 
 
+def test_contraindication_step_direction(store) -> None:
+    """禁忌题的步骤建议方向必须正确：禁的是「条件」，不是「品种」。
+
+    回归（2026-11）：compose_steps/template_answer 曾把 subject/object 用反，
+    对 Q4 生成「不要用 阳光玫瑰，改用 SO₂ 熏蒸」这类反向农事建议。
+    数据方向冻结为：条件 -CONTRA_INDICATED_FOR-> 品种；替代条件 -ALTERNATIVE_TO-> 被替代条件。
+    """
+    for question in ("用SO₂熏阳光玫瑰行不行", "玫瑰香能用SO2熏吗"):
+        result = _ask(store, question)
+        assert result.intent == "contraindication", f"{question} 意图应为 contraindication"
+        contra = [e for e in result.evidence if e.predicate == "CONTRA_INDICATED_FOR"]
+        assert contra, f"{question} 缺少 CONTRA_INDICATED_FOR 证据"
+        joined = "\n".join(result.steps)
+        assert joined, f"{question} 禁忌题应给出步骤建议"
+        for e in contra:
+            banned, variety = e.subject, e.object
+            # 步骤指向被禁条件，且绝不能把品种当成被禁对象
+            assert f"不要用 {variety}" not in joined, (
+                f"{question} 步骤把品种当成了被禁对象（反向建议）：{result.steps}"
+            )
+            assert any(f"不要用 {banned}" in step for step in result.steps), (
+                f"{question} 步骤未包含「不要用 {banned}」：{result.steps}"
+            )
+        # 有替代证据时，推荐的是 ALTERNATIVE_TO 的 subject（替代条件）
+        alts = [e for e in result.evidence if e.predicate == "ALTERNATIVE_TO"]
+        for e in contra:
+            alt = next((a for a in alts if a.object == e.subject), None)
+            if alt is not None:
+                assert any("改用" in s and alt.subject in s for s in result.steps), (
+                    f"{question} 步骤应给出替代方案「{alt.subject}」：{result.steps}"
+                )
+        # 来源标题里的标准编号（如 NY/T 1199-2006）不应判为编造数字
+        assert not any("unsourced_number" in w for w in result.warnings), (
+            f"{question} 来源标题编号被误判为 unsourced_number：{result.warnings}"
+        )
+
+
 @pytest.mark.llm
 def test_llm_mode_citations_valid_when_available(store) -> None:
     """LLM 分支（默认跳过）：有 key/联网时 mode=llm 且引用仍必须可核验。"""

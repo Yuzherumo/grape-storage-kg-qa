@@ -64,6 +64,8 @@ route(question, hits) -> (intent: str, confidence: float, candidates: list[tuple
 build_query(intent, hits, k=6) -> QuerySpec
 ```
 - 三级路由：L2 触发词加权 + 实体标签先验 + 句式模式分；最高分 < 0.35 时 `confidence` 低，UI 走澄清提示；无实体无触发词 → `general`。
+- **路由兜底覆盖（M6 加固）**：①「怎么做/怎么用/剂量」+ 命中 `Condition` → 强制 `general`（实体中心检索，避免套错处置清单）；②「有什么关系/为什么/怎么引起」+ 命中 `Disease` → `disease_risk`（回答诱因，而不是给处置清单）。
+- 归一化含中文数字与「零下」：`零下18度`/`零下十八度` → `-18度`（供越界检测使用）。
 - `build_query` 只产出参数，不拼 Cypher 字符串。
 - 触发词表放 `app/planner_rules.py`（Lead 写区，供 qa-tester 只读引用做断言）。
 
@@ -89,8 +91,22 @@ compose_steps(evidence, intent) -> list[str]        # ≤3 步，无证据返回
 verify_citations(answer, evidence) -> tuple[list[str], list[str]]
 check_numbers(answer, evidence) -> list[str]        # 返回告警码/文本
 ```
-流程：normalize → link → route → build_query → store.execute → eid 分配 → 排序截断 →（allow_llm 且 key 可用 → LLM；否则模板）→ 引用校验（失败重试 1 次，再失败转模板并加 `no_citation`）→ 数值校验 → 组装 AnswerResult。
-`mode="template"` 时答案必须仍带 `[E#]`、`steps` 与来源。
+流程：normalize → link（词表按 mtime 缓存）→ route → build_query → store.execute → eid 分配 → **覆盖校验**（typed 意图下证据必须触达命中实体，否则返回「图谱未收录」而不是回退全库）→ 排序（优先与命中实体相连的证据，再按 store 分数）→ 去重截断 →（allow_llm 且 key 可用 → LLM；否则模板）→ 引用校验（无有效引用重试 1 次，再失败转模板并加 `no_citation`）→ 最终答案确定后**重算 `cited_ids`**（覆盖分步动作里的引用）→ 数值校验 → 组装 AnswerResult。
+`mode="template"` 时答案必须仍带 `[E#]`、`steps` 与来源；`steps` 为空时不输出空的「现在该做什么」段（`general` 意图不硬编动作）。
+
+告警码（`AnswerResult.warnings`）：
+
+| 告警 | 含义 |
+|---|---|
+| `no_evidence` | 无证据 / 命中实体无对应数据（覆盖校验拦截） |
+| `no_citation` | 答案没有任何有效 `[E#]` 引用 |
+| `invalid_citation:E#` | 答案引用了不存在的证据编号 |
+| `unsourced_number:<num>` | 答案里的数字在证据中找不到来源 |
+| `out_of_range:<num><unit>` / `out_of_range` | 数值超出证据区间（含问题级越界检测） |
+| `single_source` | B/G/H 组证据仅 1 个来源 |
+| `low_confidence_intent` | 意图置信度 < 0.35 |
+| `llm_timeout` / `llm_unavailable` | 模型超时/不可用，已降级模板 |
+| `backend_fallback` | Neo4j 不可用，已回落 local |
 
 模板答案格式（离线/降级）：
 - 结论：由证据值直接拼（如「阳光玫瑰适宜冷藏温度为 0±0.5 ℃」）

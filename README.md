@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M5 验收通过 ｜ 测试 `95 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M6 加固通过 ｜ 测试 `96 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -75,7 +75,7 @@ py -3.12 -m venv .venv
 | 灰霉病 | PREVENTED_BY | 快速预冷（12h 内至 0℃） | efficacy=中 | 综述 + 国标 |
 | 阳光玫瑰 | HAS_INDICATOR_VALUE | 耐贮性 | 2~4 月 | 综述 |
 
-数据流：`data/entities.csv + triples.csv`（唯一真相）→ `scripts/gen_cypher.py` → `graph/init_nodes.cypher`、`init_rels.cypher`（MERGE 幂等）；`scripts/validate_data.py` 九项校验作为加载前门禁。
+数据流：`data/entities.csv + triples.csv`（唯一真相）→ `scripts/gen_cypher.py` → `graph/init_nodes.cypher`、`init_rels.cypher`（MERGE 幂等）；`scripts/validate_data.py` **十项**校验作为加载前门禁（含「S2a 快照必须是主数据严格子集」的一致性检查）。
 
 ## 5. 降级与失败模式（稳定性 = 40 分完成度）
 
@@ -84,6 +84,9 @@ py -3.12 -m venv .venv
 | 无 `DEEPSEEK_API_KEY` / 401 | 模板模式，答案仍含 `[E#]`、来源、分步动作 |
 | 超时 / 断网 | 重试 2 次 → 模板模式，`warnings += llm_timeout` |
 | 图谱无证据 | 明说「未检索到」，给可换问法，绝不编造 |
+| **命中实体但无对应数据**（如「维多利亚怎么存」「1-MCP 怎么用」） | **覆盖校验**拦截：不回退到别的品种/条件凑答案，明确「图谱未收录该问题」（`no_evidence`） |
+| **答案引用了不存在的 `[E#]`** | `invalid_citation:E#` 告警，UI 黄色提示 |
+| 「怎么做/怎么用」问句 | 走实体中心检索（1-MCP/臭氧等），不复用 SO₂ 禁忌处置清单 |
 | 口语 / 错别字 / ₂ 下标 | 别名 + 症状词 + 归一化命中（12 条口语黄金集 12/12） |
 | 越界问题（-18℃ 冷冻） | 区间推理 → 「不可行」+ `out_of_range` 告警 |
 | Neo4j 连不上 | 自动回落 `local`，UI 徽标提示 |
@@ -92,7 +95,7 @@ py -3.12 -m venv .venv
 ## 6. 评测（离线可复现）
 
 ```
-.\.venv\Scripts\python.exe -m pytest tests -q      # → 95 passed, 2 skipped（无网可跑）
+.\.venv\Scripts\python.exe -m pytest tests -q      # → 96 passed, 2 skipped（无网可跑）
 .\.venv\Scripts\python.exe scripts\eval_qa.py      # → docs/eval_results.md
 ```
 
@@ -128,7 +131,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
 ├─ scripts/                    # validate_data / gen_cypher / eval_qa / env_check / load_neo4j
-├─ tests/                      # 96 个测试
+├─ tests/                      # 98 个测试（96 passed / 2 skipped）
 └─ docs/                       # api / spec / sources / eval_results / demo_script / submission / ai_usage
 ```
 
@@ -138,7 +141,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 |---|---|
 | 一键启动 | `.\run.ps1` |
 | 只自检 | `.\run.ps1 -Check` |
-| 数据九项校验 | `.\.venv\Scripts\python.exe scripts\validate_data.py` |
+| 数据十项校验 | `.\.venv\Scripts\python.exe scripts\validate_data.py` |
 | CSV→Cypher 生成/漂移检查 | `.\.venv\Scripts\python.exe scripts\gen_cypher.py` / `--check` |
 | 全量测试 | `.\.venv\Scripts\python.exe -m pytest tests -q` |
 | 评测报告 | `.\.venv\Scripts\python.exe scripts\eval_qa.py` |
@@ -148,7 +151,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 ## 10. 诚实声明与已知限制
 
 1. **全库 `status=anchor`**：GB/T 16862-2026 与多数论文正文需购买/机构访问，数值按摘要与公开描述入图，`note` 写明待核验点；对外表述为「国标/综述指出」，不称「条文原文」。
-2. **Neo4j 未在真实实例执行**：Cypher 脚本完整交付且由 CSV 生成、幂等校验通过，但本机无 Docker/WSL/兼容 JDK，未做实库验证；演示默认走本地后端。
+2. **Neo4j 未在真实实例执行**：Cypher 脚本完整交付且由 CSV 生成、幂等校验通过，导入脚本 `scripts/load_neo4j.py` 已提供（无驱动/无服务时友好退出，不崩）；本机无 Docker/WSL/兼容 JDK，未做实库验证，演示默认走本地后端。
 3. **数据规模**：71 条是演示级图谱，覆盖阳光玫瑰 + 6 个对照品种，不是全领域知识库。
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。
 5. 玫瑰香耐贮性等个别数值留空未编造，`note` 标注「待补文献回填」。

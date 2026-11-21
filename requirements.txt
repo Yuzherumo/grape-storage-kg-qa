@@ -1,8 +1,8 @@
-streamlit>=1.32
-openai>=1.30
-pandas>=2.0
-python-dotenv>=1.0
-pytest>=8.0
+streamlit==1.67.0
+openai==3.57.0
+pandas==3.1.1
+python-dotenv==1.2.4
+pytest==9.2.0
 
-# 可选：仅验证 Neo4j 交付脚本时需要
+# 可选：仅验证 Neo4j 交付脚本时需要（演示默认 local 后端，不需要）
 # neo4j>=5.20

@@ -19,9 +19,9 @@ class LLMUnavailable(RuntimeError):
 
 
 class LLMClient:
-    def __init__(self, settings: Settings | None = None, *, timeout: float = 20.0):
+    def __init__(self, settings: Settings | None = None, *, timeout: float | None = None):
         self.settings = settings or load_settings()
-        self.timeout = timeout
+        self.timeout = float(timeout if timeout is not None else getattr(self.settings, "llm_timeout", 20.0))
         self.last_usage: Dict[str, Any] = {}
         self._lock = threading.Lock()
         self._client = None
