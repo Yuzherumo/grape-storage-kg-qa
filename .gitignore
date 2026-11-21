@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.tmp/
+.pipcache/
+.venv-install.log
+.pytest_cache/
+pytest-cache-files-*/
+docs/_shots/*.tmp
+*.log
+.venv314/

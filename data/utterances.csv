@@ -1,0 +1,13 @@
+id,utterance,expected_intent,expected_entity_ids,note
+u01,这葡萄放库里得几度啊,temperature,,泛指无品种；只靠触发词「几度」「库里」路由；不硬断言实体
+u02,搁冷库能存到过年不,shelf_life,cold_0,冷库→低温冷藏 cold_0（需 entities.csv 别名）；「存到过年」问耐贮期
+u03,白毛是不是没救了,disease_control,gray_mold,白毛→灰霉病农户口述症状（需别名）；「没救了」问还能不能防
+u04,放两个月还行不行,shelf_life,,无品种无实体；只考 shelf_life 意图与耐贮期证据
+u05,阳光玫瑰搁多少度合适啊,temperature,shine_muscat,规范名命中
+u06,香印青提库里头湿度得调到多少,humidity,shine_muscat,长词优先：别名「香印青提」应优于「香印」
+u07,巨峰跟红提哪个耐放些,variety_compare,kyoho;red_globe,红提→红地球别名；品种对比依赖 I 组耐贮性数据
+u08,打SO2对晴王是不是不好使啊,contraindication,shine_muscat,SO₂ 禁忌；晴王→阳光玫瑰；SO₂ 实体命中不作硬断言
+u09,灰霉病咋防啊搁冷库里,disease_control,gray_mold,规范病名命中；「冷库」可能附带 cold_0 命中（子集断言允许）
+u10,葡萄掉粒软塌塌的还能要不,quality_indicator,berry_drop,掉粒→落粒率 berry_drop（需别名）；软塌=发软
+u11,气调库O2调到3个点中不中,atmosphere,ca_o2,O2→气调 O₂ 3~5%（需别名）；3个点=3%
+u12,阳光玫瑰糖度多少才算好,quality_indicator,shine_muscat;ssc,糖度→可溶性固形物SSC（需别名）
