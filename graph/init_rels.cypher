@@ -2,7 +2,7 @@
 // graph/init_rels.cypher —— 图谱关系初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/triples.csv 生成
 // 幂等：MERGE (a)-[r:PREDICATE {sid: ...}]->(b) —— 可重复执行
-// 统计：共 71 条关系（REQUIRES 14，CONTRA_INDICATED_FOR 3，AFFECTS 19，SUSCEPTIBLE_TO 8，PREVENTED_BY 8，INDUCED_BY 6，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 8）
+// 统计：共 108 条关系（REQUIRES 26，CONTRA_INDICATED_FOR 3，AFFECTS 19，SUSCEPTIBLE_TO 8，PREVENTED_BY 22，INDUCED_BY 7，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 18）
 // 关系属性含 source_ids/locator/quote/status/confidence（证据溯源必需）
 // =============================================================================
 
@@ -10,7 +10,7 @@
 MATCH (n) RETURN count(n) AS node_count_before;
 
 
-// ---------------- REQUIRES（14 条） ----------------
+// ---------------- REQUIRES（26 条） ----------------
 MATCH (a:Variety {id: 'crimson_seedless'}), (b:Condition {id: 'ice_temp'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_crimson_ice',
@@ -235,6 +235,175 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.status = 'verified',
          r.confidence = 0.75,
          r.note = '待核验点：标准中相对湿度上限/下限原文；高湿结露风险需与通风条款一并核对；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：相对湿度与条文一致';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_cold_neg1',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '低温冷藏 -1~0℃',
+         r.value_min = -1,
+         r.value_max = 0,
+         r.unit = '℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '国标通用冷藏区间；阳光玫瑰另有 0±0.5℃ 文献口径（sm_req_cold0, anchor）';
+MATCH (a:Variety {id: 'hutai_8'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'hutai_req_cold_neg1',
+         r.subject = '户太八号',
+         r.predicate = 'REQUIRES',
+         r.object = '低温冷藏 -1~0℃',
+         r.value_min = -1,
+         r.value_max = 0,
+         r.unit = '℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '国标通用冷藏区间；阳光玫瑰另有 0±0.5℃ 文献口径（sm_req_cold0, anchor）';
+MATCH (a:Variety {id: 'victoria'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'victoria_req_cold_neg1',
+         r.subject = '维多利亚',
+         r.predicate = 'REQUIRES',
+         r.object = '低温冷藏 -1~0℃',
+         r.value_min = -1,
+         r.value_max = 0,
+         r.unit = '℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '国标通用冷藏区间；阳光玫瑰另有 0±0.5℃ 文献口径（sm_req_cold0, anchor）';
+MATCH (a:Variety {id: 'hutai_8'}), (b:Condition {id: 'rh_90_95'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'hutai_req_rh',
+         r.subject = '户太八号',
+         r.predicate = 'REQUIRES',
+         r.object = '相对湿度 90~95%',
+         r.value_min = 90,
+         r.value_max = 95,
+         r.unit = '%',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
+         r.confidence = 0.95;
+MATCH (a:Variety {id: 'victoria'}), (b:Condition {id: 'rh_90_95'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'victoria_req_rh',
+         r.subject = '维多利亚',
+         r.predicate = 'REQUIRES',
+         r.object = '相对湿度 90~95%',
+         r.value_min = 90,
+         r.value_max = 95,
+         r.unit = '%',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.3 冷藏条件',
+         r.quote = '葡萄适宜冷藏温度为-1℃~0℃,相对湿度为90%~95%。',
+         r.status = 'verified',
+         r.confidence = 0.95;
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'temp_fluctuation'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_temp_fluct',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '冷藏温度波动 ±0.5℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.4.1 温湿度管理',
+         r.quote = '冷藏期间应保持库温和湿度稳定,温度波动幅度不超过±0.5℃,相对湿度波动幅度不超过±5%。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '库温波动上限';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'daily_intake_limit'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_intake',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '每天入库量 ≤ 库容 10%',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '5.2 码垛',
+         r.quote = '冷库预冷应码放松散、整齐,货垛排列方式、走向应与库内空气环流方向一致,每天入库量不超过库容量的10%。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '入库节奏要求';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'storage_density'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_density',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '冷藏密度 ≤ 200 kg/m³',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '7.2 入库',
+         r.quote = '入库时应按品种、等级、产地、采收时间等分库、分垛堆码,货垛排列方式、走向及间隙应与库内空气环流方向一致,有效空间冷藏密度应不超过200kg/m3。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '堆码密度要求';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'precool_forced'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_forced',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '压差预冷 0~1℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '5.3.2 预冷条件',
+         r.quote = '冷库预冷时环境温度为-1℃~0℃,压差预冷时环境温度为0℃~1℃。宜在采后12h内将葡萄果实中心温度降至0℃。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '另一种预冷方式';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'sales_env'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_sales',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '销售环境 0~10℃',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '8.2 销售',
+         r.quote = '销售环境温度宜控制在0℃~10℃,场所应干净、卫生。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '销售环节温度';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'archive_record'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_archive',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '档案记录保存 ≥2 年',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '9 档案记录',
+         r.quote = '应记录鲜食葡萄的采收时间,预冷方式,包装批次,库房消毒,入库时间、数量、批次,冷藏,运输和销售条件,操作人员等信息,记录应保存两年以上。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '溯源/记录要求';
+MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'package_weight'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'sm_req_pkg_weight',
+         r.subject = '阳光玫瑰',
+         r.predicate = 'REQUIRES',
+         r.object = '包装容重 ≤ 8 kg',
+         r.stage = '贮藏',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '6.1.1.2 外包装',
+         r.quote = '纸箱容重不宜超过8kg,箱体应清洁、干燥、坚实牢固耐压、内壁平滑。木条箱和塑料周转箱容重不宜超过10kg,内衬柔性缓冲材料。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '包装规格要求';
 
 // ---------------- CONTRA_INDICATED_FOR（3 条） ----------------
 MATCH (a:Condition {id: 'so2_fumigation'}), (b:Variety {id: 'muscat_hamburg'})
@@ -601,7 +770,7 @@ MERGE (a)-[r:SUSCEPTIBLE_TO]->(b)
   SET r.sid = 'd_redglobe_black',
          r.subject = '红地球',
          r.predicate = 'SUSCEPTIBLE_TO',
-         r.object = '黑霉病',
+         r.object = '黑斑病',
          r.stage = '贮藏',
          r.severity = '低',
          r.reason = '黑霉多在高温高湿条件下发生，规范冷藏发生率低',
@@ -629,7 +798,7 @@ MERGE (a)-[r:SUSCEPTIBLE_TO]->(b)
   SET r.sid = 'd_summerblack_rhizopus',
          r.subject = '夏黑',
          r.predicate = 'SUSCEPTIBLE_TO',
-         r.object = '根霉病',
+         r.object = '根霉腐败病',
          r.stage = '贮藏',
          r.severity = '高',
          r.reason = '夏黑皮薄易裂果，裂口果汁诱发根霉快速扩展',
@@ -681,7 +850,7 @@ MERGE (a)-[r:SUSCEPTIBLE_TO]->(b)
          r.confidence = 0.6,
          r.note = '待核验点：酸腐病在阳光玫瑰上的发生率数据缺失；低 为定性判断，需田间/贮藏调查支持';
 
-// ---------------- PREVENTED_BY（8 条） ----------------
+// ---------------- PREVENTED_BY（22 条） ----------------
 MATCH (a:Disease {id: 'anthracnose'}), (b:Condition {id: 'cold_0'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_anthracnose_cold0',
@@ -757,7 +926,7 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
 MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'cold_chain_transport'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_rhizopus_coldchain',
-         r.subject = '根霉病',
+         r.subject = '根霉腐败病',
          r.predicate = 'PREVENTED_BY',
          r.object = '冷链运输',
          r.stage = '出库',
@@ -771,7 +940,7 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
 MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'no_damage_harvest'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_rhizopus_nodamage',
-         r.subject = '根霉病',
+         r.subject = '根霉腐败病',
          r.predicate = 'PREVENTED_BY',
          r.object = '无伤采收',
          r.stage = '预冷',
@@ -796,21 +965,204 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
          r.status = 'anchor',
          r.confidence = 0.76,
          r.note = '待核验点：预冷时限与灰霉发病率下降的对应原文数据；单靠预冷不能替代药剂/气调';
+MATCH (a:Disease {id: 'gray_mold'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_gray_cold',
+         r.subject = '灰霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '低温冷藏 -1~0℃',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:灰霉病BotrytiscinereaPers侵染后果面出现褐色凹陷呈圆形病斑,果粒呈明显裂纹,轻压可“脱皮”,很快整个果实软腐,长出鼠灰色霉层,果梗变黑色病菌先侵染花柱头,呈“潜伏状态”或伤口入侵。0℃下10d左右发病,-1℃仍缓慢生长1)花期前、后及采前,按农药登记批准的使用方法,喷施GB23200(所有部分)允许使用的低毒杀菌剂;2)防止机械损伤;3)库房消杀,入库时使用二氧化硫类缓释保鲜剂;4)冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施第4/3项：冷藏温度-1~0℃、波动±0.5℃以内';
+MATCH (a:Disease {id: 'gray_mold'}), (b:Condition {id: 'warehouse_disinfection'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_gray_disinfect',
+         r.subject = '灰霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '库房消杀',
+         r.efficacy = '中',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:灰霉病BotrytiscinereaPers侵染后果面出现褐色凹陷呈圆形病斑,果粒呈明显裂纹,轻压可“脱皮”,很快整个果实软腐,长出鼠灰色霉层,果梗变黑色病菌先侵染花柱头,呈“潜伏状态”或伤口入侵。0℃下10d左右发病,-1℃仍缓慢生长1)花期前、后及采前,按农药登记批准的使用方法,喷施GB23200(所有部分)允许使用的低毒杀菌剂;2)防止机械损伤;3)库房消杀,入库时使用二氧化硫类缓释保鲜剂;4)冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：库房消杀';
+MATCH (a:Disease {id: 'blue_mold'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_blue_cold',
+         r.subject = '青霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '低温冷藏 -1~0℃',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:青霉病Penicilliumspp.果粒上形成圆形或半圆形凹斑,果皮皱缩,果实软化,果肉呈透明浆状,有霉味,霉菌呈白色,后期出现青霉采收搬运中造成的机械损伤或裂果处发病,0℃下冷藏仍可发病1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施第4/3项：冷藏温度-1~0℃、波动±0.5℃以内';
+MATCH (a:Disease {id: 'blue_mold'}), (b:Condition {id: 'warehouse_disinfection'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_blue_disinfect',
+         r.subject = '青霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '库房消杀',
+         r.efficacy = '中',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:青霉病Penicilliumspp.果粒上形成圆形或半圆形凹斑,果皮皱缩,果实软化,果肉呈透明浆状,有霉味,霉菌呈白色,后期出现青霉采收搬运中造成的机械损伤或裂果处发病,0℃下冷藏仍可发病1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：库房消杀';
+MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_black_cold',
+         r.subject = '黑斑病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '低温冷藏 -1~0℃',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:黑斑病Alternariaspp.侵染后在果刷内生长呈棕褐色或深褐色的坏死斑,后期发病果粒从果穗上脱落田间下雨,特别是采收前降雨,交链格孢菌易侵入果梗与果实连结的纤维组织1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施第4/3项：冷藏温度-1~0℃、波动±0.5℃以内';
+MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'warehouse_disinfection'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_black_disinfect',
+         r.subject = '黑斑病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '库房消杀',
+         r.efficacy = '中',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:黑斑病Alternariaspp.侵染后在果刷内生长呈棕褐色或深褐色的坏死斑,后期发病果粒从果穗上脱落田间下雨,特别是采收前降雨,交链格孢菌易侵入果梗与果实连结的纤维组织1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：库房消杀';
+MATCH (a:Disease {id: 'green_mold'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_green_cold',
+         r.subject = '绿霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '低温冷藏 -1~0℃',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:绿霉病CladosporiumherbarumLink侵染后果梗顶端或侧面产生黑色坚硬腐烂病斑,果粒侧面呈扁平状或皱状,出库短期即出现绿色的霉层伤口侵染或在果梗末端小的裂纹处入侵,4℃~30℃条件下发病1)采前喷药,防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施第4/3项：冷藏温度-1~0℃、波动±0.5℃以内';
+MATCH (a:Disease {id: 'green_mold'}), (b:Condition {id: 'warehouse_disinfection'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_green_disinfect',
+         r.subject = '绿霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '库房消杀',
+         r.efficacy = '中',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:绿霉病CladosporiumherbarumLink侵染后果梗顶端或侧面产生黑色坚硬腐烂病斑,果粒侧面呈扁平状或皱状,出库短期即出现绿色的霉层伤口侵染或在果梗末端小的裂纹处入侵,4℃~30℃条件下发病1)采前喷药,防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：库房消杀';
+MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'cold_neg1'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_rhizo_cold',
+         r.subject = '根霉腐败病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '低温冷藏 -1~0℃',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:根霉腐败病RhizopusmigricansEhrenb果粒变软,果汁流出,常温下烂果长出粗白色丝体(黑色),烂果呈灰色或黑色团伤口侵入,预冷不彻底,库温过高引起1)加强果园管理;2)库房消杀;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施第4/3项：冷藏温度-1~0℃、波动±0.5℃以内';
+MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'warehouse_disinfection'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_rhizo_disinfect',
+         r.subject = '根霉腐败病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '库房消杀',
+         r.efficacy = '中',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:根霉腐败病RhizopusmigricansEhrenb果粒变软,果汁流出,常温下烂果长出粗白色丝体(黑色),烂果呈灰色或黑色团伤口侵入,预冷不彻底,库温过高引起1)加强果园管理;2)库房消杀;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：库房消杀';
+MATCH (a:Disease {id: 'blue_mold'}), (b:Condition {id: 'so2_pad'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_blue_so2pad',
+         r.subject = '青霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '焦亚硫酸盐缓释片',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:青霉病Penicilliumspp.果粒上形成圆形或半圆形凹斑,果皮皱缩,果实软化,果肉呈透明浆状,有霉味,霉菌呈白色,后期出现青霉采收搬运中造成的机械损伤或裂果处发病,0℃下冷藏仍可发病1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：入库时使用二氧化硫类缓释保鲜剂';
+MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'so2_pad'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_black_so2pad',
+         r.subject = '黑斑病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '焦亚硫酸盐缓释片',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:黑斑病Alternariaspp.侵染后在果刷内生长呈棕褐色或深褐色的坏死斑,后期发病果粒从果穗上脱落田间下雨,特别是采收前降雨,交链格孢菌易侵入果梗与果实连结的纤维组织1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：入库时使用二氧化硫类缓释保鲜剂';
+MATCH (a:Disease {id: 'green_mold'}), (b:Condition {id: 'so2_pad'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_green_so2pad',
+         r.subject = '绿霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '焦亚硫酸盐缓释片',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:绿霉病CladosporiumherbarumLink侵染后果梗顶端或侧面产生黑色坚硬腐烂病斑,果粒侧面呈扁平状或皱状,出库短期即出现绿色的霉层伤口侵染或在果梗末端小的裂纹处入侵,4℃~30℃条件下发病1)采前喷药,防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：入库时使用二氧化硫类缓释保鲜剂';
+MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'so2_pad'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_rhizo_so2pad',
+         r.subject = '根霉腐败病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = '焦亚硫酸盐缓释片',
+         r.efficacy = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:根霉腐败病RhizopusmigricansEhrenb果粒变软,果汁流出,常温下烂果长出粗白色丝体(黑色),烂果呈灰色或黑色团伤口侵入,预冷不彻底,库温过高引起1)加强果园管理;2)库房消杀;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文防治措施：入库时使用二氧化硫类缓释保鲜剂';
 
-// ---------------- INDUCED_BY（6 条） ----------------
-MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'high_temp_humid'})
+// ---------------- INDUCED_BY（7 条） ----------------
+MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'pre_harvest_rain'})
 MERGE (a)-[r:INDUCED_BY]->(b)
   SET r.sid = 'f_black_hot',
-         r.subject = '黑霉病',
+         r.subject = '黑斑病',
          r.predicate = 'INDUCED_BY',
-         r.object = '高温高湿',
+         r.object = '采前降雨',
          r.stage = '贮藏',
          r.reason = '黑霉（黑曲霉）在高温高湿条件下大量繁殖',
          r.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:黑斑病Alternariaspp.侵染后在果刷内生长呈棕褐色或深褐色的坏死斑,后期发病果粒从果穗上脱落田间下雨,特别是采收前降雨,交链格孢菌易侵入果梗与果实连结的纤维组织1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：温湿度与黑霉发生率对应原文';
+         r.note = '待核验点：温湿度与黑霉发生率对应原文；按条文更正：诱因为田间/采前降雨（原「高温高湿」无条文依据）';
 MATCH (a:Disease {id: 'blue_mold'}), (b:Condition {id: 'wound'})
 MERGE (a)-[r:INDUCED_BY]->(b)
   SET r.sid = 'f_blue_wound',
@@ -820,10 +1172,11 @@ MERGE (a)-[r:INDUCED_BY]->(b)
          r.stage = '贮藏',
          r.reason = '青霉多由伤口或果梗剪口侵入，无伤采收可显著降低发病率',
          r.source_ids = ['review_grape_storage', 'review_packaging_logistics'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:青霉病Penicilliumspp.果粒上形成圆形或半圆形凹斑,果皮皱缩,果实软化,果肉呈透明浆状,有霉味,霉菌呈白色,后期出现青霉采收搬运中造成的机械损伤或裂果处发病,0℃下冷藏仍可发病1)防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：青霉经伤口侵染的原文证据与发病率数据';
+         r.note = '待核验点：青霉经伤口侵染的原文证据与发病率数据；条文：机械损伤或裂果处发病';
 MATCH (a:Disease {id: 'gray_mold'}), (b:Condition {id: 'high_humid_condensation'})
 MERGE (a)-[r:INDUCED_BY]->(b)
   SET r.sid = 'f_gray_condensation',
@@ -859,23 +1212,38 @@ MERGE (a)-[r:INDUCED_BY]->(b)
          r.stage = '贮藏',
          r.reason = '伤口渗出汁液为灰霉提供营养与侵入门户',
          r.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:灰霉病BotrytiscinereaPers侵染后果面出现褐色凹陷呈圆形病斑,果粒呈明显裂纹,轻压可“脱皮”,很快整个果实软腐,长出鼠灰色霉层,果梗变黑色病菌先侵染花柱头,呈“潜伏状态”或伤口入侵。0℃下10d左右发病,-1℃仍缓慢生长1)花期前、后及采前,按农药登记批准的使用方法,喷施GB23200(所有部分)允许使用的低毒杀菌剂;2)防止机械损伤;3)库房消杀,入库时使用二氧化硫类缓释保鲜剂;4)冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：伤口数与灰霉发病率对应数据';
+         r.note = '待核验点：伤口数与灰霉发病率对应数据；条文：伤口入侵';
 MATCH (a:Disease {id: 'rhizopus_rot'}), (b:Condition {id: 'mechanical_injury'})
 MERGE (a)-[r:INDUCED_BY]->(b)
   SET r.sid = 'f_rhizopus_mech',
-         r.subject = '根霉病',
+         r.subject = '根霉腐败病',
          r.predicate = 'INDUCED_BY',
          r.object = '机械伤',
          r.stage = '贮藏',
          r.reason = '机械伤造成果皮破裂，根霉由伤口快速侵染并软腐',
          r.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:根霉腐败病RhizopusmigricansEhrenb果粒变软,果汁流出,常温下烂果长出粗白色丝体(黑色),烂果呈灰色或黑色团伤口侵入,预冷不彻底,库温过高引起1)加强果园管理;2)库房消杀;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：机械伤程度与根霉发病率原文';
+         r.note = '待核验点：机械伤程度与根霉发病率原文；条文：伤口侵入';
+MATCH (a:Disease {id: 'green_mold'}), (b:Condition {id: 'wound'})
+MERGE (a)-[r:INDUCED_BY]->(b)
+  SET r.sid = 'f_green_wound',
+         r.subject = '绿霉病',
+         r.predicate = 'INDUCED_BY',
+         r.object = '伤口',
+         r.level = '高',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录B 表B.1',
+         r.quote = '附录B 表B.1:绿霉病CladosporiumherbarumLink侵染后果梗顶端或侧面产生黑色坚硬腐烂病斑,果粒侧面呈扁平状或皱状,出库短期即出现绿色的霉层伤口侵染或在果梗末端小的裂纹处入侵,4℃~30℃条件下发病1)采前喷药,防止机械损伤;2)库房消杀,入库时使用二氧化硫类缓释保鲜剂;3)及时预冷,冷藏温度-1℃~0℃,温度波动±0.5℃以内',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '条文：伤口侵染或在果梗末端裂纹处入侵';
 
 // ---------------- ALTERNATIVE_TO（3 条） ----------------
 MATCH (a:Condition {id: 'microperforated_film'}), (b:Condition {id: 'ca_o2'})
@@ -946,7 +1314,7 @@ MERGE (a)-[r:INDICATES]->(b)
          r.confidence = 0.6,
          r.note = '待核验点：酸腐病感官描述与挥发性成分对应原文；指示关系为定性判断';
 
-// ---------------- HAS_INDICATOR_VALUE（8 条） ----------------
+// ---------------- HAS_INDICATOR_VALUE（18 条） ----------------
 MATCH (a:Variety {id: 'crimson_seedless'}), (b:QualityIndicator {id: 'shelf_life'})
 MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
   SET r.sid = 'i_crimson_shelf',
@@ -1073,6 +1441,156 @@ MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
          r.status = 'verified',
          r.confidence = 0.6,
          r.note = '待核验点：TA 区间原文数值与滴定方法；不同产区/成熟度差异待核；按 GB/T 16862-2026（用户提供 PDF 全文，文本经 pdfminer 提取） 升级：按表A.1 更正为 TA≤0.35%（原 0.4~0.6 无条文依据，已删）';
+MATCH (a:Variety {id: 'kyoho'}), (b:QualityIndicator {id: 'ssc'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_巨峰_ssc',
+         r.subject = '巨峰',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可溶性固形物SSC',
+         r.value_min = 14.0,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:巨峰 可溶性固形物/%≥14.00,可滴定酸/%≤0.65。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'kyoho'}), (b:QualityIndicator {id: 'ta'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_巨峰_ta',
+         r.subject = '巨峰',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可滴定酸TA',
+         r.value_max = 0.65,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:巨峰 可溶性固形物/%≥14.00,可滴定酸/%≤0.65。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'red_globe'}), (b:QualityIndicator {id: 'ssc'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_红地球_ssc',
+         r.subject = '红地球',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可溶性固形物SSC',
+         r.value_min = 15.0,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:红地球 可溶性固形物/%≥15.00,可滴定酸/%≤0.50。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'red_globe'}), (b:QualityIndicator {id: 'ta'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_红地球_ta',
+         r.subject = '红地球',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可滴定酸TA',
+         r.value_max = 0.5,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:红地球 可溶性固形物/%≥15.00,可滴定酸/%≤0.50。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'summer_black'}), (b:QualityIndicator {id: 'ssc'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_夏黑_ssc',
+         r.subject = '夏黑',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可溶性固形物SSC',
+         r.value_min = 16.0,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:夏黑 可溶性固形物/%≥16.00,可滴定酸/%≤0.50。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'summer_black'}), (b:QualityIndicator {id: 'ta'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_夏黑_ta',
+         r.subject = '夏黑',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可滴定酸TA',
+         r.value_max = 0.5,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:夏黑 可溶性固形物/%≥16.00,可滴定酸/%≤0.50。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'muscat_hamburg'}), (b:QualityIndicator {id: 'ssc'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_玫瑰香_ssc',
+         r.subject = '玫瑰香',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可溶性固形物SSC',
+         r.value_min = 16.0,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:玫瑰香 可溶性固形物/%≥16.00,可滴定酸/%≤0.65。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'muscat_hamburg'}), (b:QualityIndicator {id: 'ta'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_玫瑰香_ta',
+         r.subject = '玫瑰香',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可滴定酸TA',
+         r.value_max = 0.65,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:玫瑰香 可溶性固形物/%≥16.00,可滴定酸/%≤0.65。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'victoria'}), (b:QualityIndicator {id: 'ssc'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_维多利亚_ssc',
+         r.subject = '维多利亚',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可溶性固形物SSC',
+         r.value_min = 14.0,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:维多利亚 可溶性固形物/%≥14.00,可滴定酸/%≤0.40。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
+MATCH (a:Variety {id: 'victoria'}), (b:QualityIndicator {id: 'ta'})
+MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
+  SET r.sid = 'i_维多利亚_ta',
+         r.subject = '维多利亚',
+         r.predicate = 'HAS_INDICATOR_VALUE',
+         r.object = '可滴定酸TA',
+         r.value_max = 0.4,
+         r.unit = '%',
+         r.stage = '出库',
+         r.source_ids = ['gbt16862_2026'],
+         r.locator = '附录A 表A.1',
+         r.quote = '附录A 表A.1:维多利亚 可溶性固形物/%≥14.00,可滴定酸/%≤0.40。',
+         r.status = 'verified',
+         r.confidence = 0.95,
+         r.note = '按表A.1 行列还原（采收理化指标）';
 
 // 关系写入完毕，做一次统计自检
 MATCH ()-[r]->() RETURN type(r) AS predicate, count(*) AS cnt ORDER BY predicate;

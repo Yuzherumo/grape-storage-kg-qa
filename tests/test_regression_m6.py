@@ -43,11 +43,14 @@ def _touched_ids(evidence) -> set:
 
 
 # ---------------------------------------------------------------- 1) 覆盖校验
-@pytest.mark.parametrize("question", ["维多利亚怎么存", "维多利亚能放多久"])
+# M8 数据扩充后：维多利亚已有 REQUIRES 温度/湿度 + SSC/TA 证据（不再是无数据实体），
+# 但「耐贮性」基线仍缺失 → 用 shelf_life 意图做负例。
+@pytest.mark.parametrize("question", ["维多利亚能放多久"])
 def test_coverage_check_refuses_unrelated_evidence(store, question: str) -> None:
     result = _ask(store, question)
     assert result.evidence == [], (
-        f"{question!r} 命中的维多利亚在图中无关联三元组，证据必须为空（不拿别品种凑），实际 {len(result.evidence)} 条"
+        f"{question!r} 命中的维多利亚没有耐贮性基线证据，证据必须为空（不拿别品种凑），"
+        f"实际 {len(result.evidence)} 条：{[(e.predicate, e.subject, e.object) for e in result.evidence]}"
     )
     assert WARN_NO_EVIDENCE in result.warnings, f"{question!r} 应告警 no_evidence：{result.warnings}"
     assert "图谱未收录" in result.answer, f"{question!r} 答案应明确「图谱未收录」：{result.answer!r}"
@@ -61,9 +64,22 @@ def test_coverage_check_refuses_unrelated_evidence(store, question: str) -> None
         )
 
 
+def test_coverage_check_accepts_new_victoria_evidence(store) -> None:
+    """M8 正例：维多利亚已入图（REQUIRES 温度 + SSC/TA），覆盖校验不得误杀。"""
+    result = _ask(store, "维多利亚怎么存")
+    assert result.evidence, "维多利亚已有图谱证据（M8 扩充），不应被覆盖校验清空"
+    assert WARN_NO_EVIDENCE not in result.warnings, f"维多利亚正例不应报 no_evidence：{result.warnings}"
+    subjects = {item.subject for item in result.evidence}
+    assert "维多利亚" in subjects, f"证据应以维多利亚为主体：{sorted(subjects)}"
+
+
 def test_coverage_check_keeps_covered_evidence(store) -> None:
     result = _ask(store, "阳光玫瑰放冷库该调到多少度？")
-    assert len(result.evidence) == 2, f"Q1 应有 2 条证据（低温冷藏 + 冰温），实际 {len(result.evidence)}"
+    assert len(result.evidence) >= 2, f"Q1 应有多条低温冷藏证据，实际 {len(result.evidence)}"
+    object_ids = {item.properties.get("object_id") for item in result.evidence}
+    assert {"cold_0", "ice_temp"} <= object_ids, (
+        f"Q1 证据应覆盖 cold_0（0±0.5℃）与 ice_temp（冰温），实际 object_ids={sorted(x for x in object_ids if x)}"
+    )
     assert WARN_NO_EVIDENCE not in result.warnings, f"正例不应被覆盖校验误杀：{result.warnings}"
 
 
@@ -131,14 +147,35 @@ def test_below_zero_request_is_flagged_out_of_range(store, question: str) -> Non
 
 
 # ---------------------------------------------------------------- 5) 空指标值文案
-def test_variety_compare_missing_value_uses_placeholder(store) -> None:
-    result = _ask(store, "玫瑰香和巨峰哪个更能放")
-    assert result.intent == "variety_compare", f"应路由 variety_compare，实际 {result.intent}"
-    assert "图谱未收录玫瑰香的耐贮性数值" in result.answer, (
-        f"玫瑰香无耐贮性数值时应输出占位文案，实际答案：{result.answer!r}"
-    )
-    assert "耐贮性 耐贮性" not in result.answer, "出现「指标名 指标名」破相拼接"
-    assert not re.search(r"耐贮性\s+（", result.answer), "出现「耐贮性 （」空值拼接"
+def test_variety_compare_missing_value_uses_placeholder() -> None:
+    """M8 后真实数据里所有指标基线都有值，用合成 Evidence 单测占位文案本身。"""
+    from app.contracts import Evidence
+    from app.qa import template_answer
+
+    evidence = [
+        Evidence(
+            eid="E1", subject="巨峰", predicate="HAS_INDICATOR_VALUE", object="耐贮性",
+            unit="月", value_min=2.0, value_max=4.0,
+        ),
+        # 玫瑰香无耐贮性数值 → 应输出「图谱未收录…数值」占位，而不是空值拼接
+        Evidence(eid="E2", subject="玫瑰香", predicate="HAS_INDICATOR_VALUE", object="耐贮性"),
+    ]
+    answer = template_answer("variety_compare", "玫瑰香和巨峰哪个更能放", evidence, [], False)
+    assert "图谱未收录玫瑰香的耐贮性数值" in answer, f"空值指标应输出占位文案：{answer!r}"
+    assert "耐贮性 耐贮性" not in answer, "出现「指标名 指标名」破相拼接"
+    assert not re.search(r"耐贮性\s+（", answer), f"出现「耐贮性 （」空值拼接：{answer!r}"
+
+
+def test_variety_compare_real_data_has_no_broken_value_join(store) -> None:
+    """真实数据回归：M8 后玫瑰香/户太八号有 SSC/TA 但无耐贮性，答案不得出现空值拼接。"""
+    for question in ("玫瑰香和巨峰哪个更能放", "户太八号和巨峰哪个更能放"):
+        result = _ask(store, question)
+        assert result.intent == "variety_compare", f"{question!r} 应路由 variety_compare，实际 {result.intent}"
+        assert result.answer.strip(), f"{question!r} 答案为空"
+        assert "耐贮性 耐贮性" not in result.answer, f"{question!r} 出现「指标名 指标名」破相拼接：{result.answer!r}"
+        assert not re.search(r"耐贮性\s+（", result.answer), (
+            f"{question!r} 出现「耐贮性 （」空值拼接：{result.answer!r}"
+        )
 
 
 # ---------------------------------------------------------------- 6) 无效引用

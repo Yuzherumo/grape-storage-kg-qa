@@ -1,0 +1,40 @@
+[project]
+name = "grape-storage-kg-qa"
+version = "0.1.0"
+description = "鲜食葡萄储藏知识图谱 × DeepSeek 问答（农客松 2026 主赛道方向二）"
+requires-python = ">=3.10"
+dependencies = [
+  "streamlit==1.67.0",
+  "openai==3.57.0",
+  "pandas==3.1.1",
+  "python-dotenv==1.2.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [".venv", ".tmp", ".pipcache", "pytest-cache-files-*", "__pycache__", "docs", "data", "graph", "app"]
+markers = [
+  "llm: 需要 DEEPSEEK_API_KEY 的联网用例（默认跳过）",
+  "slow: 慢用例",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [".venv", ".tmp", ".pipcache", "graph", "data", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # 长中文注释/表格字符串
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+"app/ui.py" = ["E402"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/ui.py", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

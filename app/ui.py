@@ -502,6 +502,7 @@ def _ask(
     *,
     topk: int,
     allow_llm: bool,
+    context: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Optional[AnswerResult], Optional[str]]:
     """只调用一次 qa.answer_question；异常交给 UI 友好提示，绝不向上抛。"""
     if not runtime.ready or runtime.answer_question is None:
@@ -516,6 +517,7 @@ def _ask(
             allow_llm=allow_llm,
             steps=True,
             settings=runtime.settings,
+            context=context,
         )
         if isinstance(result, AnswerResult):
             return result, None
@@ -1267,12 +1269,23 @@ def main() -> None:
         asked = typed.strip()
 
     if asked:
+        last_for_ctx = st.session_state.get("last_result")
+        ctx = None
+        if last_for_ctx is not None and getattr(last_for_ctx, "entities", None):
+            ctx = {
+                "intent": getattr(last_for_ctx, "intent", ""),
+                "entities": [
+                    {"node_id": h.node_id, "label": h.label, "surface": getattr(h, "surface", "")}
+                    for h in last_for_ctx.entities
+                ],
+            }
         with st.spinner("正在检索图谱证据并组织答案…"):
             result, error = _ask(
                 runtime,
                 asked,
                 topk=config["topk"],
                 allow_llm=not config["offline"],
+                context=ctx,
             )
         if error:
             st.error("问答管线执行时发生异常，已捕获（页面保持可用）。")
@@ -1286,6 +1299,8 @@ def main() -> None:
 
     last_result = st.session_state.get("last_result")
     if last_result is not None:
+        if getattr(last_result, "context_note", ""):
+            st.caption(f"↩️ {last_result.context_note}（当前问句未命中实体，自动承接上一轮）")
         last_meta = st.session_state.get("last_meta") or {}
         if last_meta.get("history"):
             st.info(

@@ -18,6 +18,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install ruff coverage
+
+      - name: Lint (ruff)
+        run: ruff check app scripts tests
 
       - name: Validate graph data (10 checks)
         run: python scripts/validate_data.py
@@ -25,8 +29,8 @@ jobs:
       - name: Cypher generation drift check
         run: python scripts/gen_cypher.py --check
 
-      - name: Offline test suite (no API key, no network)
-        run: python -m pytest tests -q
+      - name: Offline test suite with coverage (no API key, no network)
+        run: python -m pytest tests -q --cov=app --cov-report=term-missing
 
       - name: Generate eval report (offline mode)
         run: python scripts/eval_qa.py

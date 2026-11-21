@@ -22,22 +22,28 @@
 ## 2. 证据强度与分组规则
 
 - **B 组**（`CONTRA_INDICATED_FOR`）、**G 组**（`ALTERNATIVE_TO`）、**H 组**（`INDICATES`）每条 **≥2 个来源**，否则 `note` 必须写「单来源，建议后续实验验证」，UI 显示「单来源」徽标。
-- 当前 71 条中 B/G/H 组全部 ≥2 来源（SO₂×阳光玫瑰为 3 来源）。
-- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **10 条 `verified`**（GB/T 16862-2026 条文）、**61 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
+- 当前 108 条中 B/G/H 组全部 ≥2 来源（SO₂×阳光玫瑰为 3 来源）。
+- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **51 条 `verified`**（GB/T 16862-2026 条文）、**57 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
 - `confidence`：0.50~0.82，按来源等级（国标 > 综述 > 论文 > 行业资料）与一致性人工设定。
 
-## 2.1 国标条文引用（10 条 verified）
+## 2.1 国标条文引用（51 条 verified）
 
 > 来源：GB/T 16862-2026《鲜食葡萄冷藏技术》全文 PDF（用户提供）。**仅引用条级摘录，未转载标准全文。**
 
-| 条款 | 条文摘录（入图 quote） | 升级的三元组（sid） |
+| 条款 | 条文摘录（入图 quote） | 升级/新增的三元组（sid 或组） |
 |---|---|---|
-| §7.3 冷藏条件 | 葡萄适宜冷藏温度为-1℃~0℃，相对湿度为90%~95%。 | `a_kyoho_cold_neg1`、`a_red_globe_cold_neg1`、`a_muscat_rh`、`sm_req_rh` |
-| §5.3.2 预冷条件 | 冷库预冷时环境温度为-1℃~0℃，压差预冷时环境温度为0℃~1℃。宜在采后12h内将葡萄果实中心温度降至0℃。 | `sm_req_precool` |
-| §6.3.4 保鲜剂(纸)使用要求 | 待果实温度降至贮藏温度后，应在上层吸水纸上方放置二氧化硫类缓释保鲜剂(纸)并封袋/箱。葡萄不应产生二氧化硫伤害。 | `e_gray_so2pad` |
-| 附录B 表B.1 灰霉病防治措施 | …2)防止机械损伤；3)库房消杀，入库时使用二氧化硫类缓释保鲜剂；4)冷藏温度-1℃~0℃，温度波动±0.5℃以内 | `e_gray_nodamage` |
-| §8.1 运输 | 葡萄宜采用冷藏车或保温车运输，运输温度宜控制在0℃~5℃…… | `a_victoria_coldchain` |
-| 附录A 表A.1 | 阳光玫瑰：可溶性固形物/%≥16.00，可滴定酸/%≤0.35 | `sm_ind_ssc`、`sm_ind_ta`（并更正原 TA 0.4~0.6%） |
+| §7.3 冷藏条件 | 葡萄适宜冷藏温度为-1℃~0℃，相对湿度为90%~95%。 | `a_kyoho_cold_neg1`、`a_red_globe_cold_neg1`、`a_muscat_rh`、`sm_req_rh`、`sm_req_cold_neg1`、`hutai_req_cold_neg1`、`victoria_req_cold_neg1`、`hutai_req_rh`、`victoria_req_rh` |
+| §7.4.1 温湿度管理 | 冷藏期间应保持库温和湿度稳定，温度波动幅度不超过±0.5℃，相对湿度波动幅度不超过±5%。 | `sm_req_temp_fluct` |
+| §5.2 码垛 | 每天入库量不超过库容量的10%。 | `sm_req_intake` |
+| §5.3.2 预冷条件 | 冷库预冷 -1~0℃、压差预冷 0~1℃，宜在采后12h内将果实中心温度降至0℃。 | `sm_req_precool`、`sm_req_forced` |
+| §7.2 入库 | 有效空间冷藏密度应不超过 200kg/m³。 | `sm_req_density` |
+| §6.1.1.2 外包装 | 纸箱容重不宜超过8kg…… | `sm_req_pkg_weight` |
+| §6.3.4 保鲜剂(纸) | 放置二氧化硫类缓释保鲜剂(纸)并封袋/箱；葡萄不应产生二氧化硫伤害。 | `e_gray_so2pad` 等缓释剂防治边 |
+| §8.1 运输 | 运输温度宜控制在0℃~5℃…… | `a_victoria_coldchain` |
+| §8.2 销售 | 销售环境温度宜控制在0℃~10℃…… | `sm_req_sales` |
+| §9 档案记录 | 记录应保存两年以上。 | `sm_req_archive` |
+| 附录A 表A.1 | 各品种可溶性固形物≥、可滴定酸≤（8 品种） | `sm_ind_ssc`、`sm_ind_ta`、`i_{巨峰/红地球/夏黑/玫瑰香/维多利亚}_{ssc,ta}` |
+| 附录B 表B.1 | 5 种病害（灰霉/青霉/黑斑/绿霉/根霉腐败）症状、发病条件、防治措施 | `e_{gray/blue/black/green/rhizo}_cold`、`..._disinfect`、`..._so2pad`、`f_green_wound` 等；并升级 `f_gray_wound`/`f_blue_wound`/`f_rhizopus_mech`/`f_black_hot` |
 
 **未升级（仍 anchor）的关键项**：阳光玫瑰 0±0.5℃（工程/文献口径，国标通用区间为 -1~0℃）、各品种耐贮性月数、SO₂ 熏蒸×阳光玫瑰禁忌（国标仅规范缓释保鲜剂，熏蒸风险依据 §3.1「二氧化硫伤害」定义+文献）、AFFECTS 因果强度。
 

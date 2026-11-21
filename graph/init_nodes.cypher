@@ -2,7 +2,7 @@
 // graph/init_nodes.cypher —— 图谱节点初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/entities.csv + data/sources.csv 生成
 // 幂等：MERGE (n:Label {id: ...}) —— 可重复执行
-// 统计：共 59 个节点（Variety 8，Condition 21，QualityIndicator 13，Disease 6，Source 11）
+// 统计：共 69 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 11）
 // 生成后校验：python scripts/gen_cypher.py --check
 // =============================================================================
 
@@ -100,7 +100,7 @@ MERGE (n:Variety {id: 'victoria'})
          n.source_ids = ['review_grape_storage'],
          n.note = '早熟黄绿色品种，易褐变';
 
-// ---------------- Condition（21 个） ----------------
+// ---------------- Condition（30 个） ----------------
 MERGE (n:Condition {id: 'cold_0'})
   SET n.label = 'Condition',
          n.name = '低温冷藏 0±0.5℃',
@@ -288,6 +288,60 @@ MERGE (n:Condition {id: 'wound'})
          n.category = '环境风险',
          n.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
          n.note = '病原菌主要侵染入口';
+MERGE (n:Condition {id: 'temp_fluctuation'})
+  SET n.label = 'Condition',
+         n.name = '冷藏温度波动 ±0.5℃',
+         n.category = '温度',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标7.4.1：温度波动幅度不超过±0.5℃；条文口径，已 verified';
+MERGE (n:Condition {id: 'daily_intake_limit'})
+  SET n.label = 'Condition',
+         n.name = '每天入库量 ≤ 库容 10%',
+         n.category = '采后操作',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标5.2：每天入库量不超过库容量的10%；条文口径，已 verified';
+MERGE (n:Condition {id: 'storage_density'})
+  SET n.label = 'Condition',
+         n.name = '冷藏密度 ≤ 200 kg/m³',
+         n.category = '采后操作',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标7.2：有效空间冷藏密度不超过200kg/m3；条文口径，已 verified';
+MERGE (n:Condition {id: 'precool_forced'})
+  SET n.label = 'Condition',
+         n.name = '压差预冷 0~1℃',
+         n.category = '采后操作',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标5.3.2：压差预冷时环境温度为0℃~1℃；条文口径，已 verified';
+MERGE (n:Condition {id: 'sales_env'})
+  SET n.label = 'Condition',
+         n.name = '销售环境 0~10℃',
+         n.category = '温度',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标8.2：销售环境温度宜控制在0℃~10℃；条文口径，已 verified';
+MERGE (n:Condition {id: 'archive_record'})
+  SET n.label = 'Condition',
+         n.name = '档案记录保存 ≥2 年',
+         n.category = '采后操作',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标第9章：记录应保存两年以上；条文口径，已 verified';
+MERGE (n:Condition {id: 'package_weight'})
+  SET n.label = 'Condition',
+         n.name = '包装容重 ≤ 8 kg',
+         n.category = '包装',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标6.1.1.2：纸箱容重不宜超过8kg；条文口径，已 verified';
+MERGE (n:Condition {id: 'pre_harvest_rain'})
+  SET n.label = 'Condition',
+         n.name = '采前降雨',
+         n.category = '环境风险',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标附录B：田间下雨/采前降雨是黑斑病诱因；条文口径，已 verified';
+MERGE (n:Condition {id: 'warehouse_disinfection'})
+  SET n.label = 'Condition',
+         n.name = '库房消杀',
+         n.category = '化学',
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标附录B：库房消杀为病害防治措施；条文口径，已 verified';
 
 // ---------------- QualityIndicator（13 个） ----------------
 MERGE (n:QualityIndicator {id: 'respiration'})
@@ -405,7 +459,7 @@ MERGE (n:QualityIndicator {id: 'vc'})
          n.source_ids = ['review_grape_storage', 'paper_ice_temp'],
          n.note = '贮藏期易氧化下降';
 
-// ---------------- Disease（6 个） ----------------
+// ---------------- Disease（7 个） ----------------
 MERGE (n:Disease {id: 'gray_mold'})
   SET n.label = 'Disease',
          n.name = '灰霉病',
@@ -413,23 +467,23 @@ MERGE (n:Disease {id: 'gray_mold'})
          n.pathogen_latin = 'Botrytis cinerea',
          n.symptom = ['长白毛、灰霉层、果梗发霉、软腐水渍'],
          n.source_ids = ['review_shine_muscat', 'review_grape_storage', 'gbt16862_2026'],
-         n.note = '冷库中最主要采后病害，0℃仍可缓慢发病';
+         n.note = '冷库中最主要采后病害，0℃仍可缓慢发病；附录B 表B.1 已核对，症状/防治条文入图';
 MERGE (n:Disease {id: 'rhizopus_rot'})
   SET n.label = 'Disease',
-         n.name = '根霉病',
+         n.name = '根霉腐败病',
          n.aliases = ['根霉', '软烂', '黑毛', '破皮流水'],
-         n.pathogen_latin = 'Rhizopus stolonifer',
-         n.symptom = ['软烂、黑毛、破皮流水'],
-         n.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
-         n.note = '多由机械伤/裂果诱发，扩展极快';
+         n.pathogen_latin = 'Rhizopus migricans',
+         n.symptom = ['软烂、破皮流水、常温下长粗白色丝体（黑毛）'],
+         n.source_ids = ['review_grape_storage', 'ops_grape_ny1199', 'gbt16862_2026'],
+         n.note = '多由机械伤/裂果诱发，扩展极快；按GB/T 16862-2026 附录B 对齐：原名「根霉病 R. stolonifer」不符，更正为「根霉腐败病 R. migricans」；根霉腐败病 Rhizopus migricans；软烂/破皮流水为农户口语';
 MERGE (n:Disease {id: 'blue_mold'})
   SET n.label = 'Disease',
          n.name = '青霉病',
          n.aliases = ['青霉', '绿霉', '霉味'],
          n.pathogen_latin = 'Penicillium spp.',
          n.symptom = ['青绿色霉斑、霉味'],
-         n.source_ids = ['review_grape_storage', 'review_packaging_logistics'],
-         n.note = '常与高湿、库房带菌相关';
+         n.source_ids = ['review_grape_storage', 'review_packaging_logistics', 'gbt16862_2026'],
+         n.note = '常与高湿、库房带菌相关；附录B 表B.1 已核对，症状/防治条文入图';
 MERGE (n:Disease {id: 'anthracnose'})
   SET n.label = 'Disease',
          n.name = '炭疽病',
@@ -447,12 +501,20 @@ MERGE (n:Disease {id: 'sour_rot'})
          n.note = '常继发于裂果与果蝇危害';
 MERGE (n:Disease {id: 'black_mold'})
   SET n.label = 'Disease',
-         n.name = '黑霉病',
+         n.name = '黑斑病',
          n.aliases = ['黑霉', '黑毛霉', '粉霉'],
-         n.pathogen_latin = 'Aspergillus niger',
-         n.symptom = ['黑色霉状物、粉霉'],
-         n.source_ids = ['review_grape_storage', 'ops_grape_ny1199'],
-         n.note = '高温高湿条件下发生重';
+         n.pathogen_latin = 'Alternaria spp.',
+         n.symptom = ['果刷棕褐色凹陷斑、后期掉粒'],
+         n.source_ids = ['review_grape_storage', 'ops_grape_ny1199', 'gbt16862_2026'],
+         n.note = '高温高湿条件下发生重；按GB/T 16862-2026 附录B 对齐：原「黑霉病 Aspergillus niger」无国标依据，更正为「黑斑病 Alternaria spp.」；黑斑病 Alternaria spp.；掉粒为农户口语';
+MERGE (n:Disease {id: 'green_mold'})
+  SET n.label = 'Disease',
+         n.name = '绿霉病',
+         n.aliases = ['绿霉'],
+         n.pathogen_latin = 'Cladosporium herbarum',
+         n.symptom = ['果梗黑褐色腐烂斑、出库后长绿色霉层'],
+         n.source_ids = ['gbt16862_2026'],
+         n.note = '国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语';
 
 // ---------------- Source（11 个，来自 data/sources.csv） ----------------
 MERGE (n:Source {id: 'gbt16862_2026'})

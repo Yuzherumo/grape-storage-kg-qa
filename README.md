@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M7 国标入图通过 ｜ 测试 `116 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系**｜**10 条已按 GB/T 16862-2026 条文 verified** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M8 国标全文入库 ｜ 测试 `118 passed / 2 skipped` ｜ 图谱 **69 节点 / 108 条关系**｜**51 条已按 GB/T 16862-2026 条文 verified** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -62,10 +62,10 @@ py -3.12 -m venv .venv
 
 ## 4. 知识图谱
 
-- **59 节点**：品种 8、储藏条件 21、品质指标 13、病害 6、来源 11（`Source` 为溯源辅助节点，不进实体链接词表）
-- **71 条关系 / 9 种谓词**：`REQUIRES`、`CONTRA_INDICATED_FOR`、`AFFECTS`、`SUSCEPTIBLE_TO`、`PREVENTED_BY`、`INDUCED_BY`、`ALTERNATIVE_TO`、`INDICATES`、`HAS_INDICATOR_VALUE`
+- **69 节点**：品种 8、储藏条件 30、品质指标 13、病害 7、来源 11（`Source` 为溯源辅助节点，不进实体链接词表）
+- **108 条关系 / 9 种谓词**：`REQUIRES`(26)、`CONTRA_INDICATED_FOR`(3)、`AFFECTS`(19)、`SUSCEPTIBLE_TO`(8)、`PREVENTED_BY`(22)、`INDUCED_BY`(7)、`ALTERNATIVE_TO`(3)、`INDICATES`(2)、`HAS_INDICATOR_VALUE`(18)
 - **10 个查询模板**：`graph/queries/*.cypher`（温度/湿度/气调/耐贮性/病害处置/病害风险/品质判断/品种对比/禁忌/兜底）
-- **证据分级**：**10 条 `verified`**（已获取 GB/T 16862-2026 全文，quote=条文原文、locator=条款号）、**61 条 `anchor`**（综述/论文正文未获取，note 写明待核验点）
+- **证据分级**：**51 条 `verified`**（已获取 GB/T 16862-2026 全文，quote=条文原文、locator=条款号）、**57 条 `anchor`**（综述/论文正文未获取，note 写明待核验点）
 
 三元组示例（前两条已 `verified`，其余 `anchor`）：
 
@@ -73,7 +73,7 @@ py -3.12 -m venv .venv
 |---|---|---|---|---|
 | 阳光玫瑰 | REQUIRES | 相对湿度 90~95% | 92.5 % | 国标 §7.3 / **verified** |
 | 巨峰 | REQUIRES | 低温冷藏 -1~0℃ | -1~0 ℃ | 国标 §7.3 / **verified** |
-| 焦亚硫酸盐缓释片 | PREVENTED_BY | 灰霉病（反向：灰霉病→缓释片） | — | 国标 §6.3.4+附录B / **verified** |
+| 焦亚硫酸盐缓释片 | PREVENTED_BY（灰霉病→缓释片） | — | 国标 §6.3.4+附录B / **verified** |
 | SO₂ 熏蒸 | CONTRA_INDICATED_FOR | 阳光玫瑰 | severity=高 | 中文论文 + SCI 论文 / anchor |
 | 阳光玫瑰 | HAS_INDICATOR_VALUE | 耐贮性 | 2~4 月 | 综述 / anchor |
 
@@ -97,7 +97,7 @@ py -3.12 -m venv .venv
 ## 6. 评测（离线可复现）
 
 ```
-.\.venv\Scripts\python.exe -m pytest tests -q      # → 116 passed, 2 skipped（无网可跑）
+.\.venv\Scripts\python.exe -m pytest tests -q      # → 118 passed, 2 skipped（无网可跑）
 .\.venv\Scripts\python.exe scripts\eval_qa.py      # → docs/eval_results.md
 ```
 
@@ -125,7 +125,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 ├─ requirements.txt / .env.example / pytest.ini / README.md
 ├─ data/                       # 唯一数据源
 │  ├─ entities.csv             # 48 个实体节点（含农户口语别名、病害症状）
-│  ├─ triples.csv              # 71 条三元组
+│  ├─ triples.csv              # 108 条三元组（51 verified / 57 anchor）
 │  ├─ triples_shine_muscat.csv # 20 条阳光玫瑰核心三元组（M1 门禁产物）
 │  ├─ sources.csv              # 11 条来源（国标/综述/论文/行业标准）
 │  ├─ utterances.csv           # 12 条农户口语黄金集
@@ -134,7 +134,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
 ├─ scripts/                    # validate_data / gen_cypher / eval_qa / env_check / load_neo4j
-├─ tests/                      # 118 个测试（116 passed / 2 skipped，含 M6 加固回归 20 条）
+├─ tests/                      # 120 个测试（118 passed / 2 skipped，含 M6/M8 回归）
 └─ docs/                       # api / spec / sources / eval_results / demo_script / submission / ai_usage
 ```
 
@@ -153,9 +153,9 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 ## 10. 诚实声明与已知限制
 
-1. **证据分级：10 条 verified + 61 条 anchor**：已获取 GB/T 16862-2026 全文 PDF（用户提供），与条文逐字对应的 10 条已升级 `verified` 并附条款号与原文摘录（§7.3 温湿度、§5.3.2 预冷、§6.3.4 保鲜剂、§8.1 运输、附录A 表A.1 理化指标、附录B 表B.1 病害防治）；其余 61 条因综述/论文正文未获取，仍 `anchor` 并在 `note` 写待核验点。**未转载标准全文，仅引用条级摘录。**
+1. **证据分级：51 条 verified + 57 条 anchor**：已获取 GB/T 16862-2026 全文 PDF（用户提供），与条文逐字对应或可由条文直接推出的 51 条已升级 `verified`，覆盖 §7.3 温湿度、§7.4.1 温湿度波动、§5.2 入库量、§5.3.2 预冷、§7.1/§7.2 入库与堆码、§6.1.1.2 包装、§6.3.4 保鲜剂、§8.1 运输、§8.2 销售、§9 档案、附录A 表A.1 理化指标、附录B 表B.1 五种病害防治；其余 57 条因综述/论文正文未获取仍 `anchor` 并在 `note` 写待核验点。**未转载标准全文，仅引用条级摘录。**
 2. **Neo4j 未在真实实例执行**：Cypher 脚本完整交付且由 CSV 生成、幂等校验通过，导入脚本 `scripts/load_neo4j.py` 已提供（无驱动/无服务时友好退出，不崩）；本机无 Docker/WSL/兼容 JDK，未做实库验证，演示默认走本地后端。
-3. **数据规模**：71 条是演示级图谱，覆盖阳光玫瑰 + 6 个对照品种，不是全领域知识库。
+3. **数据规模**：108 条是演示级图谱，覆盖阳光玫瑰 + 7 个对照品种、9 个国标条文条件、7 种病害（其中 5 种与国标附录B 对齐），不是全领域知识库。
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。
 5. 玫瑰香耐贮性等个别数值留空未编造，`note` 标注「待补文献回填」。
 

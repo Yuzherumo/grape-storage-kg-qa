@@ -108,6 +108,12 @@ check_numbers(answer, evidence) -> list[str]        # 返回告警码/文本
 | `llm_timeout` / `llm_unavailable` | 模型超时/不可用，已降级模板 |
 | `backend_fallback` | Neo4j 不可用，已回落 local |
 
+### 6.1 多轮追问与缓存（M8）
+
+- `answer_question(..., context=None)`：`context = {"intent": str, "entities": [{"node_id","label","surface"}]}`；**仅当当前问句未命中任何实体时**继承上一轮实体，并在 `AnswerResult.context_note` 返回「承接上一轮：…」供 UI 显示（如「那湿度呢？」→ 承接阳光玫瑰）。
+- LLM 结果按 `(问题, 证据指纹)` 做进程内 LRU（上限 64）：彩排/评委重复问同一句秒回；证据变化自动失效。
+- `variety_compare` 会取更多指标证据（内部 `k≥12`）并**逐品种核对耐贮性基线**：图里没有的品种明确输出「图谱未收录X的耐贮性数值」，不把「没取到」误报成「未收录」。
+
 模板答案格式（离线/降级）：
 - 结论：由证据值直接拼（如「阳光玫瑰适宜冷藏温度为 0±0.5 ℃」）
 - 依据：`[E1] 阳光玫瑰 -REQUIRES-> 低温冷藏 0±0.5℃（GB/T 16862-2026）`

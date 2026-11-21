@@ -94,9 +94,10 @@ def _sources_cn(e: Evidence) -> str:
 def _evidence_line(e: Evidence) -> str:
     val = _fmt_value(e)
     tail = f"（{val}）" if val and val not in e.object else ""
+    loc = f"；条款：{e.locator[:42]}" if (e.locator or "").strip() else ""
     return (
         f"[{e.eid}] {e.subject} —{PRED_LABEL.get(e.predicate, e.predicate)}→ {e.object}{tail}；"
-        f"来源：{_sources_cn(e)}；{_status_cn(e)}；置信 {e.confidence:.2f}"
+        f"来源：{_sources_cn(e)}；{_status_cn(e)}；置信 {e.confidence:.2f}{loc}"
     )
 
 
@@ -227,6 +228,7 @@ def template_answer(
     evidence: Sequence[Evidence],
     entities: Sequence[EntityHit],
     out_of_range: bool,
+    missing_shelf_ids: Optional[set] = None,
 ) -> str:
     """模板答案：结论 + 依据。每句带 [E#]。"""
     if not evidence:
@@ -258,18 +260,48 @@ def template_answer(
             head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
 
     elif intent == "variety_compare":
-        vs = [e for e in evidence if e.predicate == "HAS_INDICATOR_VALUE"]
+        # 先算「哪些命中品种在图里没有耐贮性基线」（以 missing_shelf_ids / 有效证据为准）
+        have_ids = {
+            e.properties.get("subject_id") for e in evidence
+            if e.predicate == "HAS_INDICATOR_VALUE" and e.object == "耐贮性"
+            and (e.value is not None or e.value_min is not None or e.value_max is not None)
+        }
+        missing: List[str] = []
+        seen_ids: set[str] = set()
+        for h in [x for x in entities if x.label == "Variety"]:
+            if h.node_id in seen_ids:
+                continue
+            seen_ids.add(h.node_id)
+            if (missing_shelf_ids is not None and h.node_id in missing_shelf_ids) or (
+                missing_shelf_ids is None and h.node_id not in have_ids
+            ):
+                missing.append(h.surface)
+
+        # 「哪个更能放」类对比以耐贮性为主线，糖酸作为补充
+        vs = sorted(
+            [e for e in evidence if e.predicate == "HAS_INDICATOR_VALUE"],
+            key=lambda e: 0 if e.object == "耐贮性" else 1,
+        )
         if len({e.subject for e in vs}) >= 2:
             parts = []
             for e in vs[:3]:
                 val = _fmt_value(e)
                 if val:
                     parts.append(f"{e.subject} {e.object} {val}（[{e.eid}]）")
-                else:
+                elif e.object != "耐贮性":
+                    # 耐贮性缺失由下面统一说明，避免同一句重复
                     parts.append(f"图谱未收录{e.subject}的{e.object}数值（[{e.eid}]）")
-            head = "结论：" + "；".join(parts) + "。"
+            head = "结论：" + "；".join(parts)
         else:
-            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
+            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3]))
+        # 去重：同一品种同一句不重复出现
+        if not missing and missing_shelf_ids is None:
+            # 回退（无 entities 的合成场景）：直接从证据里找「有耐贮性边但没数值」的品种
+            missing = [e.subject for e in vs if e.object == "耐贮性" and not _fmt_value(e)]
+        missing = [m for m in missing if f"图谱未收录{m}的" not in head]
+        if missing:
+            head += "；图谱未收录" + "、".join(missing) + "的耐贮性数值"
+        head += "。"
     elif intent == "contraindication":
         c = next((e for e in evidence if e.predicate == "CONTRA_INDICATED_FOR"), None)
         contra_name = getattr(c, "subject", "") or ""
@@ -484,6 +516,19 @@ def _split_llm_text(text: str) -> Tuple[str, List[str]]:
 
 # ------------------------------------------------------------------ 词表缓存
 _CATALOG_CACHE: Dict[str, Any] = {}
+_LLM_CACHE: Dict[str, str] = {}
+_LLM_CACHE_MAX = 64
+
+
+def _llm_cache_key(question: str, evidence: Sequence[Evidence]) -> str:
+    """相同问题 + 相同证据 → 复用上次生成文本（彩排/评委重复提问秒回）。"""
+    import hashlib
+
+    payload = question + "|" + "|".join(
+        f"{e.eid}:{e.subject}:{e.predicate}:{e.object}:{e.value}:{e.value_min}:{e.value_max}"
+        for e in evidence
+    )
+    return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
 
 def _load_catalog_cached(path: str):
@@ -513,6 +558,7 @@ def answer_question(
     allow_llm: bool = True,
     steps: bool = True,
     settings: Any = None,
+    context: Optional[Dict[str, Any]] = None,
 ) -> AnswerResult:
     t0 = time.perf_counter()
     q = (question or "").strip()
@@ -536,10 +582,29 @@ def answer_question(
         hits = link_entities(q, _load_catalog_cached(str(st.data_path / "entities.csv")))
     except Exception:
         hits = []
+    # 1.5) 多轮追问：当前问句没命中实体时，承接上一轮实体（如「那湿度呢？」）
+    prev_ctx = context or {}
+    if not hits:
+        for item in (prev_ctx.get("entities") or [])[:4]:
+            if isinstance(item, EntityHit):
+                hits.append(item)
+            elif isinstance(item, dict) and item.get("node_id"):
+                hits.append(EntityHit(
+                    node_id=str(item["node_id"]),
+                    label=str(item.get("label") or "Variety"),
+                    surface=str(item.get("surface") or item.get("node_id")),
+                    alias_hit=str(item.get("surface") or ""),
+                ))
+        if hits:
+            result.context_note = "承接上一轮：" + "、".join(
+                dict.fromkeys(h.surface or h.node_id for h in hits)
+            )
     result.entities = hits
 
     # 2) 意图路由
     intent, confidence, candidates = route(q, hits)
+    if result.context_note and intent == "general" and prev_ctx.get("intent"):
+        intent, confidence = str(prev_ctx["intent"]), max(confidence, 0.4)
     result.intent, result.intent_confidence = intent, confidence
     if confidence < 0.35 and intent != "general":
         warnings.append(WARN_LOW_CONFIDENCE_INTENT)
@@ -560,7 +625,9 @@ def answer_question(
     store_obj = None
     try:
         store_obj = _get_store(store, settings)
-        spec: QuerySpec = build_query(intent, hits, k=k)
+        # 品种对比要多取一些指标证据（糖/酸/耐贮性 × 多品种），否则会误判「未收录」
+        eff_k = max(int(k or 6), 12) if intent == "variety_compare" else int(k or 6)
+        spec: QuerySpec = build_query(intent, hits, k=eff_k)
         evidence = list(store_obj.execute(spec) or [])
         if getattr(store_obj, "backend_fallback", False):
             warnings.append(WARN_BACKEND_FALLBACK)
@@ -593,7 +660,8 @@ def answer_question(
         return float(overlap)
 
     evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
-    evidence = _dedupe(evidence)[: max(1, int(k or 6))]
+    cap = max(int(k or 6), 12) if intent == "variety_compare" else max(1, int(k or 6))
+    evidence = _dedupe(evidence)[:cap]
     _assign_eids(evidence)
     result.evidence = evidence
     for e in evidence:
@@ -626,11 +694,46 @@ def answer_question(
             result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
             return result
 
+    # 4.6) 品种对比：逐品种核对「耐贮性」基线是否真的在图中（避免把「没取到」误报成「未收录」）
+    missing_shelf_ids: set = set()
+    if intent == "variety_compare" and store_obj is not None:
+        variety_hits = [h for h in hits if h.label == "Variety"]
+
+        def _has_value(evs) -> set:
+            return {
+                e2.properties.get("subject_id")
+                for e2 in evs
+                if e2.predicate == "HAS_INDICATOR_VALUE" and e2.object == "耐贮性"
+                and (e2.value is not None or e2.value_min is not None or e2.value_max is not None)
+            }
+
+        found = _has_value(evidence)
+        for h in variety_hits:
+            if h.node_id in found:
+                continue
+            try:
+                extra = list(store_obj.execute(
+                    QuerySpec("shelf_life", params={"variety_ids": [h.node_id], "k": 4})
+                ) or [])
+            except Exception:
+                extra = []
+            hit = [e2 for e2 in extra if e2.properties.get("subject_id") == h.node_id and _has_value([e2])]
+            if hit:
+                evidence = _dedupe(evidence + hit)
+                found.add(h.node_id)
+            else:
+                missing_shelf_ids.add(h.node_id)
+        # 补充证据后重新编号/回填（新增行带空 eid，必须重排）
+        if evidence:
+            evidence = _dedupe(evidence)[: cap + 2]
+            _assign_eids(evidence)
+            result.evidence = evidence
+
     # 5) 越界检测
     out_of_range = detect_out_of_range(q, evidence) if evidence else False
 
     # 6) 生成
-    tpl = template_answer(intent, q, evidence, hits, out_of_range)
+    tpl = template_answer(intent, q, evidence, hits, out_of_range, missing_shelf_ids)
     answer = tpl
     result.mode = "template"
 
@@ -645,8 +748,16 @@ def answer_question(
 
     if use_llm and evidence:
         messages = build_prompt(q, evidence)
+        cache_key = _llm_cache_key(q, evidence)
         try:
-            text = llm.complete(messages)
+            cached_text = _LLM_CACHE.get(cache_key)
+            if cached_text is not None:
+                text = cached_text
+            else:
+                text = llm.complete(messages)
+                if len(_LLM_CACHE) >= _LLM_CACHE_MAX:
+                    _LLM_CACHE.clear()
+                _LLM_CACHE[cache_key] = text
             answer = text
             result.mode = "llm"
             cited, w = verify_citations(answer, evidence)
@@ -726,6 +837,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "intent_confidence": res.intent_confidence,
         "entities": [{"id": h.node_id, "label": h.label, "surface": h.surface} for h in res.entities],
         "mode": res.mode,
+        "context_note": res.context_note,
         "answer": res.answer,
         "steps": res.steps,
         "cited_ids": res.cited_ids,

@@ -102,6 +102,7 @@ class AnswerResult:
     query_cypher: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     llm_meta: Dict[str, Any] = field(default_factory=dict)
+    context_note: str = ""  # 多轮追问承接提示（如「承接上一轮：阳光玫瑰」），单轮为空
 
     def as_dict(self) -> Dict[str, Any]:
         d = asdict(self)

@@ -48,6 +48,16 @@ CONDITION_IDS = {
     "microperforated_film",
     "cold_chain_transport",
     "wound",
+    # M8 国标全文入图新增（docs/spec.md §1.2 共 30 个）
+    "temp_fluctuation",
+    "daily_intake_limit",
+    "storage_density",
+    "precool_forced",
+    "sales_env",
+    "archive_record",
+    "package_weight",
+    "pre_harvest_rain",
+    "warehouse_disinfection",
 }
 QI_IDS = {
     "respiration",
@@ -71,6 +81,17 @@ DISEASE_IDS = {
     "anthracnose",
     "sour_rot",
     "black_mold",
+    "green_mold",  # M8：新增绿霉病（docs/spec.md §1.4 共 7 个）
+}
+# docs/spec.md §1.4（M8 校正）：id 不变，名称按国标附录B 更正
+DISEASE_NAMES = {
+    "gray_mold": "灰霉病",
+    "rhizopus_rot": "根霉腐败病",
+    "blue_mold": "青霉病",
+    "anthracnose": "炭疽病",
+    "sour_rot": "酸腐病",
+    "black_mold": "黑斑病",
+    "green_mold": "绿霉病",
 }
 EXPECTED_IDS = {
     "Variety": VARIETY_IDS,
@@ -249,6 +270,16 @@ def test_entities_names_unique_and_disease_symptom_has_colloquial_words() -> Non
     symptoms = " ".join(row.get("symptom", "") for row in _by_label(rows, "Disease"))
     for word in ("长白毛", "软烂"):
         assert word in symptoms, f" Disease.symptom 缺少农户口语 {word!r}"
+
+
+def test_disease_names_match_spec_m8_correction() -> None:
+    """docs/spec.md §1.4（M8 校正）：id 冻结，但名称必须与国标附录B 对齐（改名要锁住）。"""
+    actual = {row["id"]: row["name"] for row in _by_label(_entities(), "Disease")}
+    assert actual == DISEASE_NAMES, (
+        f"病害 id→name 与 spec.md §1.4 不一致；"
+        f"缺失/不符={ {k: v for k, v in DISEASE_NAMES.items() if actual.get(k) != v} }，"
+        f"多余={sorted(set(actual) - set(DISEASE_NAMES))}"
+    )
 
 
 def test_entities_source_ids_are_foreign_keys() -> None:

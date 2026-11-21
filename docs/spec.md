@@ -18,7 +18,7 @@
 | `hutai_8` | 户太八号 | 户太8号 | 欧美杂交种 |
 | `victoria` | 维多利亚 | Victoria | 欧亚种 |
 
-### 1.2 储藏条件 Condition（21）
+### 1.2 储藏条件 Condition（30）
 | id | name | category | value_min | value_max | unit |
 |---|---|---|---|---|---|
 | `cold_0` | 低温冷藏 0±0.5℃ | 温度 | -0.5 | 0.5 | ℃ |
@@ -42,19 +42,33 @@
 | `microperforated_film` | 微孔保鲜膜 | 包装 | | | |
 | `cold_chain_transport` | 冷链运输 | 采后操作 | | | |
 | `wound` | 伤口 | 环境风险 | | | |
+| `temp_fluctuation` | 冷藏温度波动 ±0.5℃ | 温度 | -0.5 | 0.5 | ℃ |
+| `daily_intake_limit` | 每天入库量 ≤ 库容 10% | 采后操作 | | | |
+| `storage_density` | 冷藏密度 ≤ 200 kg/m³ | 采后操作 | | | |
+| `precool_forced` | 压差预冷 0~1℃ | 采后操作 | | | |
+| `sales_env` | 销售环境 0~10℃ | 温度 | | | |
+| `archive_record` | 档案记录保存 ≥2 年 | 采后操作 | | | |
+| `package_weight` | 包装容重 ≤ 8 kg | 包装 | | | |
+| `pre_harvest_rain` | 采前降雨 | 环境风险 | | | |
+| `warehouse_disinfection` | 库房消杀 | 化学 | | | |
+
+> 最后一组 9 个条件为 M8 从 GB/T 16862-2026 条文新增（§7.4.1/§5.2/§7.2/§5.3.2/§8.2/§9/§6.1.1.2/附录B），对应三元组均为 `verified`。
 
 ### 1.3 品质指标 QualityIndicator（13）
 `respiration` 呼吸强度（lower_better）、`ethylene` 乙烯释放率（lower_better）、`decay_rate` 腐烂率 %（lower_better）、`berry_drop` 落粒率 %（lower_better）、`browning_index` 褐变指数（lower_better）、`weight_loss` 失重率 %（lower_better）、`stem_browning` 果梗褐变（lower_better）、`off_flavor` 异味/风味偏离（lower_better）、`shelf_life` 耐贮性 月（higher_better）、`ssc` 可溶性固形物SSC %（higher_better）、`ta` 可滴定酸TA %（target）、`firmness` 硬度（target）、`vc` 维生素C（higher_better）
 
-### 1.4 病害 Disease（6）
+### 1.4 病害 Disease（7，前 5 种与国标附录B 表B.1 对齐）
 | id | name | pathogen_latin | symptom（农户口述，必须含口语） |
 |---|---|---|---|
 | `gray_mold` | 灰霉病 | Botrytis cinerea | 长白毛、灰霉层、果梗发霉、软腐水渍 |
-| `rhizopus_rot` | 根霉病 | Rhizopus stolonifer | 软烂、黑毛、破皮流水 |
+| `rhizopus_rot` | 根霉腐败病 | Rhizopus migricans | 软烂、破皮流水、常温下长粗白色丝体（黑毛） |
 | `blue_mold` | 青霉病 | Penicillium spp. | 青绿色霉斑、霉味 |
 | `anthracnose` | 炭疽病 | Colletotrichum gloeosporioides | 凹陷褐斑、腐烂斑扩展 |
 | `sour_rot` | 酸腐病 | — | 酸臭味、流汁、发软 |
-| `black_mold` | 黑霉病 | Aspergillus niger | 黑色霉状物、粉霉 |
+| `black_mold` | 黑斑病 | Alternaria spp. | 果刷棕褐色凹陷斑、后期掉粒 |
+| `green_mold` | 绿霉病 | Cladosporium herbarum | 果梗黑褐色腐烂斑、出库后长绿色霉层 |
+
+> M8 校正：原「黑霉病 Aspergillus niger」「根霉病 R. stolonifer」与国标附录B 不符，已按国标更正为「黑斑病 Alternaria spp.」「根霉腐败病 R. migricans」；新增绿霉病。炭疽病/酸腐病国标未列，保留但相关证据仍为 `anchor`。
 
 ### 1.5 来源 Source（10~12，`data/sources.csv`）
 必须真实可检索。建议覆盖：
