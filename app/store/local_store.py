@@ -28,6 +28,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
@@ -60,6 +61,17 @@ CATEGORY_HUMIDITY = "湿度"
 CATEGORY_ATMOSPHERE = "气调"
 INDICATOR_SHELF_LIFE = "shelf_life"
 INDICATOR_SHELF_LIFE_NAME = "耐贮性"
+
+# query_cypher 展示用：Cypher 模板里的 $ 参数名，以及 QuerySpec 中对应的 list 参数
+_CYPHER_PARAM_RE = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)")
+_LIST_PARAM_NAMES: Tuple[str, ...] = (
+    "variety_ids",
+    "condition_ids",
+    "indicator_ids",
+    "disease_ids",
+    "entity_ids",
+    "keywords",
+)
 
 # 边 dict 的统一字段（CSV 缺列时补空）
 EDGE_DEFAULTS: Dict[str, Any] = {

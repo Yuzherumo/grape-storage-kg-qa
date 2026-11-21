@@ -635,6 +635,7 @@ def _render_stats(runtime: Runtime) -> None:
         return
     items = []
     data_files: List[str] = []
+    scalars: Dict[str, Any] = {}
     for key, value in stats.items():
         if str(key).startswith("_"):
             continue
@@ -644,12 +645,23 @@ def _render_stats(runtime: Runtime) -> None:
             continue
         if isinstance(value, dict):
             continue
+        scalars[str(key)] = value
         label = STAT_LABELS.get(str(key), str(key))
         items.append(f'<span class="stat-chip">{_esc(label)} <b>{_esc(value)}</b></span>')
     if not items:
         st.caption("图谱统计为空（数据未就绪）")
         return
     st.markdown('<div class="stat-row">' + "".join(items) + "</div>", unsafe_allow_html=True)
+    # 图节点总数 = 实体节点 + 来源节点（均来自 store.stats，不写死数字）
+    try:
+        node_total = int(scalars["nodes"])
+        source_total = int(scalars["sources"])
+    except (KeyError, TypeError, ValueError):
+        node_total = source_total = None
+    if node_total is not None and source_total is not None:
+        st.caption(
+            f"图谱总节点 {node_total + source_total} = 实体节点 {node_total} + 来源 {source_total}（来源亦为图节点）"
+        )
     if data_files:
         st.caption("数据文件：" + "、".join(data_files))
     if not stats.get("_data_ready", True):
@@ -1127,6 +1139,17 @@ def render_sidebar(runtime: Runtime) -> Dict[str, Any]:
             value=_default_offline(runtime),
             help="勾选后完全不调用 DeepSeek，仅用知识图谱模板作答。",
         )
+        if _llm_key_configured(runtime) and not offline:
+            st.markdown(
+                '<div class="badge-row"><span class="badge badge-llm">📡 在线模式（DeepSeek 已配置）</span></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            reason = "未配置 API Key" if not _llm_key_configured(runtime) else "已勾选离线模式"
+            st.markdown(
+                f'<div class="badge-row"><span class="badge badge-muted">📴 离线模板（{_esc(reason)}）</span></div>',
+                unsafe_allow_html=True,
+            )
         large = st.checkbox(
             "大字模式（1.25~1.5× 字号）",
             value=_default_large(runtime),

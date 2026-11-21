@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M5 验收通过 ｜ 测试 `94 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ **无 API Key、断网也能跑**
+> 状态：M5 验收通过 ｜ 测试 `95 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ **无 API Key、断网也能跑**
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -92,12 +92,12 @@ py -3.12 -m venv .venv
 ## 6. 评测（离线可复现）
 
 ```
-.\.venv\Scripts\python.exe -m pytest tests -q      # → 94 passed, 2 skipped（无网可跑）
+.\.venv\Scripts\python.exe -m pytest tests -q      # → 95 passed, 2 skipped（无网可跑）
 .\.venv\Scripts\python.exe scripts\eval_qa.py      # → docs/eval_results.md
 ```
 
 `docs/eval_results.md` 当前结果：**核心题 5/5、越界探针 1/1、口语变体意图 12/12、实体命中 12/12**。
-Q1~Q6 证据数 1/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6 触发预期的 `out_of_range`。
+Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6 触发预期的 `out_of_range`。
 判定口径（证据非空、引用有效、±区间/单位数值校验、意图与谓词、越界探针）见报告末尾。
 
 ## 7. 与方向二「生命系统」的契合

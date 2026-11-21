@@ -64,7 +64,8 @@ def test_build_query_returns_parameterized_spec_not_cypher_string(intent_name: s
     assert isinstance(spec.cypher_params, dict)
 
 
-def test_build_query_carries_hit_entity_ids_as_parameters() -> None:
+def test_build_query_carries_typed_entity_ids_as_parameters() -> None:
+    """api.md §5：非 general 意图走 typed ids（variety_ids 等），命中实体 id 必须进参数。"""
     from app.planner import build_query
 
     hits = link("阳光玫瑰冷藏温度多少合适")
@@ -72,6 +73,36 @@ def test_build_query_carries_hit_entity_ids_as_parameters() -> None:
     spec = build_query("temperature", hits, k=6)
     blob = json.dumps(spec.params, ensure_ascii=False, default=str)
     assert "shine_muscat" in blob, f"temperature 查询参数未携带命中实体 id：{spec.params}"
+    assert spec.params.get("variety_ids") == ["shine_muscat"], (
+        f"温度题应把品种写入 variety_ids：{spec.params}"
+    )
+
+
+def test_entity_ids_only_for_general_and_condition_ids_only_for_contraindication() -> None:
+    """api.md §5（本轮更新）：entity_ids 仅 general 兜底；condition_ids 仅 contraindication 精确过滤。"""
+    from app.planner import build_query
+
+    # 命中「阳光玫瑰 + 冷库(cold_0)」两个实体，验证 condition_ids 不被误用于其它意图
+    hits = link("阳光玫瑰放冷库冷藏温度")
+    assert any(hit.node_id == "shine_muscat" for hit in hits)
+    assert any(hit.node_id == "cold_0" for hit in hits), (
+        f"「冷库」应链接 cold_0：{[hit.node_id for hit in hits]}"
+    )
+
+    for intent in INTENTS:
+        spec = build_query(intent, hits, k=6)
+        params = spec.params
+        condition_ids = list(params.get("condition_ids") or [])
+        entity_ids = list(params.get("entity_ids") or [])
+        if intent == "general":
+            assert entity_ids, f"general 兜底应使用 entity_ids（不能为空）：{params}"
+        else:
+            assert not entity_ids, f"{intent} 不应使用 entity_ids（api.md §5：仅 general）：{params}"
+        if intent != "contraindication":
+            assert not condition_ids, (
+                f"{intent} 不应使用 condition_ids 做精确过滤"
+                f"（否则「冷库→cold_0」会把结果窄化且双后端口径不一致）：{params}"
+            )
 
 
 # ---------------------------------------------------------------- 黄金集意图路由
