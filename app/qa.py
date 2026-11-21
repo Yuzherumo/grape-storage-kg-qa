@@ -323,6 +323,15 @@ def template_answer(
         head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
 
     basis = "依据：\n" + "\n".join(f"- {_evidence_line(e)}" for e in evidence[:5])
+    # 温度口径冲突时显式解释（国标通用区间 vs 文献工程口径）
+    if intent == "temperature":
+        objs = {e.object for e in evidence}
+        if "低温冷藏 0±0.5℃" in objs and "低温冷藏 -1~0℃" in objs:
+            head += (
+                "\n\n口径说明：GB/T 16862-2026 §7.3 的通用冷藏区间是 -1℃~0℃（verified）；"
+                "0±0.5℃ 是文献/工程口径（anchor）。实际设定建议按国标 -1~0℃ 控温，"
+                "并保证温度波动不超过 ±0.5℃，两者并不冲突。"
+            )
     return head + "\n\n" + basis
 
 
@@ -627,8 +636,8 @@ def answer_question(
     store_obj = None
     try:
         store_obj = _get_store(store, settings)
-        # 品种对比要多取一些指标证据（糖/酸/耐贮性 × 多品种），否则会误判「未收录」
-        eff_k = max(int(k or 6), 12) if intent == "variety_compare" else int(k or 6)
+        # 品种对比/实体中心检索要多取一些边，否则「第二个命中实体」的边会被 k 截掉
+        eff_k = max(int(k or 6), 12) if intent in ("variety_compare", "general") else int(k or 6)
         spec: QuerySpec = build_query(intent, hits, k=eff_k)
         evidence = list(store_obj.execute(spec) or [])
         if getattr(store_obj, "backend_fallback", False):
@@ -662,7 +671,7 @@ def answer_question(
         return float(overlap)
 
     evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
-    cap = max(int(k or 6), 12) if intent == "variety_compare" else max(1, int(k or 6))
+    cap = max(int(k or 6), 12) if intent in ("variety_compare", "general") else max(1, int(k or 6))
     evidence = _dedupe(evidence)[:cap]
     _assign_eids(evidence)
     result.evidence = evidence
