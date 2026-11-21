@@ -26,8 +26,14 @@ jobs:
       - name: Validate graph data (10 checks)
         run: python scripts/validate_data.py
 
+      - name: Validate Cypher scripts (static)
+        run: python scripts/validate_cypher.py
+
       - name: Cypher generation drift check
         run: python scripts/gen_cypher.py --check
+
+      - name: Execute equivalent Cypher on embedded openCypher engine (Kùzu)
+        run: python scripts/verify_cypher_engine.py
 
       - name: Offline test suite with coverage (no API key, no network)
         run: python -m pytest tests -q --cov=app --cov-report=term-missing

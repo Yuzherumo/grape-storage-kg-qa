@@ -105,6 +105,8 @@ py -3.12 -m venv .venv
 Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6 触发预期的 `out_of_range`。
 
 在线模式（2026-11-21 实测，`deepseek-chat`）：6 题全部 `mode=llm`，引用全部有效、**无 `unsourced_number`**，Q6 仍正确触发 `out_of_range`，单题 1.3~2.8 s；`RUN_LLM=1 pytest tests -m llm` → 1 passed（真实 LLM 分支下引用仍可核验）。
+
+Cypher 实跑（无 Neo4j 服务端时）：`scripts/verify_cypher_engine.py` 在嵌入式 openCypher 引擎 **Kùzu** 上建表灌数 **69 节点 / 108 关系**，6 题与本地后端结果一致、4 条 verified 条文定点命中；`scripts/validate_cypher.py` 对 13 个 `.cypher` 文件做标签/关系/参数/计数静态校验。详见 [neo4j_verify.md](docs/neo4j_verify.md)。
 判定口径（证据非空、引用有效、±区间/单位数值校验、意图与谓词、越界探针）见报告末尾。
 M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验防张冠李戴 / 怎么做路由 / 因果路由 / 零下归一化 / 空指标占位文案 / 无效引用告警 / 证据重排 / 十项数据校验」。
 
@@ -133,9 +135,9 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 │  └─ schema.json              # 类型/谓词枚举、分组与双来源规则
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
-├─ scripts/                    # validate_data / gen_cypher / eval_qa / env_check / load_neo4j
+├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable.ps1
 ├─ tests/                      # 120 个测试（118 passed / 2 skipped，含 M6/M8 回归）
-└─ docs/                       # api / spec / sources / eval_results / demo_script / submission / ai_usage
+└─ docs/                       # api / spec / sources / eval_results / neo4j_verify / demo_script / submission / ai_usage
 ```
 
 ## 9. 命令速查
@@ -145,6 +147,9 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 | 一键启动 | `.\run.ps1` |
 | 只自检 | `.\run.ps1 -Check` |
 | 数据十项校验 | `.\.venv\Scripts\python.exe scripts\validate_data.py` |
+| Cypher 静态校验（标签/关系/参数/计数） | `.\.venv\Scripts\python.exe scripts\validate_cypher.py` |
+| 嵌入式 openCypher 实跑（Kùzu，无需 Neo4j） | `.\.venv\Scripts\python.exe scripts\verify_cypher_engine.py` |
+| 便携版 Neo4j（需 JDK21+Neo4j zip） | `.\scripts\setup_neo4j_portable.ps1`（或 `-JdkZip/-Neo4jZip` 指定本地 zip） |
 | CSV→Cypher 生成/漂移检查 | `.\.venv\Scripts\python.exe scripts\gen_cypher.py` / `--check` |
 | 全量测试 | `.\.venv\Scripts\python.exe -m pytest tests -q` |
 | 评测报告 | `.\.venv\Scripts\python.exe scripts\eval_qa.py` |
@@ -154,7 +159,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 ## 10. 诚实声明与已知限制
 
 1. **证据分级：51 条 verified + 57 条 anchor**：已获取 GB/T 16862-2026 全文 PDF（用户提供），与条文逐字对应或可由条文直接推出的 51 条已升级 `verified`，覆盖 §7.3 温湿度、§7.4.1 温湿度波动、§5.2 入库量、§5.3.2 预冷、§7.1/§7.2 入库与堆码、§6.1.1.2 包装、§6.3.4 保鲜剂、§8.1 运输、§8.2 销售、§9 档案、附录A 表A.1 理化指标、附录B 表B.1 五种病害防治；其余 57 条因综述/论文正文未获取仍 `anchor` 并在 `note` 写待核验点。**未转载标准全文，仅引用条级摘录。**
-2. **Neo4j 未在真实实例执行**：Cypher 脚本完整交付且由 CSV 生成、幂等校验通过，导入脚本 `scripts/load_neo4j.py` 已提供（无驱动/无服务时友好退出，不崩）；本机无 Docker/WSL/兼容 JDK，未做实库验证，演示默认走本地后端。
+2. **Neo4j 服务端**：官方下载域名（`dist.neo4j.org` / `dist.neo4j.com`）在当前网络**一律 403**，本机也无 JDK 21/Aura 账号，因此没有启动 Neo4j 服务端。替代方案已落地：**① 在嵌入式 openCypher 引擎 Kùzu 上真跑等价查询**（69 节点/108 关系建表灌数、6 题与本地后端一致、4 条 verified 条文定点命中）；**② Cypher 脚本静态校验**（标签/关系/参数/MERGE 计数/10 意图覆盖）；**③ 便携版脚本** `scripts/setup_neo4j_portable.ps1`（拿到 zip 后一条命令完成 JDK+Neo4j+导入+幂等校验）。详见 `docs/neo4j_verify.md`；演示默认走本地后端。
 3. **数据规模**：108 条是演示级图谱，覆盖阳光玫瑰 + 7 个对照品种、9 个国标条文条件、7 种病害（其中 5 种与国标附录B 对齐），不是全领域知识库。
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。
 5. 玫瑰香耐贮性等个别数值留空未编造，`note` 标注「待补文献回填」。

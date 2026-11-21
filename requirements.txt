@@ -4,5 +4,8 @@ pandas==3.1.1
 python-dotenv==1.2.4
 pytest==9.2.0
 
+# 可选：嵌入式 openCypher 引擎（无 Neo4j 服务端时做查询实跑验证，见 docs/neo4j_verify.md）
+kuzu==0.11.3
+
 # 可选：仅验证 Neo4j 交付脚本时需要（演示默认 local 后端，不需要）
 # neo4j>=5.20

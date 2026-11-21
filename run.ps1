@@ -24,21 +24,28 @@ if (-not (Test-Path -LiteralPath $venvPy)) {
     exit 1
 }
 
-Write-Host "[1/3] 数据校验（十项）..."
+Write-Host "[1/4] 数据校验（十项）..."
 & $venvPy (Join-Path $ws "scripts\validate_data.py")
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[错误] 数据校验未通过，已中止启动。" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "[2/3] 图谱加载自检..."
+Write-Host "[2/4] Cypher 脚本静态校验..."
+& $venvPy (Join-Path $ws "scripts\validate_cypher.py")
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[错误] Cypher 校验未通过，已中止启动。" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "[3/4] 图谱加载自检..."
 & $venvPy -c "from app.store import get_store; s=get_store(); print('  后端:', s.name, '| 统计:', s.stats())"
 if ($LASTEXITCODE -ne 0) { Write-Host "[错误] 图谱加载失败。" -ForegroundColor Red; exit 1 }
 
 if ($Check) {
-    Write-Host "[3/3] 跳过启动（-Check）。" -ForegroundColor Yellow
+    Write-Host "[4/4] 跳过启动（-Check）。" -ForegroundColor Yellow
     exit 0
 }
 
-Write-Host "[3/3] 启动 Web 演示： http://127.0.0.1:$Port" -ForegroundColor Cyan
+Write-Host "[4/4] 启动 Web 演示： http://127.0.0.1:$Port" -ForegroundColor Cyan
 & $venvPy -m streamlit run (Join-Path $ws "app\ui.py") --server.port $Port --server.headless true --browser.gatherUsageStats false
