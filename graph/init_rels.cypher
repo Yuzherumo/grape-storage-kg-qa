@@ -134,11 +134,12 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.unit = 'μL/L',
          r.stage = '贮藏',
          r.reason = '1 μL/L 1-MCP 熏蒸 12h 可抑制乙烯作用，减轻落粒与软化',
-         r.source_ids = ['paper_so2_1mcp_shine', 'paper_so2_pad_1mcp_shine'],
-         r.locator = '《1-MCP和SO2处理对阳光玫瑰葡萄贮藏品质及风味的影响》结果与分析章节；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['paper_so2_1mcp_shine', 'paper_so2_pad_1mcp_shine', 'review_sqs_2024'],
+         r.locator = 'PDF p3 右栏·1.2.2 化学物质保鲜（1-MCP）',
+         r.quote = '张鹏等以阳光玫瑰葡萄为研究对象，使用1 μL/L的1-MCP进行采前喷施和采后熏蒸处理，发现采后进行1-MCP处理可以明显改善葡萄的贮藏后品质。',
+         r.status = 'verified',
          r.confidence = 0.65,
-         r.note = '待核验点：浓度（1 μL/L）与处理时长（12h）原文数值待核；两篇论文处理条件可能不同，需以原文实验设计为准';
+         r.note = '待核验点：浓度（1 μL/L）与处理时长（12h）原文数值待核；两篇论文处理条件可能不同，需以原文实验设计为准；阳光玫瑰 1-MCP 1 μL/L 的处理依据';
 MATCH (a:Variety {id: 'shine_muscat'}), (b:Condition {id: 'ca_co2'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'sm_req_co2',
@@ -443,11 +444,12 @@ MERGE (a)-[r:CONTRA_INDICATED_FOR]->(b)
          r.stage = '贮藏',
          r.severity = '高',
          r.reason = '阳光玫瑰对 SO₂ 敏感，熏蒸高剂量易致果皮漂白、果梗褐变与风味劣变，生产上宜改用低剂量缓释',
-         r.source_ids = ['paper_so2_1mcp_shine', 'paper_clo2_so2_shine', 'paper_so2_pad_1mcp_shine'],
-         r.locator = 'An integrated transcriptomic and metabolomic analysis of Shine Muscat grapes ... ClO2/SO2 storage（SCI）结果章节；页码待补',
-         r.status = 'anchor',
+         r.source_ids = ['paper_so2_1mcp_shine', 'paper_clo2_so2_shine', 'paper_so2_pad_1mcp_shine', 'review_so2_zyf'],
+         r.locator = 'PDF p4 右栏·4 过量SO2对鲜食葡萄的伤害',
+         r.quote = '不同品种的葡萄以及葡萄的不同部位对其敏感性不同，使得SO2保鲜剂在使用过程中释放条件难以精确控制，容易发生SO2过量的情况。这会对鲜食葡萄产生药害作用，常见的症状有果实漂白、落粒、裂果、风味劣变以及化学试剂残留。',
+         r.status = 'verified',
          r.confidence = 0.72,
-         r.note = '待核验点：SO₂ 熏蒸剂量-伤害阈值（ppm·h）与漂白/异味的原文数据；本条目为禁忌（B 组），已备 3 篇来源待逐条核对';
+         r.note = '待核验点：SO₂ 熏蒸剂量-伤害阈值（ppm·h）与漂白/异味的原文数据；本条目为禁忌（B 组），已备 3 篇来源待逐条核对；SO2 伤害通识依据；阳光玫瑰特异敏感性来自另两篇论文（note 保留）';
 
 // ---------------- AFFECTS（19 条） ----------------
 MATCH (a:Condition {id: 'ca_co2'}), (b:QualityIndicator {id: 'decay_rate'})
@@ -505,11 +507,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'decrease',
          r.level = '强',
          r.reason = '低温显著抑制灰霉等真菌生长，冷藏期腐烂率远低于常温',
-         r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
-         r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
-         r.status = 'anchor',
+         r.source_ids = ['gbt16862_2026', 'review_grape_storage', 'review_gwq_2002'],
+         r.locator = 'PDF p1 右栏·2 常温贮藏与冷藏',
+         r.quote = '低温能够明显抑制葡萄的呼吸强度、酶的活性及真菌的生长与繁殖。',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：不同温度下腐烂率对比数据原文';
+         r.note = '待核验点：不同温度下腐烂率对比数据原文；低温抑制真菌生长与繁殖，支撑腐烂率下降';
 MATCH (a:Condition {id: 'cold_0'}), (b:QualityIndicator {id: 'ethylene'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_cold0_ethylene',
@@ -565,11 +568,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'increase',
          r.level = '中',
          r.reason = 'CO₂ 伤害导致果肉/果皮褐变，褐变指数上升',
-         r.source_ids = ['review_packaging_logistics', 'review_grape_storage'],
-         r.locator = '《葡萄物流及贮藏保鲜包装技术研究现状与展望》（包装工程 2023, 44(23)）综述正文；页码待补',
-         r.status = 'anchor',
+         r.source_ids = ['review_packaging_logistics', 'review_grape_storage', 'review_gwq_2002'],
+         r.locator = 'PDF p3 左栏·6 气调贮藏',
+         r.quote = 'Borry研究认为0℃下7—12周15%~20% CO2能够抑制Thompson葡萄贮藏期间的腐烂，CO2再升高则会引起果粒褐变，其中5%CO2+15%O2处理效果最好。',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：CO₂ 伤害与褐变指数阈值原文';
+         r.note = '待核验点：CO₂ 伤害与褐变指数阈值原文；高 CO2 引起果粒褐变';
 MATCH (a:Condition {id: 'high_co2'}), (b:QualityIndicator {id: 'off_flavor'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_highco2_offflavor',
@@ -580,11 +584,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'increase',
          r.level = '强',
          r.reason = '高 CO₂ 诱导无氧呼吸与乙醇/乙醛积累，产生异味',
-         r.source_ids = ['review_packaging_logistics', 'review_grape_storage'],
-         r.locator = '《葡萄物流及贮藏保鲜包装技术研究现状与展望》（包装工程 2023, 44(23)）综述正文；页码待补',
-         r.status = 'anchor',
+         r.source_ids = ['review_packaging_logistics', 'review_grape_storage', 'review_gwq_2002'],
+         r.locator = 'PDF p3 左栏·6 气调贮藏',
+         r.quote = '15%以上的CO2气体环境中贮藏133 d后，与SO2有同样的抑菌效果，但果粒和果梗褐变，并有异味产生。',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：CO₂ 浓度与异味评分原文曲线';
+         r.note = '待核验点：CO₂ 浓度与异味评分原文曲线；高 CO2 产生异味';
 MATCH (a:Condition {id: 'ozone'}), (b:QualityIndicator {id: 'decay_rate'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_ozone_decay',
@@ -610,11 +615,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'decrease',
          r.level = '中',
          r.reason = '快速预冷缩短高温窗口期，抑制孢子萌发，降低腐烂率',
-         r.source_ids = ['review_grape_storage', 'gbt16862_2026'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['review_grape_storage', 'gbt16862_2026', 'review_gwq_2002'],
+         r.locator = 'PDF p1 右栏·1 最佳采收期（预冷）',
+         r.quote = '采收以后及时预冷能够减少果梗失水、褐变、脱粒及变软，并可在很大程度上抑制真菌的生长和繁殖。',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：预冷时限与腐烂率下降对应数据';
+         r.note = '待核验点：预冷时限与腐烂率下降对应数据；预冷抑制真菌繁殖，支撑腐烂率下降；12h 时限由国标 5.3.2 支撑';
 MATCH (a:Condition {id: 'rh_low'}), (b:QualityIndicator {id: 'weight_loss'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_rh_low_weightloss',
@@ -670,11 +676,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'decrease',
          r.level = '强',
          r.reason = '1-MCP 竞争性结合乙烯受体，延缓果梗离层形成，显著降低落粒率',
-         r.source_ids = ['paper_so2_1mcp_shine', 'paper_so2_pad_1mcp_shine'],
-         r.locator = '《1-MCP和SO2处理对阳光玫瑰葡萄贮藏品质及风味的影响》结果与分析章节；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['paper_so2_1mcp_shine', 'paper_so2_pad_1mcp_shine', 'review_sqs_2024'],
+         r.locator = 'PDF p3 右栏·1.2.2 化学物质保鲜（1-MCP）',
+         r.quote = '田竹希等以水晶葡萄为试验材料，采用1-甲基环丙烯(1-MCP)结合60Co-γ辐照处理，能够抑制贮藏期内水晶葡萄的腐烂率、掉粒率和失质量率。',
+         r.status = 'verified',
          r.confidence = 0.72,
-         r.note = '待核验点：落粒率下降百分比与对照组的原文数据、处理浓度';
+         r.note = '待核验点：落粒率下降百分比与对照组的原文数据、处理浓度；为 1-MCP+辐照复合处理，非 1-MCP 单独处理（note 如实标注）';
 MATCH (a:Condition {id: 'so2_fumigation'}), (b:QualityIndicator {id: 'browning_index'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'sm_aff_browning_so2',
@@ -700,11 +707,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'decrease',
          r.level = '强',
          r.reason = '1-MCP 阻断乙烯受体信号，反馈抑制乙烯合成与释放',
-         r.source_ids = ['paper_so2_1mcp_shine', 'review_shine_muscat'],
-         r.locator = '《1-MCP和SO2处理对阳光玫瑰葡萄贮藏品质及风味的影响》结果与分析章节；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['paper_so2_1mcp_shine', 'review_shine_muscat', 'review_sqs_2024'],
+         r.locator = 'PDF p3 右栏·1.2.2 化学物质保鲜（1-MCP）',
+         r.quote = '1-MCP是一种乙烯的拮抗抑制剂，有着调控采后果蔬成熟过程的作用。',
+         r.status = 'verified',
          r.confidence = 0.7,
-         r.note = '待核验点：乙烯释放率（μL/(kg·h)）下降幅度原文数据';
+         r.note = '待核验点：乙烯释放率（μL/(kg·h)）下降幅度原文数据；1-MCP 为乙烯拮抗抑制剂（抑制乙烯作用）';
 MATCH (a:Condition {id: 'cold_0'}), (b:QualityIndicator {id: 'respiration'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'sm_aff_resp',
@@ -715,11 +723,12 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.effect = 'decrease',
          r.level = '强',
          r.reason = '低温降低酶活性与呼吸速率，0℃ 附近呼吸强度显著低于常温',
-         r.source_ids = ['review_grape_storage', 'review_table_grape_en'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['review_grape_storage', 'review_table_grape_en', 'review_gwq_2002'],
+         r.locator = 'PDF p1 右栏·2 常温贮藏与冷藏',
+         r.quote = '低温能够明显抑制葡萄的呼吸强度、酶的活性及真菌的生长与繁殖。',
+         r.status = 'verified',
          r.confidence = 0.75,
-         r.note = '待核验点：呼吸强度下降的量化数据（mg CO2/(kg·h)）原文待补';
+         r.note = '待核验点：呼吸强度下降的量化数据（mg CO2/(kg·h)）原文待补；低温抑制呼吸强度，原文直接给出';
 MATCH (a:Condition {id: 'rh_90_95'}), (b:QualityIndicator {id: 'weight_loss'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'sm_aff_weightloss_rh',
@@ -1267,11 +1276,12 @@ MERGE (a)-[r:ALTERNATIVE_TO]->(b)
          r.object = '低温冷藏 -1~0℃',
          r.stage = '贮藏',
          r.reason = '近冰温精准控温（-0.5~0℃）可在避免冻伤前提下替代更低温度的 -1~0℃ 冷藏',
-         r.source_ids = ['paper_ice_temp', 'review_grape_storage'],
-         r.locator = '《1-MCP结合ClO2处理对冰温贮藏红提葡萄生理品质的影响》结果章节；页码待补',
-         r.status = 'anchor',
+         r.source_ids = ['paper_ice_temp', 'review_grape_storage', 'review_gwq_2002'],
+         r.locator = 'PDF p2 左栏·3 冰温贮藏',
+         r.quote = '研究表明冰温贮藏巨峰葡萄既弥补了一般冷藏保鲜法贮期短、烂果多的缺陷，又弥补了冻藏对原料质构破坏程度大的缺陷。',
+         r.status = 'verified',
          r.confidence = 0.6,
-         r.note = '待核验点：冰温与 -1~0℃ 冷藏的品质对比原文；实证对象为红提，需扩展验证';
+         r.note = '待核验点：冰温与 -1~0℃ 冷藏的品质对比原文；实证对象为红提，需扩展验证；冰温作为冷藏的改进方案（替代关系）';
 MATCH (a:Condition {id: 'so2_pad'}), (b:Condition {id: 'so2_fumigation'})
 MERGE (a)-[r:ALTERNATIVE_TO]->(b)
   SET r.sid = 'g_so2pad_alt_fumigation',

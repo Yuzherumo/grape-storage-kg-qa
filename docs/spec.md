@@ -70,7 +70,7 @@
 
 > M8 校正：原「黑霉病 Aspergillus niger」「根霉病 R. stolonifer」与国标附录B 不符，已按国标更正为「黑斑病 Alternaria spp.」「根霉腐败病 R. migricans」；新增绿霉病。炭疽病/酸腐病国标未列，保留但相关证据仍为 `anchor`。
 
-### 1.5 来源 Source（10~12，`data/sources.csv`）
+### 1.5 来源 Source（10~20，`data/sources.csv`）
 必须真实可检索。建议覆盖：
 1. `gbt16862_2026` GB/T 16862-2026《鲜食葡萄冷藏技术》，type=国标，access=paywalled（openstd 有在线预览）
 2. `review_grape_storage` 葡萄采后贮藏保鲜技术研究进展（中文核心期刊综述）

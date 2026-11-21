@@ -2,7 +2,7 @@
 // graph/init_nodes.cypher —— 图谱节点初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/entities.csv + data/sources.csv 生成
 // 幂等：MERGE (n:Label {id: ...}) —— 可重复执行
-// 统计：共 69 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 11）
+// 统计：共 74 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 16）
 // 生成后校验：python scripts/gen_cypher.py --check
 // =============================================================================
 
@@ -525,7 +525,7 @@ MERGE (n:Disease {id: 'green_mold'})
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语';
 
-// ---------------- Source（11 个，来自 data/sources.csv） ----------------
+// ---------------- Source（16 个，来自 data/sources.csv） ----------------
 MERGE (n:Source {id: 'gbt16862_2026'})
   SET n.title = '鲜食葡萄冷藏技术（GB/T 16862-2026）',
          n.authors = '国家市场监督管理总局;国家标准化管理委员会（发布单位）',
@@ -600,6 +600,49 @@ MERGE (n:Source {id: 'ops_grape_ny1199'})
          n.doi_url = 'https://cssn.net.cn/cssn/productDetail/e9237d9392c56e8f5129aae25f764a36',
          n.access = 'paywalled',
          n.note = '农业行业标准，中国标准服务网/国家数字标准馆可检索。正文待获取原文（待补链接）。';
+MERGE (n:Source {id: 'review_gwq_2002'})
+  SET n.title = '葡萄贮藏保鲜技术研究进展',
+         n.authors = '关文强;张华云;刘兴华;修德仁',
+         n.year = '2002',
+         n.venue = '果树学报, 2002, 19(5): 326-329',
+         n.type = '综述',
+         n.access = 'paywalled',
+         n.note = '用户提供 PDF 原文（已本地逐条核对）；覆盖贮藏温度/冷藏/冰温/辐照/保鲜剂/气调';
+MERGE (n:Source {id: 'review_sqs_2024'})
+  SET n.title = '鲜食葡萄保鲜技术研究进展',
+         n.authors = '邵千朔;黄桂丽;梁慧敏;孙灵湘;全鑫瑶',
+         n.year = '2024',
+         n.venue = '江苏农业科学, 2024, 52(4): 17-22',
+         n.type = '综述',
+         n.doi_url = 'https://doi.org/10.15889/j.issn.1002-1302.2024.04.003',
+         n.access = 'paywalled',
+         n.note = '用户提供 PDF 原文；覆盖冰温/气调/臭氧/1-MCP/热处理/辐照/生物保鲜';
+MERGE (n:Source {id: 'review_so2_zyf'})
+  SET n.title = '二氧化硫在鲜食葡萄保鲜中的应用研究进展',
+         n.authors = '张一帆;吴培文;朱本忠',
+         n.year = '2024',
+         n.venue = '现代食品科技, 2024, 40(6): 311-317',
+         n.type = '综述',
+         n.doi_url = 'https://doi.org/10.13982/j.mfst.1673-9078.2024.6.0645',
+         n.access = 'paywalled',
+         n.note = '用户提供 PDF 原文；SO2 抑菌机制/品质效应/过量伤害（漂白、落粒、裂果、风味劣变）';
+MERGE (n:Source {id: 'review_plant_wy_2022'})
+  SET n.title = '植物提取物在葡萄保鲜中的应用研究进展',
+         n.authors = '王阳;佟伟;张文江;练华山;朱志强',
+         n.year = '2022',
+         n.venue = '保鲜与加工, 2022, 22(4): 116-120',
+         n.type = '综述',
+         n.doi_url = 'https://doi.org/10.3969/j.issn.1009-6221.2022.04.015',
+         n.access = 'paywalled',
+         n.note = '用户提供 PDF 原文；植物提取物抑菌/涂膜保鲜';
+MERGE (n:Source {id: 'review_dy_2017'})
+  SET n.title = '鲜食葡萄保鲜研究新进展',
+         n.authors = '邓毅;杨雪莲;刘进平;王国立;吴素芳',
+         n.year = '2017',
+         n.venue = '绿色科技, 2017(5)',
+         n.type = '综述',
+         n.access = 'public',
+         n.note = '用户提供 PDF 原文；品种耐贮性规律/茶多酚与壳聚糖';
 
 // 节点写入完毕；随后执行 graph/init_rels.cypher
 MATCH (n) RETURN labels(n)[0] AS label, count(*) AS cnt ORDER BY label;

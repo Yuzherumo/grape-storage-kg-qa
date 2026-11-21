@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M8 国标全文入库 ｜ 测试 `118 passed / 2 skipped` ｜ 图谱 **69 节点 / 108 条关系**｜**51 条已按 GB/T 16862-2026 条文 verified** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M9 综述入源 ｜ 测试 `118 passed / 2 skipped` ｜ 图谱 **74 节点 / 108 条关系**｜**61 条 verified（国标条文 51 + 综述原文 10）** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -62,10 +62,10 @@ py -3.12 -m venv .venv
 
 ## 4. 知识图谱
 
-- **69 节点**：品种 8、储藏条件 30、品质指标 13、病害 7、来源 11（`Source` 为溯源辅助节点，不进实体链接词表）
+- **74 节点**：品种 8、储藏条件 30、品质指标 13、病害 7、来源 16（`Source` 为溯源辅助节点，不进实体链接词表）
 - **108 条关系 / 9 种谓词**：`REQUIRES`(26)、`CONTRA_INDICATED_FOR`(3)、`AFFECTS`(19)、`SUSCEPTIBLE_TO`(8)、`PREVENTED_BY`(22)、`INDUCED_BY`(7)、`ALTERNATIVE_TO`(3)、`INDICATES`(2)、`HAS_INDICATOR_VALUE`(18)
 - **10 个查询模板**：`graph/queries/*.cypher`（温度/湿度/气调/耐贮性/病害处置/病害风险/品质判断/品种对比/禁忌/兜底）
-- **证据分级**：**51 条 `verified`**（已获取 GB/T 16862-2026 全文，quote=条文原文、locator=条款号）、**57 条 `anchor`**（综述/论文正文未获取，note 写明待核验点）
+- **证据分级**：**61 条 `verified`**（国标条文 51 条 + 用户提供的 5 篇综述原文 10 条；quote=原文、locator=条款号/PDF 页码栏目）、**47 条 `anchor`**（其余论文正文未获取，note 写明待核验点）
 
 三元组示例（前两条已 `verified`，其余 `anchor`）：
 
@@ -106,7 +106,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 
 在线模式（2026-11-21 实测，`deepseek-chat`）：6 题全部 `mode=llm`，引用全部有效、**无 `unsourced_number`**，Q6 仍正确触发 `out_of_range`，单题 1.3~2.8 s；`RUN_LLM=1 pytest tests -m llm` → 1 passed（真实 LLM 分支下引用仍可核验）。
 
-Cypher 实跑（无 Neo4j 服务端时）：`scripts/verify_cypher_engine.py` 在嵌入式 openCypher 引擎 **Kùzu** 上建表灌数 **69 节点 / 108 关系**，6 题与本地后端结果一致、4 条 verified 条文定点命中；`scripts/validate_cypher.py` 对 13 个 `.cypher` 文件做标签/关系/参数/计数静态校验。详见 [neo4j_verify.md](docs/neo4j_verify.md)。
+Cypher 实跑（无 Neo4j 服务端时）：`scripts/verify_cypher_engine.py` 在嵌入式 openCypher 引擎 **Kùzu** 上建表灌数 **74 节点 / 108 关系**，6 题与本地后端结果一致、4 条 verified 条文定点命中；`scripts/validate_cypher.py` 对 13 个 `.cypher` 文件做标签/关系/参数/计数静态校验。详见 [neo4j_verify.md](docs/neo4j_verify.md)。
 判定口径（证据非空、引用有效、±区间/单位数值校验、意图与谓词、越界探针）见报告末尾。
 M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验防张冠李戴 / 怎么做路由 / 因果路由 / 零下归一化 / 空指标占位文案 / 无效引用告警 / 证据重排 / 十项数据校验」。
 
@@ -127,9 +127,9 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 ├─ requirements.txt / .env.example / pytest.ini / README.md
 ├─ data/                       # 唯一数据源
 │  ├─ entities.csv             # 48 个实体节点（含农户口语别名、病害症状）
-│  ├─ triples.csv              # 108 条三元组（51 verified / 57 anchor）
+│  ├─ triples.csv              # 108 条三元组（61 verified / 47 anchor）
 │  ├─ triples_shine_muscat.csv # 20 条阳光玫瑰核心三元组（M1 门禁产物）
-│  ├─ sources.csv              # 11 条来源（国标/综述/论文/行业标准）
+│  ├─ sources.csv              # 16 条来源（国标/5 篇综述/论文/行业标准）
 │  ├─ utterances.csv           # 12 条农户口语黄金集
 │  ├─ eval_questions.csv       # 5 典型 + 1 越界探针
 │  └─ schema.json              # 类型/谓词枚举、分组与双来源规则
@@ -158,8 +158,8 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 ## 10. 诚实声明与已知限制
 
-1. **证据分级：51 条 verified + 57 条 anchor**：已获取 GB/T 16862-2026 全文 PDF（用户提供），与条文逐字对应或可由条文直接推出的 51 条已升级 `verified`，覆盖 §7.3 温湿度、§7.4.1 温湿度波动、§5.2 入库量、§5.3.2 预冷、§7.1/§7.2 入库与堆码、§6.1.1.2 包装、§6.3.4 保鲜剂、§8.1 运输、§8.2 销售、§9 档案、附录A 表A.1 理化指标、附录B 表B.1 五种病害防治；其余 57 条因综述/论文正文未获取仍 `anchor` 并在 `note` 写待核验点。**未转载标准全文，仅引用条级摘录。**
-2. **Neo4j 服务端**：官方下载域名（`dist.neo4j.org` / `dist.neo4j.com`）在当前网络**一律 403**，本机也无 JDK 21/Aura 账号，因此没有启动 Neo4j 服务端。替代方案已落地：**① 在嵌入式 openCypher 引擎 Kùzu 上真跑等价查询**（69 节点/108 关系建表灌数、6 题与本地后端一致、4 条 verified 条文定点命中）；**② Cypher 脚本静态校验**（标签/关系/参数/MERGE 计数/10 意图覆盖）；**③ 便携版脚本** `scripts/setup_neo4j_portable.ps1`（拿到 zip 后一条命令完成 JDK+Neo4j+导入+幂等校验）。详见 `docs/neo4j_verify.md`；演示默认走本地后端。
+1. **证据分级：61 条 verified + 47 条 anchor**：已获取 **GB/T 16862-2026 全文 PDF** 与 **5 篇综述 PDF（用户提供）**。国标条文直接支撑的 51 条、综述原文直接支撑的 10 条已升级 `verified`（带条款号 / PDF 页码栏目 + 原文摘录）；其余 47 条因论文正文未获取仍 `anchor` 并在 `note` 写待核验点。**未转载标准或论文全文，仅引用条级摘录。**
+2. **Neo4j 服务端**：官方下载域名（`dist.neo4j.org` / `dist.neo4j.com`）在当前网络**一律 403**，本机也无 JDK 21/Aura 账号，因此没有启动 Neo4j 服务端。替代方案已落地：**① 在嵌入式 openCypher 引擎 Kùzu 上真跑等价查询**（74 节点/108 关系建表灌数、6 题与本地后端一致、4 条 verified 条文定点命中）；**② Cypher 脚本静态校验**（标签/关系/参数/MERGE 计数/10 意图覆盖）；**③ 便携版脚本** `scripts/setup_neo4j_portable.ps1`（拿到 zip 后一条命令完成 JDK+Neo4j+导入+幂等校验）。详见 `docs/neo4j_verify.md`；演示默认走本地后端。
 3. **数据规模**：108 条是演示级图谱，覆盖阳光玫瑰 + 7 个对照品种、9 个国标条文条件、7 种病害（其中 5 种与国标附录B 对齐），不是全领域知识库。
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。
 5. 玫瑰香耐贮性等个别数值留空未编造，`note` 标注「待补文献回填」。

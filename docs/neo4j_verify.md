@@ -23,7 +23,7 @@
 
 `scripts/verify_cypher_engine.py`：
 1. 从 `data/entities.csv + sources.csv + triples.csv` 在 Kùzu 中建表（5 类节点表 + 9 张关系表，关系表按 schema.json 的「主/宾类型」约束）；
-2. 灌入 **69 节点 / 108 条关系**，与 CSV 精确比对；
+2. 灌入 **74 节点 / 108 条关系**，与 CSV 精确比对；
 3. 对 10 类意图写等价 Cypher（REQUIRES/AFFECTS/PREVENTED_BY/INDUCED_BY/CONTRA/ALTERNATIVE/HAS_INDICATOR_VALUE/SUSCEPTIBLE_TO），**与本地后端逐题对照**；
 4. 定点核对 4 条 verified 条文三元组。
 
@@ -81,7 +81,7 @@ Q6  | temperature       | 12      | 12             | ✅
 .\scripts\setup_neo4j_portable.ps1 -JdkZip D:\jdk21.zip -Neo4jZip D:\neo4j-community-5.26.0-windows.zip
 ```
 
-预期结果：节点 **69**（58 实体 + 11 来源）、关系 **108**；二次导入计数不变；`cypher-shell` 可执行 `graph/queries/*.cypher`。
+预期结果：节点 **74**（58 实体 + 16 来源）、关系 **108**；二次导入计数不变；`cypher-shell` 可执行 `graph/queries/*.cypher`。
 
 > 拿到 Neo4j 后如需跑双后端一致性测试：安装驱动后执行
 > `pip install neo4j` → 设置 `.env` 的 `NEO4J_URI/USER/PASSWORD` → `pytest tests/test_backend_parity.py -q`（当前因无驱动/无服务自动 skip）。

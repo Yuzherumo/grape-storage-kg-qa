@@ -223,8 +223,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         got = label_count.get(label, 0)
         if isinstance(want, int) and got != want:
             rep.err(1, f"实体规模：{label} 期望 {want} 个，实际 {got} 个（docs/spec.md §1）")
-    if not (10 <= len(sources) <= 12):
-        rep.err(1, f"来源规模：期望 10~12 条，实际 {len(sources)} 条（docs/spec.md §1.5）")
+    if not (10 <= len(sources) <= 20):
+        rep.err(1, f"来源规模：期望 10~20 条，实际 {len(sources)} 条（docs/spec.md §1.5）")
     # 唯一性
     dup = [i for i, n in Counter((r.get("id") or "").strip() for r in entities).items() if n > 1]
     if dup:

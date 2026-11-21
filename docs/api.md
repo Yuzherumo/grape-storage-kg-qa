@@ -81,6 +81,7 @@ class GraphStore:  # base.py
 - `Neo4jStore(uri, user, password)`：执行 `graph/queries/*.cypher`（共 **10** 个模板，含 `general`）；连接失败 → 抛 `BackendFallback`，**由工厂回落 local**（UI 收到 `warnings += backend_fallback`）。
 - `QuerySpec.params` 约定（两种后端一致，未知 key 忽略）：`variety_ids / condition_ids / indicator_ids / disease_ids / entity_ids / keywords / question / k`。其中 `entity_ids` **仅 `general` 兜底使用**；`condition_ids` 仅 `contraindication` 意图做精确过滤 —— 否则「冷库→cold_0」会把温度结果窄化成 1 条，且 local 与 neo4j 过滤口径不一致（parity）。
 - 证据排序：`score = 0.5*confidence + 0.3*status权重(verified=1,anchor=0.6) + 0.2*实体命中度`，降序后按 (subject,predicate,object) 去重，截断 `k`。
+  **例外**：`variety_compare` 为保证「每个品种都有指标基线」的覆盖，证据上限取 `max(k, 12)`（并在图里缺基线时显式输出「图谱未收录 X 的耐贮性数值」）。
 - `eid` 由 qa 层统一分配（`E1..En`），store 返回时留空字符串。
 
 ## 6. qa（`app/qa.py`，Lead 写区）

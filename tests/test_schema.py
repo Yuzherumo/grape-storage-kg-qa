@@ -290,16 +290,34 @@ def test_entities_source_ids_are_foreign_keys() -> None:
 
 
 # ---------------------------------------------------------------- sources.csv
+def _source_count_range(schema: dict) -> tuple[int, int]:
+    """解析 schema.json 的来源规模口径（如 "10~20" → (10, 20)），避免测试硬编码区间。"""
+    target = str(schema.get("entity_targets", {}).get("Source", ""))
+    match = re.search(r"(\d+)\s*[~～至\-]\s*(\d+)", target)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    single = re.search(r"(\d+)", target)
+    if single:
+        return int(single.group(1)), int(single.group(1))
+    raise AssertionError(f"schema.json entity_targets.Source 无法解析区间：{target!r}")
+
+
 def test_sources_csv_contract() -> None:
     assert csv_header(SOURCES_CSV) == SOURCE_COLUMNS, "sources.csv 列与 api.md §1.3 不一致"
     rows = _sources()
     ids = [str(row.get("id") or "").strip() for row in rows]
     assert len(ids) == len(set(ids)), "sources.csv 存在重复 id"
-    assert 10 <= len(rows) <= 12, f"来源数量应为 10~12 条，实际 {len(rows)}"
+    # 来源规模口径以 schema.json 为准（M9：11→16 条，spec.md §1.5 已改 10~20）
+    low, high = _source_count_range(_schema())
+    assert low <= len(rows) <= high, f"来源数量应为 {low}~{high} 条（schema.json），实际 {len(rows)}"
     for row in rows:
         assert row["type"] in SOURCE_TYPES, f"{row['id']} type={row['type']!r} 非法"
         assert row["access"] in ACCESS_ENUM, f"{row['id']} access={row['access']!r} 非法"
         assert str(row.get("title") or "").strip(), f"{row['id']} 缺少 title"
+    # 原文入源（M9）：新增来源应有题录标题且 id 唯一可被 triples 引用
+    assert any("DOI" in (row.get("doi_url") or "") or "doi.org" in (row.get("doi_url") or "") for row in rows), (
+        "sources.csv 应有带 DOI/链接的可检索来源"
+    )
 
 
 # ---------------------------------------------------------------- triples.csv

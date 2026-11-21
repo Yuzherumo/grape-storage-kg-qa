@@ -106,7 +106,7 @@
     "Condition": 30,
     "QualityIndicator": 13,
     "Disease": 7,
-    "Source": "10~12"
+    "Source": "10~20"
   },
   "condition_categories": [
     "温度",
