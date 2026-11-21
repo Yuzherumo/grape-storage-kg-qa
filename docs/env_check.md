@@ -3,11 +3,11 @@
 > 由 `scripts/env_check.py` 自动生成（不联网）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\env_check.py`
 
-- 采集时间：2026-11-21 19:09:32
+- 采集时间：2026-11-21 19:11:42
 - 操作系统：`Windows-11-10.0.26100-SP0`
 - Python：`3.12.14`（`C:\Users\21629\Desktop\农课松\.venv\Scripts\python.exe`）
 - 工作目录：`C:\Users\21629\Desktop\农课松`
-- .env：无 .env 文件
+- .env：已加载 .env
 
 ## 1. 依赖版本
 
@@ -24,15 +24,15 @@ neo4j | 未安装
 
 变量 | 状态
 ---|---
-GRAPH_BACKEND | 未设置
+GRAPH_BACKEND | `local`
 DATA_DIR | 未设置
 DEEPSEEK_API_KEY | 未设置
-DEEPSEEK_MODEL | 未设置
-DEEPSEEK_BASE_URL | 未设置
-NEO4J_URI | 未设置
-NEO4J_USER | 未设置
+DEEPSEEK_MODEL | `deepseek-chat`
+DEEPSEEK_BASE_URL | `https://api.deepseek.com`
+NEO4J_URI | `bolt://127.0.0.1:7687`
+NEO4J_USER | `neo4j`
 NEO4J_PASSWORD | 未设置
-UI_PORT | 未设置
+UI_PORT | `8501`
 
 ## 3. 图谱后端
 

@@ -333,6 +333,8 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
             if f2:
                 fam_ranges.setdefault(f2, []).append((lo, hi))
         _add_bare(text)
+        _add_bare(str(e.confidence))  # 依据行里的「置信 0.78」属证据元数据，不算编造
+        _add_bare(f"{e.value} {e.value_min} {e.value_max}")  # 结构化数值（如 -0.5~0.5）也是证据数字
     _add_bare(normalize_question(question))
 
     clean = re.sub(r"\[E\d+\]", "", answer or "")          # [E5] 不是数字 5
@@ -599,6 +601,11 @@ def answer_question(
                 )
     else:
         result.answer = answer
+
+    # 7.5) 步骤可能引用额外证据（如第 3 步引用 E6），最终答案确定后重算引用
+    cited_final, _w = verify_citations(result.answer, evidence)
+    if cited_final:
+        result.cited_ids = cited_final
 
     # 8) 数值校验 + 越界告警
     if out_of_range:

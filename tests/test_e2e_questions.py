@@ -96,9 +96,12 @@ def test_eval_question_pipeline(store, row: dict) -> None:
                 f"{row['id']} 答案出现禁用关键词 {keyword!r}：{result.answer!r}"
             )
 
-        # ---- 模板答案数值自洽（不得出现证据外温度）
+        # ---- 模板答案数值自洽（不得出现证据外温度，也不得报出证据外数字）
         assert WARN_OUT_OF_RANGE not in result.warnings, (
             f"{row['id']} 模板答案触发 out_of_range：{result.warnings}"
+        )
+        assert not any("unsourced_number" in warning for warning in result.warnings), (
+            f"{row['id']} 模板答案出现证据外数字告警（模板答案由证据拼装，不应有假告警）：{result.warnings}"
         )
         assert not unsupported_temperatures(result.answer, evidence), (
             f"{row['id']} 模板答案出现证据外温度：{unsupported_temperatures(result.answer, evidence)}"
@@ -133,6 +136,12 @@ def test_eval_question_pipeline(store, row: dict) -> None:
         assert WARN_OUT_OF_RANGE in result.warnings, (
             f"{row['id']} 越界请求（-18℃ vs 证据 0±0.5℃）应触发 out_of_range 告警，"
             f"实际 warnings={result.warnings}"
+        )
+        # 引用仍须完整：答案（含「现在该做什么」步骤）里的 [E#] 都属于证据且进入 cited_ids
+        assert refs, f"{row['id']} 越界题答案也应带 [E#] 引用：{result.answer!r}"
+        assert set(refs) <= eids, f"{row['id']} 越界题引用了不存在的证据编号：{refs} vs {sorted(eids)}"
+        assert set(refs) <= set(result.cited_ids), (
+            f"{row['id']} 越界题答案中的 [E#] 未进入 cited_ids：refs={refs} cited={result.cited_ids}"
         )
 
 

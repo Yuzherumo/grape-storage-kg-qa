@@ -99,13 +99,18 @@ def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6) -> QuerySpec
     entity_ids = [h.node_id for h in hits]
     # 去重保序
     entity_ids = list(dict.fromkeys(entity_ids))
+    # entity_ids 只给 general 兜底用：其余意图走 typed ids，避免「冷库→cold_0」把温度结果窄化成 1 条，
+    # 也保证 LocalStore 与 Neo4j 模板过滤口径一致（双后端 parity）。
+    if (intent if intent in INTENTS else R.DEFAULT_INTENT) != "general":
+        entity_ids = []
 
     keywords = [h.surface for h in hits if h.surface][:5]
 
     params: dict[str, Any] = {
         "intent": intent if intent in INTENTS else R.DEFAULT_INTENT,
         "variety_ids": variety_ids,
-        "condition_ids": condition_ids,
+        # 只有禁忌意图才按具体条件过滤（否则「冷库」会把温度结果收窄成 1 条）
+        "condition_ids": condition_ids if intent == "contraindication" else [],
         "indicator_ids": indicator_ids,
         "disease_ids": disease_ids,
         "entity_ids": entity_ids,
@@ -118,7 +123,7 @@ def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6) -> QuerySpec
         cypher_file=f"graph/queries/{params['intent']}.cypher",
         cypher_params={
             "variety_ids": variety_ids,
-            "condition_ids": condition_ids,
+            "condition_ids": params["condition_ids"],
             "indicator_ids": indicator_ids,
             "disease_ids": disease_ids,
             "entity_ids": entity_ids,
