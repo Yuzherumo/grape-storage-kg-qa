@@ -108,9 +108,12 @@ def route(question: str, hits: Sequence[EntityHit]) -> Tuple[str, float, List[Tu
     # 「怎么做/怎么用」+ 命中条件实体 → 实体中心检索（general），避免套错处置清单
     if hits and any(k in q for k in R.HOWTO_KEYWORDS) and any(h.label == "Condition" for h in hits):
         return R.DEFAULT_INTENT, 0.5, []
+    # 命中「条文型操作条件」（包装/入库量/堆码/温度波动/销售/档案…）→ 实体中心检索
+    if any(h.node_id in R.OPERATION_CONDITIONS for h in hits) and "CONTRA_INDICATED_FOR" not in scores:
+        return R.DEFAULT_INTENT, 0.6, []
     # 「因果/关系」问句 + 命中病害 → 病害风险意图（回答「结露诱发灰霉」，而不是给处置清单）
     if any(h.label == "Disease" for h in hits) and any(
-        k in q for k in ("有什么关系", "有啥关系", "什么关系", "为什么", "咋会", "怎么引起", "什么原因")
+        k in q for k in ("有什么关系", "有啥关系", "什么关系", "为什么", "咋会", "怎么引起", "什么原因", "诱因")
     ):
         return "disease_risk", 0.6, []
     if not scores:

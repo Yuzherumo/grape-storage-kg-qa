@@ -291,54 +291,63 @@ MERGE (n:Condition {id: 'wound'})
 MERGE (n:Condition {id: 'temp_fluctuation'})
   SET n.label = 'Condition',
          n.name = '冷藏温度波动 ±0.5℃',
+         n.aliases = ['温度波动', '库温波动', '波动范围'],
          n.category = '温度',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标7.4.1：温度波动幅度不超过±0.5℃；条文口径，已 verified';
 MERGE (n:Condition {id: 'daily_intake_limit'})
   SET n.label = 'Condition',
          n.name = '每天入库量 ≤ 库容 10%',
+         n.aliases = ['入库量', '每天入库', '每日入库', '每天入多少', '入多少库'],
          n.category = '采后操作',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标5.2：每天入库量不超过库容量的10%；条文口径，已 verified';
 MERGE (n:Condition {id: 'storage_density'})
   SET n.label = 'Condition',
          n.name = '冷藏密度 ≤ 200 kg/m³',
+         n.aliases = ['堆码密度', '冷藏密度', '堆码', '码垛'],
          n.category = '采后操作',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标7.2：有效空间冷藏密度不超过200kg/m3；条文口径，已 verified';
 MERGE (n:Condition {id: 'precool_forced'})
   SET n.label = 'Condition',
          n.name = '压差预冷 0~1℃',
+         n.aliases = ['压差预冷', '预冷方式'],
          n.category = '采后操作',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标5.3.2：压差预冷时环境温度为0℃~1℃；条文口径，已 verified';
 MERGE (n:Condition {id: 'sales_env'})
   SET n.label = 'Condition',
          n.name = '销售环境 0~10℃',
+         n.aliases = ['销售温度', '销售环境', '卖场温度'],
          n.category = '温度',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标8.2：销售环境温度宜控制在0℃~10℃；条文口径，已 verified';
 MERGE (n:Condition {id: 'archive_record'})
   SET n.label = 'Condition',
          n.name = '档案记录保存 ≥2 年',
+         n.aliases = ['档案', '记录保存', '档案记录', '留档'],
          n.category = '采后操作',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标第9章：记录应保存两年以上；条文口径，已 verified';
 MERGE (n:Condition {id: 'package_weight'})
   SET n.label = 'Condition',
          n.name = '包装容重 ≤ 8 kg',
+         n.aliases = ['包装', '包装要求', '装箱', '纸箱', '箱重'],
          n.category = '包装',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标6.1.1.2：纸箱容重不宜超过8kg；条文口径，已 verified';
 MERGE (n:Condition {id: 'pre_harvest_rain'})
   SET n.label = 'Condition',
          n.name = '采前降雨',
+         n.aliases = ['采前降雨', '采前雨', '采收前降雨'],
          n.category = '环境风险',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B：田间下雨/采前降雨是黑斑病诱因；条文口径，已 verified';
 MERGE (n:Condition {id: 'warehouse_disinfection'})
   SET n.label = 'Condition',
          n.name = '库房消杀',
+         n.aliases = ['库房消杀', '库房消毒', '消毒'],
          n.category = '化学',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B：库房消杀为病害防治措施；条文口径，已 verified';

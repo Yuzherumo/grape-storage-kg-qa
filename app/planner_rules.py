@@ -41,7 +41,7 @@ TRIGGERS: dict[str, list[tuple[str, float]]] = {
     ],
     "disease_risk": [
         ("为什么", 1.6), ("咋回事", 1.6), ("原因", 1.8), ("会不会", 2.0), ("容易", 1.5),
-        ("诱发", 2.2), ("风险", 1.8), ("怎么引起", 2.0),
+        ("诱发", 2.2), ("诱因", 2.4), ("风险", 1.8), ("怎么引起", 2.0), ("条件", 0.8),
     ],
     "quality_indicator": [
         ("怎么判断", 2.5), ("怎么知道", 2.2), ("怎么看出来", 2.6), ("看出来", 1.6),
@@ -87,7 +87,15 @@ PATTERNS: list[tuple[str, str, float]] = [
 
 # 「怎么做/怎么用」这类问句应做实体中心检索（general），而不是套到某个处置清单上
 HOWTO_KEYWORDS = ("怎么用", "咋用", "怎么操作", "咋操作", "如何使用", "使用方法", "用法",
-                  "怎么做", "咋做", "怎么处理比较", "怎么弄", "多少量", "剂量")
+                  "怎么做", "咋做", "怎么处理比较", "怎么弄", "多少量", "剂量",
+                  "要求", "规定", "标准")
+
+# 条文型「操作条件」：命中这些条件时做实体中心检索（general），而不是套处置/禁忌清单
+OPERATION_CONDITIONS = {
+    "package_weight", "daily_intake_limit", "storage_density", "temp_fluctuation",
+    "precool_forced", "sales_env", "archive_record", "warehouse_disinfection",
+    "pre_harvest_rain",
+}
 
 # ---------------------------------------------------------------- 实体标签先验
 ENTITY_PRIOR: dict[str, list[tuple[str, float]]] = {

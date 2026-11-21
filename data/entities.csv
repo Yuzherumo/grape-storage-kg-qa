@@ -47,13 +47,13 @@ blue_mold,Disease,青霉病,青霉;绿霉;霉味,,,,,,,,,,,,,Penicillium spp.,�
 anthracnose,Disease,炭疽病,炭疽;凹陷褐斑;褐斑,,,,,,,,,,,,,Colletotrichum gloeosporioides,凹陷褐斑、腐烂斑扩展,review_shine_muscat;review_grape_storage,潜伏侵染，采后成熟期显症
 sour_rot,Disease,酸腐病,酸腐;酸臭;流汁;发酸,,,,,,,,,,,,,,酸臭味、流汁、发软,review_shine_muscat;review_packaging_logistics,常继发于裂果与果蝇危害
 black_mold,Disease,黑斑病,黑霉;黑毛霉;粉霉,,,,,,,,,,,,,Alternaria spp.,果刷棕褐色凹陷斑、后期掉粒,review_grape_storage;ops_grape_ny1199;gbt16862_2026,高温高湿条件下发生重；按GB/T 16862-2026 附录B 对齐：原「黑霉病 Aspergillus niger」无国标依据，更正为「黑斑病 Alternaria spp.」；黑斑病 Alternaria spp.；掉粒为农户口语
-temp_fluctuation,Condition,冷藏温度波动 ±0.5℃,,温度,,,,,,,,,,,,,,gbt16862_2026,国标7.4.1：温度波动幅度不超过±0.5℃；条文口径，已 verified
-daily_intake_limit,Condition,每天入库量 ≤ 库容 10%,,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标5.2：每天入库量不超过库容量的10%；条文口径，已 verified
-storage_density,Condition,冷藏密度 ≤ 200 kg/m³,,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标7.2：有效空间冷藏密度不超过200kg/m3；条文口径，已 verified
-precool_forced,Condition,压差预冷 0~1℃,,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标5.3.2：压差预冷时环境温度为0℃~1℃；条文口径，已 verified
-sales_env,Condition,销售环境 0~10℃,,温度,,,,,,,,,,,,,,gbt16862_2026,国标8.2：销售环境温度宜控制在0℃~10℃；条文口径，已 verified
-archive_record,Condition,档案记录保存 ≥2 年,,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标第9章：记录应保存两年以上；条文口径，已 verified
-package_weight,Condition,包装容重 ≤ 8 kg,,包装,,,,,,,,,,,,,,gbt16862_2026,国标6.1.1.2：纸箱容重不宜超过8kg；条文口径，已 verified
-pre_harvest_rain,Condition,采前降雨,,环境风险,,,,,,,,,,,,,,gbt16862_2026,国标附录B：田间下雨/采前降雨是黑斑病诱因；条文口径，已 verified
-warehouse_disinfection,Condition,库房消杀,,化学,,,,,,,,,,,,,,gbt16862_2026,国标附录B：库房消杀为病害防治措施；条文口径，已 verified
+temp_fluctuation,Condition,冷藏温度波动 ±0.5℃,温度波动;库温波动;波动范围,温度,,,,,,,,,,,,,,gbt16862_2026,国标7.4.1：温度波动幅度不超过±0.5℃；条文口径，已 verified
+daily_intake_limit,Condition,每天入库量 ≤ 库容 10%,入库量;每天入库;每日入库;每天入多少;入多少库,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标5.2：每天入库量不超过库容量的10%；条文口径，已 verified
+storage_density,Condition,冷藏密度 ≤ 200 kg/m³,堆码密度;冷藏密度;堆码;码垛,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标7.2：有效空间冷藏密度不超过200kg/m3；条文口径，已 verified
+precool_forced,Condition,压差预冷 0~1℃,压差预冷;预冷方式,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标5.3.2：压差预冷时环境温度为0℃~1℃；条文口径，已 verified
+sales_env,Condition,销售环境 0~10℃,销售温度;销售环境;卖场温度,温度,,,,,,,,,,,,,,gbt16862_2026,国标8.2：销售环境温度宜控制在0℃~10℃；条文口径，已 verified
+archive_record,Condition,档案记录保存 ≥2 年,档案;记录保存;档案记录;留档,采后操作,,,,,,,,,,,,,,gbt16862_2026,国标第9章：记录应保存两年以上；条文口径，已 verified
+package_weight,Condition,包装容重 ≤ 8 kg,包装;包装要求;装箱;纸箱;箱重,包装,,,,,,,,,,,,,,gbt16862_2026,国标6.1.1.2：纸箱容重不宜超过8kg；条文口径，已 verified
+pre_harvest_rain,Condition,采前降雨,采前降雨;采前雨;采收前降雨,环境风险,,,,,,,,,,,,,,gbt16862_2026,国标附录B：田间下雨/采前降雨是黑斑病诱因；条文口径，已 verified
+warehouse_disinfection,Condition,库房消杀,库房消杀;库房消毒;消毒,化学,,,,,,,,,,,,,,gbt16862_2026,国标附录B：库房消杀为病害防治措施；条文口径，已 verified
 green_mold,Disease,绿霉病,绿霉,,,,,,,,,,,,,Cladosporium herbarum,果梗黑褐色腐烂斑、出库后长绿色霉层,gbt16862_2026,国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语
