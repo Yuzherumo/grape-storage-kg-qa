@@ -71,7 +71,11 @@ def _fmt_value(e: Evidence) -> str:
     if e.value_min is not None or e.value_max is not None:
         lo = "" if e.value_min is None else f"{e.value_min:g}"
         hi = "" if e.value_max is None else f"{e.value_max:g}"
-        return f"{lo}~{hi}{e.unit}"
+        if lo and hi:
+            return f"{lo}~{hi}{e.unit}"
+        if lo:  # 只有下限（如 SSC≥16%）→ 不能输出悬空的「16~%」
+            return f"≥{lo}{e.unit}"
+        return f"≤{hi}{e.unit}"
     return ""
 
 
