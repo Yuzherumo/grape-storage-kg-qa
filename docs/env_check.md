@@ -3,7 +3,7 @@
 > 由 `scripts/env_check.py` 自动生成（不联网）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\env_check.py`
 
-- 采集时间：2026-11-21 19:11:42
+- 采集时间：2026-11-21 19:45:37
 - 操作系统：`Windows-11-10.0.26100-SP0`
 - Python：`3.12.14`（`C:\Users\21629\Desktop\农课松\.venv\Scripts\python.exe`）
 - 工作目录：`C:\Users\21629\Desktop\农课松`
@@ -26,7 +26,7 @@ neo4j | 未安装
 ---|---
 GRAPH_BACKEND | `local`
 DATA_DIR | 未设置
-DEEPSEEK_API_KEY | 未设置
+DEEPSEEK_API_KEY | 已设置（不显示值）
 DEEPSEEK_MODEL | `deepseek-chat`
 DEEPSEEK_BASE_URL | `https://api.deepseek.com`
 NEO4J_URI | `bolt://127.0.0.1:7687`
@@ -43,7 +43,7 @@ UI_PORT | `8501`
 
 ## 4. LLM 可用性（不发起真实请求）
 
-- 状态：⭕ 不可用（预期行为）—— 未配置 DEEPSEEK_API_KEY，问答自动走离线模板模式（模型 deepseek-chat）
+- 状态：✅ 可用 —— 已配置 API key，模型 deepseek-chat（未发起真实请求）
 
 ## 5. 数据与图谱文件
 
