@@ -1,7 +1,7 @@
 # 鲜食葡萄储藏知识图谱问答（葡萄冷库「能查证」的技术助手）
 
 > 农客松 2026 · 主赛道 · **方向二「生命系统」**（农业 / 食品）
-> 状态：M6 加固通过 ｜ 测试 `96 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
+> 状态：M6 加固通过 ｜ 测试 `116 passed / 2 skipped` ｜ 图谱 **59 节点 / 71 条关系** ｜ 数据 **十项校验** 全绿 ｜ **无 API Key、断网也能跑** ｜ 在线模式已实测（`deepseek-chat`，1.3~2.8 s/题）
 > 演示地址：`http://127.0.0.1:8501`（`.\run.ps1` 一键启动）
 
 ---
@@ -95,7 +95,7 @@ py -3.12 -m venv .venv
 ## 6. 评测（离线可复现）
 
 ```
-.\.venv\Scripts\python.exe -m pytest tests -q      # → 96 passed, 2 skipped（无网可跑）
+.\.venv\Scripts\python.exe -m pytest tests -q      # → 116 passed, 2 skipped（无网可跑）
 .\.venv\Scripts\python.exe scripts\eval_qa.py      # → docs/eval_results.md
 ```
 
@@ -104,6 +104,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 
 在线模式（2026-11-21 实测，`deepseek-chat`）：6 题全部 `mode=llm`，引用全部有效、**无 `unsourced_number`**，Q6 仍正确触发 `out_of_range`，单题 1.3~2.8 s；`RUN_LLM=1 pytest tests -m llm` → 1 passed（真实 LLM 分支下引用仍可核验）。
 判定口径（证据非空、引用有效、±区间/单位数值校验、意图与谓词、越界探针）见报告末尾。
+M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验防张冠李戴 / 怎么做路由 / 因果路由 / 零下归一化 / 空指标占位文案 / 无效引用告警 / 证据重排 / 十项数据校验」。
 
 ## 7. 与方向二「生命系统」的契合
 
@@ -131,7 +132,7 @@ Q1~Q6 证据数 2/6/1/3/6/6，引用全部有效，数值校验全部通过，Q6
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
 ├─ scripts/                    # validate_data / gen_cypher / eval_qa / env_check / load_neo4j
-├─ tests/                      # 98 个测试（96 passed / 2 skipped）
+├─ tests/                      # 118 个测试（116 passed / 2 skipped，含 M6 加固回归 20 条）
 └─ docs/                       # api / spec / sources / eval_results / demo_script / submission / ai_usage
 ```
 

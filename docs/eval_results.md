@@ -3,7 +3,7 @@
 > 由 `scripts/eval_qa.py` 自动生成（离线模式：`allow_llm=False`，不联网、不需 API key）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\eval_qa.py`
 
-- 生成时间：2026-11-21 20:01:10
+- 生成时间：2026-11-21 20:18:30
 - 后端：`local`；图谱统计：`{'backend': 'local', 'nodes': 48, 'rels': 71, 'varieties': 8, 'conditions': 21, 'indicators': 13, 'diseases': 6, 'sources': 11, 'unresolved_edges': 0, 'data_files': ['triples_shine_muscat.csv', 'triples.csv']}`
 - 总判定：**PASS** —— 核心题 5/5 通过；越界探针 1/1 通过；口语变体意图命中 12/12（门槛 10）；实体命中 12/12
 
@@ -28,7 +28,7 @@ u03 白毛是不是没救了 | disease_control | disease_control (0.90) | ✅
 u04 放两个月还行不行 | shelf_life | shelf_life (1.00) | ✅
 u05 阳光玫瑰搁多少度合适啊 | temperature | temperature (0.85) | ✅
 u06 香印青提库里头湿度得调到多少 | humidity | humidity (0.72) | ✅
-u07 巨峰跟红提哪个耐放些 | variety_compare | variety_compare (0.67) | ✅
+u07 巨峰跟红提哪个耐放些 | variety_compare | variety_compare (0.66) | ✅
 u08 打SO2对晴王是不是不好使啊 | contraindication | contraindication (0.37) | ✅
 u09 灰霉病咋防啊搁冷库里 | disease_control | disease_control (0.72) | ✅
 u10 葡萄掉粒软塌塌的还能要不 | quality_indicator | quality_indicator (1.00) | ✅

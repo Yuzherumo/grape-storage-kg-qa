@@ -581,8 +581,12 @@ def answer_question(
     hit_ids_all = {h.node_id for h in hits}
 
     def _touch_rank(ev: Evidence) -> float:
+        """与命中实体相连的个数：同时触达多个命中实体（如「灰霉病↔结露」）排在最前。"""
         ids = {ev.properties.get("subject_id"), ev.properties.get("object_id")}
-        return 1.0 if (ids & hit_ids_all or ev.subject in hit_ids_all or ev.object in hit_ids_all) else 0.0
+        overlap = len(ids & hit_ids_all)
+        if not overlap and (ev.subject in hit_ids_all or ev.object in hit_ids_all):
+            overlap = 1
+        return float(overlap)
 
     evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
     evidence = _dedupe(evidence)[: max(1, int(k or 6))]

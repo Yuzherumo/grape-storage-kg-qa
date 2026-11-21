@@ -928,11 +928,14 @@ def _html_table(rows: Sequence[Dict[str, Any]]) -> str:
 
 def _render_evidence_table(ordered: Sequence[Evidence], cited_set: set, *, large: bool) -> None:
     st.markdown("#### 🧾 证据表（可溯源明细）")
-    st.caption("列：eid / 三元组 / 值 / 来源 / 状态 / 置信。依据区灰色卡片 = 未被答案引用的证据。")
     rows = _table_rows(ordered)
     if not rows:
-        st.caption("本次无证据可列。")
+        st.info(
+            "🫙 本次没有可展示的证据（evidence = []）：答案按「图谱未收录」口径处理，"
+            "不引用、不编造数据；换一种问法或改问已收录较多的品种。"
+        )
         return
+    st.caption("列：eid / 三元组 / 值 / 来源 / 状态 / 置信。依据区灰色卡片 = 未被答案引用的证据。")
     if large:
         try:
             import pandas as pd
@@ -967,6 +970,14 @@ def _classify_warning(raw: Any) -> Tuple[str, str, str, str]:
     if code.startswith("unsourced_number"):
         message = detail or "答案中的数值未能对应到证据来源"
         return "amber", "无来源数值", message, code
+    if code.startswith("invalid_citation"):
+        target = detail.strip()
+        message = (
+            f"答案引用了不存在的证据编号 {target}，已按证据核验剔除或降级"
+            if target
+            else "答案引用了不存在的证据编号，已按证据核验剔除或降级"
+        )
+        return "amber", "引用无效", message, code
     if code in known:
         level, title, default_message = known[code]
         return level, title, detail or default_message, code
@@ -1038,7 +1049,7 @@ def render_result(result: AnswerResult, *, show_cypher: bool, large: bool) -> No
         st.caption("（答案缺少结论段落）")
 
     cited_count = sum(1 for ev in ordered if _eid_of(ev) in cited_set)
-    st.markdown(f"#### 📚 依据（共 {len(ordered)} 条证据 · 答案引用 {cited_count} 条）")
+    st.markdown("#### 📚 依据（共 {0} 条证据 · 答案引用 {1} 条）".format(len(ordered), cited_count))
     if ordered:
         st.markdown(_evidence_cards_html(ordered, cited_set), unsafe_allow_html=True)
     elif evidence_text:
@@ -1046,17 +1057,18 @@ def render_result(result: AnswerResult, *, show_cypher: bool, large: bool) -> No
     else:
         st.caption("本次未检索到图谱证据。")
 
-    st.markdown("#### ✅ 现在该做什么")
-    if steps:
-        lines = [f"{index}. {_render_md(str(step), cited_ids)}" for index, step in enumerate(steps, 1)]
-        st.markdown("\n".join(lines), unsafe_allow_html=True)
-    elif action_text:
-        st.markdown(_render_md(action_text, cited_ids), unsafe_allow_html=True)
-    else:
-        st.caption("本次回答未给出操作步骤。")
+    # 只有确实存在第三段（steps 或 answer 里的行动段）才渲染标题与内容，
+    # 避免「图谱未收录」类两段答案出现空的「现在该做什么」标题/空卡片。
+    action_text = (action_text or "").strip()
+    if steps or action_text:
+        st.markdown("#### ✅ 现在该做什么")
+        if steps:
+            lines = [f"{index}. {_render_md(str(step), cited_ids)}" for index, step in enumerate(steps, 1)]
+            st.markdown("\n".join(lines), unsafe_allow_html=True)
+        else:
+            st.markdown(_render_md(action_text, cited_ids), unsafe_allow_html=True)
 
-    if ordered:
-        _render_evidence_table(ordered, cited_set, large=large)
+    _render_evidence_table(ordered, cited_set, large=large)
 
     with st.expander("🔍 查询详情（Cypher / 耗时 / 模型元信息）", expanded=False):
         cols = st.columns(4)
