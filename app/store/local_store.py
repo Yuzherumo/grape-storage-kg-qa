@@ -105,6 +105,30 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _template_param_names(template: str) -> List[str]:
+    """按首次出现顺序提取 Cypher 模板里实际用到的 ``$参数`` 名。"""
+    names: List[str] = []
+    for match in _CYPHER_PARAM_RE.finditer(template or ""):
+        name = match.group(1)
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def _format_cypher_value(value: Any) -> str:
+    """把参数值格式化成 Cypher 风格字面量（仅用于 ``// params:`` 展示注释）。"""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return repr(value)
+    if isinstance(value, (list, tuple, set)):
+        return "[" + ", ".join(_format_cypher_value(item) for item in value) + "]"
+    text = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{text}"'
+
+
 class LocalStore(GraphStore):
     """纯标准库内存邻接表后端。线程内只读，可安全复用于多轮问答。"""
 
@@ -831,17 +855,52 @@ class LocalStore(GraphStore):
 
     # ================================================================ 展示/健康
     def query_cypher(self, spec: QuerySpec) -> List[str]:
+        """返回 ``[header, params, template]`` 三个**非空**元素（供 UI 原样展示）。
+
+        - 不再返回空分隔元素（UI 逐元素 ``st.code``，空串会渲染空白代码框）；
+        - ``params`` 行只列模板里真实出现的 ``$`` 参数（去掉 ``intent``/``k`` 等非 Cypher 参数，
+          ``k`` 映射为模板的 ``$limit``），列表用 Cypher 风格双引号；
+        - 找不到模板时只返回 header（列表仍非空，qa-tester e2e 不依赖模板存在）。
+        """
         intent = _clean(getattr(spec, "intent", "")) or "general"
-        lines = [f"// backend=local（内存邻接表检索，下方为该意图的等价 Cypher 模板，参数见 QuerySpec）"]
-        params = getattr(spec, "params", None) or {}
-        if params:
-            rendered = ", ".join(f"{key}={params[key]!r}" for key in sorted(params) if key != "question")
-            if rendered:
-                lines.append(f"// params: {rendered}")
+        lines: List[str] = ["// backend=local（内存邻接表检索，下方为该意图的等价 Cypher 模板，参数见 QuerySpec）"]
         template = self._template_text(intent)
         if template:
-            lines.extend(["", template])
-        return lines
+            rendered = self._render_cypher_params(spec, template)
+            if rendered:
+                lines.append(
+                    "// params: "
+                    + ", ".join(f"{name}={_format_cypher_value(value)}" for name, value in rendered)
+                )
+            lines.append(template)
+        return [line for line in lines if line.strip()]
+
+    def _render_cypher_params(self, spec: QuerySpec, template: str) -> List[Tuple[str, Any]]:
+        """按模板参数名收集并格式化参数值（只保留模板实际用到的 ``$`` 参数）。"""
+        names = _template_param_names(template)
+        if not names:
+            return []
+        params = getattr(spec, "params", None) or {}
+        cypher_params = getattr(spec, "cypher_params", None) or {}
+        merged: Dict[str, Any] = {}
+        if isinstance(params, Mapping):
+            merged.update(params)
+        if isinstance(cypher_params, Mapping):
+            merged.update(cypher_params)
+
+        limit_value = merged.get("limit", merged.get("k"))
+        limit_number = to_float(limit_value)
+        limit = int(limit_number) if limit_number is not None else self.k_default
+        values: Dict[str, Any] = {name: as_list(merged.get(name)) for name in _LIST_PARAM_NAMES}
+        values["limit"] = max(1, min(50, limit))
+
+        rendered: List[Tuple[str, Any]] = []
+        for name in names:
+            if name in values:
+                rendered.append((name, values[name]))
+            elif name in merged:
+                rendered.append((name, merged[name]))
+        return rendered
 
     def _template_text(self, intent: str) -> str:
         path = self.queries_dir / f"{intent}.cypher"
