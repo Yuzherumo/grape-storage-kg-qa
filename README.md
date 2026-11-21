@@ -34,6 +34,7 @@
 ```
 
 > 打包/换机器：`.\scripts\make_release.ps1` 生成不含密钥与 PDF 的干净快照（见 [packaging.md](docs/packaging.md)）。
+> **公网 Demo**：三种上线方式（Streamlit Cloud / 魔搭创空间 / 本地内网穿透）见 [deploy.md](docs/deploy.md)；临时公网地址可跑 `.\scripts\run_public_tunnel.ps1`。
 > `install.ps1` 已处理「打包版 Python 无 ensurepip」的情况（改用基础解释器的 `pip --python` 安装）。
 
 没有 API Key 也能完整演示：系统自动进入**离线模板模式**，答案仍带 `[E#]` 引用、来源与分步动作。
@@ -132,8 +133,10 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 .
 ├─ install.ps1                 # 一键装环境（自动处理无 pip 的打包版 Python）
 ├─ run.ps1                     # 一键启动（数据校验 → Cypher 校验 → 图谱自检 → Streamlit）
+├─ app.py                      # 云端部署入口（Streamlit Cloud / 魔搭创空间默认找 app.py）
 ├─ LICENSE                     # 版权声明（团队所有，赛事评审使用）
 ├─ requirements.txt / pyproject.toml / pytest.ini / .env.example / README.md
+├─ .streamlit/                 # 主题配置 + Secrets 模板（云端部署用，secrets.toml 不提交）
 ├─ data/                       # 唯一数据源
 │  ├─ entities.csv             # 58 个实体节点（含农户口语别名、病害症状）
 │  ├─ triples.csv              # 108 条三元组（61 verified / 47 anchor）
@@ -146,7 +149,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
 ├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable / make_release
 ├─ tests/                      # 120 个测试（118 passed / 2 skipped，含 M6/M8 回归）
-├─ docs/                       # api / spec / sources / eval_results / neo4j_verify / packaging / demo_script / submission / ai_usage
+├─ docs/                       # api / spec / sources / eval_results / neo4j_verify / packaging / deploy / demo_script / submission / ai_usage
 ├─ .refs/                      # 本机文献 PDF（gitignore，不随包分发）
 └─ dist/                       # 打包产物（gitignore）
 ```
@@ -159,6 +162,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 | 一键启动 | `.\run.ps1` |
 | 只自检 | `.\run.ps1 -Check` |
 | **打包交付快照** | `.\scripts\make_release.ps1 -Version v1.0`（可选 `-WithGitBundle`） |
+| 临时公网地址（cloudflared） | `.\scripts\run_public_tunnel.ps1`（需本地 8501 已启动） |
 | 数据十项校验 | `.\.venv\Scripts\python.exe scripts\validate_data.py` |
 | Cypher 静态校验（标签/关系/参数/计数） | `.\.venv\Scripts\python.exe scripts\validate_cypher.py` |
 | 嵌入式 openCypher 实跑（Kùzu，无需 Neo4j） | `.\.venv\Scripts\python.exe scripts\verify_cypher_engine.py` |
@@ -186,7 +190,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 
 | 交付物 | 位置 |
 |---|---|
-| 在线 Demo | `.\run.ps1` → `http://127.0.0.1:8501` |
+| 在线 Demo | 本地 `.\run.ps1` → `http://127.0.0.1:8501`；公网见 `docs/deploy.md`（Streamlit Cloud / 魔搭创空间 / 临时隧道） |
 | 200 字简介 | `docs/submission.md` |
 | 代码仓库 / 干净快照 | `.\scripts\make_release.ps1` → `dist/*.zip`（含 MANIFEST + SHA256；可选 git bundle） |
 | 图谱与 Cypher 快照 | 已包含在上面的 zip 中（`data/`、`graph/`） |

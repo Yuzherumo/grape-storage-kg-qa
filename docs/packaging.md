@@ -16,12 +16,13 @@
 
 ## 2. 打包原则：白名单收录、黑名单强校验
 
-**收录（白名单）**：`app/ data/ graph/ scripts/ tests/ docs/ .github/`、`README.md`、`LICENSE`、`requirements.txt`、`pyproject.toml`、`pytest.ini`、`.env.example`、`.gitignore`、`run.ps1`、`install.ps1`。
+**收录（白名单）**：`app/ data/ graph/ scripts/ tests/ docs/ .github/ .streamlit/`、`README.md`、`LICENSE`、`requirements.txt`、`pyproject.toml`、`pytest.ini`、`.env.example`、`.gitignore`、`run.ps1`、`install.ps1`、`app.py`（云端入口）。
 
 **排除（黑名单）**：
 | 项 | 原因 |
 |---|---|
 | `.env` | 含真实 `DEEPSEEK_API_KEY`；只保留 `.env.example` |
+| `.streamlit/secrets.toml` | 云端密钥文件；只保留 `.streamlit/secrets.toml.example` |
 | `*.pdf` | 第三方标准/论文原件，版权原因不随包分发；只保留题录与条级摘录 |
 | `.venv/ .tools/ .refs/ .tmp/` | 本机环境、下载物、缓存 |
 | `.git/` | 如需开发历史，用 `-WithGitBundle` 另生成 `git bundle` |

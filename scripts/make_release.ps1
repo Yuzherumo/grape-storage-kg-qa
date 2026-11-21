@@ -58,9 +58,9 @@ New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
 $files = @(
     "README.md", "LICENSE", "requirements.txt", "pyproject.toml", "pytest.ini",
-    ".env.example", ".gitignore", "run.ps1", "install.ps1"
+    ".env.example", ".gitignore", "run.ps1", "install.ps1", "app.py"
 )
-$dirs = @("app", "data", "graph", "scripts", "tests", "docs", ".github")
+$dirs = @("app", "data", "graph", "scripts", "tests", "docs", ".github", ".streamlit")
 
 foreach ($f in $files) {
     if (Test-Path -LiteralPath (Join-Path $ws $f)) { Copy-Item -LiteralPath (Join-Path $ws $f) -Destination $stage -Force }
@@ -71,7 +71,7 @@ foreach ($d in $dirs) {
     $dst = Join-Path $stage $d
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
     Get-ChildItem -LiteralPath $src -Recurse -File | Where-Object {
-        $_.FullName -notmatch "\\__pycache__\\|\\\.pytest_cache\\|\.pyc$|\.pdf$|\\_shots\\"
+        $_.FullName -notmatch "\\__pycache__\\|\\\.pytest_cache\\|\.pyc$|\.pdf$|\\_shots\\|secrets\.toml$"
     } | ForEach-Object {
         $rel = $_.FullName.Substring($src.Length).TrimStart("\")
         $target = Join-Path $dst $rel
@@ -93,7 +93,7 @@ $archive = [System.IO.Compression.ZipFile]::OpenRead($zip)
 $entries = $archive.Entries | ForEach-Object { $_.FullName }
 $archive.Dispose()
 $forbidden = $entries | Where-Object {
-    $_ -match "(^|/)\.env$" -or $_ -match "\.pdf$" -or $_ -match "(^|/)\.venv" -or
+    $_ -match "(^|/)\.env$" -or $_ -match "secrets\.toml$" -or $_ -match "\.pdf$" -or $_ -match "(^|/)\.venv" -or
     $_ -match "(^|/)\.refs" -or $_ -match "(^|/)\.tools" -or $_ -match "(^|/)\.tmp" -or
     $_ -match "(^|/)\.git/" -or $_ -match "__pycache__" -or $_ -match "pytest-cache"
 }
@@ -123,10 +123,12 @@ $lines = @(
     "- 脚本：``scripts/``（校验/生成/评测/导入/打包）",
     "- 测试：``tests/``（118 passed / 2 skipped 离线可跑）",
     "- 文档：``docs/``（api/spec/sources/eval/neo4j_verify/demo/submission/ai_usage 等）",
-    "- 入口：``README.md``、``install.ps1``、``run.ps1``、``requirements.txt``、``.env.example``、``pyproject.toml``、``pytest.ini``、``LICENSE``",
+    "- 入口：``README.md``、``install.ps1``、``run.ps1``、``app.py``、``requirements.txt``、``.env.example``、``pyproject.toml``、``pytest.ini``、``LICENSE``",
+    "- 部署：``.streamlit/config.toml``（主题）、``.streamlit/secrets.toml.example``（Secrets 模板）、``docs/deploy.md``（云端部署步骤）",
     "",
     "## 排除（及原因）",
     "- ``.env``：含真实 API Key，仅本机使用（模板见 ``.env.example``）",
+    "- ``.streamlit/secrets.toml``：云端密钥文件，不随包分发（模板见 ``.streamlit/secrets.toml.example``）",
     "- ``*.pdf``：第三方论文/标准 PDF，版权原因不随包分发（仅引用题录与条级摘录，见 ``docs/sources.md``）",
     "- ``.venv/.tools/.tmp/.refs``：本机环境/下载物/缓存",
     "- ``.git``：可用 ``git bundle`` 另附开发历史（``-WithGitBundle``）",

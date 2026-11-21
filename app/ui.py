@@ -148,8 +148,37 @@ def _resolve(module: str, attr: str) -> Any:
         return None
 
 
+_SECRET_KEYS = (
+    "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_BASE_URL",
+    "GRAPH_BACKEND", "NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD",
+    "UI_TOPK", "UI_LARGE_FONT", "UI_SHOW_CYPHER", "LLM_TIMEOUT",
+)
+
+
+def _bridge_secrets() -> None:
+    """云端部署（Streamlit Cloud / 魔搭创空间）用 st.secrets 注入配置。
+
+    本地有 .env 时以 .env 为准；云端没有 .env，就把 secrets 写进环境变量，
+    再交给 app.config.load_settings() 统一读取。
+    """
+    try:
+        secrets = st.secrets
+    except Exception:  # noqa: BLE001  （无 secrets.toml 时抛异常）
+        return
+    for key in _SECRET_KEYS:
+        if os.getenv(key):
+            continue
+        try:
+            value = secrets[key]
+        except Exception:  # noqa: BLE001
+            continue
+        if value is not None and str(value).strip() != "":
+            os.environ[key] = str(value)
+
+
 @st.cache_resource(show_spinner=False)
 def load_runtime() -> Runtime:
+    _bridge_secrets()
     rt = Runtime()
     try:
         from app.config import load_settings
