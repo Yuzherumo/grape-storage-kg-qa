@@ -34,13 +34,13 @@ from app.contracts import AnswerResult, Evidence
 
 DATA = ROOT / "data"
 
-EXAMPLES: List[Tuple[str, str]] = [
-    ("🌡️", "阳光玫瑰放冷库该调到多少度？"),
-    ("🍄", "冷库里葡萄长白毛了怎么办？"),
-    ("💧", "阳光玫瑰库房湿度要调到多少？"),
-    ("⚖️", "阳光玫瑰和巨峰哪个更能放？"),
-    ("🚫", "用 SO₂ 熏阳光玫瑰行不行？"),
-    ("❄️", "-18℃ 冻起来能存一年吗？"),
+EXAMPLES: List[str] = [
+    "阳光玫瑰放冷库该调到多少度？",
+    "冷库里葡萄长白毛了怎么办？",
+    "阳光玫瑰库房湿度要调到多少？",
+    "阳光玫瑰和巨峰哪个更能放？",
+    "用 SO₂ 熏阳光玫瑰行不行？",
+    "-18℃ 冻起来能存一年吗？",
 ]
 
 
@@ -335,7 +335,7 @@ html{ font-size:18px; }
 # ---------------------------------------------------------------- 侧栏
 def render_sidebar(rt: Runtime) -> Dict[str, Any]:
     with st.sidebar:
-        st.markdown('<div class="ds-logo"><span class="mark">🍇</span>葡萄冷库知识库</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ds-logo"><span class="mark">葡</span>葡萄冷库知识库</div>', unsafe_allow_html=True)
         if st.button("＋ 新建对话", use_container_width=True, key="new_chat"):
             st.session_state["turns"] = []
             st.rerun()
@@ -393,14 +393,14 @@ def render_sidebar(rt: Runtime) -> Dict[str, Any]:
 # ---------------------------------------------------------------- 渲染
 def _warn_cls(raw: str) -> Tuple[str, str]:
     if raw.startswith("unsourced_number") or raw.startswith("out_of_range") or raw == "out_of_range":
-        return "amber", "⚠️"
+        return "amber", "越界"
     if raw in ("no_evidence", "no_citation") or raw.startswith("invalid_citation"):
-        return "red", "⛔"
+        return "red", "未收录"
     if raw in ("llm_timeout", "llm_unavailable"):
-        return "amber", "⏱️"
+        return "amber", "超时"
     if raw == "single_source":
-        return "gray", "🔗"
-    return "blue", "ℹ️"
+        return "gray", "单来源"
+    return "blue", "提示"
 
 
 def _warn_text(raw: str) -> str:
@@ -426,7 +426,8 @@ def _render_warnings(warnings: Sequence[str]) -> None:
     if not warnings:
         return
     pills = "".join(
-        f'<span class="ds-warn {_warn_cls(w)[0]}">{_warn_cls(w)[1]} {_esc(_warn_text(w))}</span>' for w in warnings
+        f'<span class="ds-warn {_warn_cls(w)[0]}">{_esc(_warn_cls(w)[1])} · {_esc(_warn_text(w))}</span>'
+        for w in warnings
     )
     st.markdown(pills, unsafe_allow_html=True)
 
@@ -448,7 +449,7 @@ def _render_evidence(ev: Evidence, *, cited: bool) -> None:
 
 
 def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) -> None:
-    st.markdown('<div class="ds-role"><span class="mark">🍇</span>葡萄冷库助手</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ds-role"><span class="mark">葡</span>葡萄冷库助手</div>', unsafe_allow_html=True)
     _render_warnings(result.warnings)
 
     concl, basis, action = _split_answer(result.answer)
@@ -473,7 +474,7 @@ def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) ->
                 )
 
     if result.context_note:
-        st.caption(f"↩️ {result.context_note}")
+        st.caption(f"承接上一轮 · {result.context_note}")
 
     meta = [f"意图 {result.intent}", f"模式 {'在线' if result.mode == 'llm' else '离线模板'}",
             f"耗时 {result.elapsed_ms} ms", f"证据 {len(result.evidence)} 条"]
@@ -497,8 +498,7 @@ def render_user(question: str) -> None:
 
 # ---------------------------------------------------------------- 主流程
 def main() -> None:
-    st.set_page_config(page_title="葡萄冷库知识库", page_icon="🍇", layout="centered",
-                       initial_sidebar_state="expanded")
+    st.set_page_config(page_title="葡萄冷库知识库", layout="centered", initial_sidebar_state="expanded")
     st.markdown(CSS, unsafe_allow_html=True)
 
     rt = load_runtime()
@@ -524,8 +524,8 @@ def main() -> None:
         )
         with st.container(key="examples"):
             cols = st.columns(2)
-            for idx, (icon, q) in enumerate(EXAMPLES):
-                if cols[idx % 2].button(f"{icon} {q}", key=f"ex_{idx}", use_container_width=True):
+            for idx, q in enumerate(EXAMPLES):
+                if cols[idx % 2].button(q, key=f"ex_{idx}", use_container_width=True):
                     st.session_state["pending_question"] = q
                     st.rerun()
 
