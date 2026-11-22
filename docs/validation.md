@@ -5,7 +5,7 @@
 ## 1. 记录口径
 
 - 记录时间：2026-11-22（Asia/Shanghai）。
-- 代码状态：本地工作区基于 commit `af80a52`，但**存在未提交的可靠性加固改动**（`app/qa.py`、`app/llm.py`、`app/ui.py` 等）和未跟踪测试文件（`tests/test_config_validation.py` 等）。本文结果来自当前工作区的一次完整运行，不代表远端仓库 `main` 的已提交状态。
+- 代码状态：本地工作区基于 commit `9093d90`（已包含可靠性加固、CI 修复与 2026-11-22 数据更新），无未提交改动；本文结果来自该工作区的一次完整运行。
 - 测试环境：Windows 11（10.0.26100）、Python 3.12.14、pytest 9.2.0、Streamlit 1.67.0、openai 3.57.0、pandas 3.1.1、Kùzu 0.11.3、ruff 0.17.6、coverage 7.17.4。
 - 详细依赖版本由 `scripts/env_check.py` 生成到 [env_check.md](env_check.md)。
 
@@ -129,7 +129,7 @@ CI 通过只代表上述静态/离线步骤通过，不覆盖真实 Neo4j、在�
 | 日期 | 版本/提交 | 结果 | 说明 |
 |---|---|---|---|
 | 2026-11-21 | M9（`7e34732` 前后） | 118 条通过 / 2 跳过；在线 LLM 6 题通过 | 当时测试规模较小；后续可靠性加固新增测试 |
-| 2026-11-22 | 工作区（基于 `af80a52`，含未提交改动） | 287 passed / 2 skipped；覆盖率 82%；数据/Cypher/Kùzu/eval 通过 | 本文主要记录 |
+| 2026-11-22 | `9093d90`（数据更新后） | 287 passed / 2 skipped；覆盖率 82%；数据/Cypher/Kùzu/eval 通过；CI run `44984323892` 双 job 通过 | 本文主要记录；新增 3 来源、7 三元组 |
 | 2026-11-22 | 远端 `4099009` | CI 在 Kùzu 步骤失败 | `ModuleNotFoundError: app`，随后修复 |
 | 2026-11-22 | 远端 `a73f89e` | **CI 两个 job 全部通过** | 当前记录；Ubuntu test + Windows scripts |
 
