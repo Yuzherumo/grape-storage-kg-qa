@@ -29,8 +29,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from app.contracts import AnswerResult, Evidence
+from app.graph_interactive import interactive_html
 from app.graph_view import ego_graph, graph_summary, load_graph, to_svg
 
 DATA = ROOT / "data"
@@ -233,20 +235,24 @@ def _rows(path: Path) -> int:
 
 
 @st.cache_data(show_spinner=False)
-def build_graph_svg(view: str) -> Tuple[str, Dict[str, int]]:
-    """生成知识图谱 SVG（纯标准库布局；view=all|shine）。"""
+def build_graph_html(view: str) -> Tuple[str, Dict[str, int]]:
+    """生成可交互知识图谱 HTML（点击节点看邻居；view=all|shine）。"""
     try:
         graph = load_graph(DATA)
         if view == "shine":
             graph = ego_graph(graph, "shine_muscat")
-            svg = to_svg(graph, width=1400, height=820,
-                         title="阳光玫瑰（Shine Muscat）子图",
-                         subtitle="与该品种直接相连的储藏条件、品质指标、病害与禁忌关系；悬停节点看详情")
+            html_doc = interactive_html(
+                graph, width=1400, height=820,
+                title="阳光玫瑰（Shine Muscat）子图",
+                subtitle="点击节点查看关联条件/指标/病害；滚轮缩放，拖拽平移",
+            )
         else:
-            svg = to_svg(graph, width=1600, height=980,
-                         title="鲜食葡萄储藏知识图谱",
-                         subtitle="GB/T 16862-2026 条文 + 5 篇综述；实线=已核验，虚线=待核验；来源通过 source_ids 关联")
-        return svg, graph_summary(graph)
+            html_doc = interactive_html(
+                graph, width=1600, height=980,
+                title="鲜食葡萄储藏知识图谱",
+                subtitle="点击节点看关联；实线=已核验，虚线=待核验；来源通过 source_ids 关联",
+            )
+        return html_doc, graph_summary(graph)
     except Exception as exc:  # noqa: BLE001
         return "<p>图谱渲染失败：" + _esc(exc) + "</p>", {}
 
@@ -570,9 +576,9 @@ def main() -> None:
     )
     if cfg.get("show_graph"):
         view_key = "shine" if cfg.get("graph_view") == "阳光玫瑰子图" else "all"
-        svg, summary = build_graph_svg(view_key)
+        graph_html, summary = build_graph_html(view_key)
         st.markdown('<div class="ds-side-title">知识图谱</div>', unsafe_allow_html=True)
-        st.markdown('<div class="ds-graph">' + svg + "</div>", unsafe_allow_html=True)
+        components.html(graph_html, height=800, scrolling=False)
         if summary:
             st.caption(
                 "节点 " + str(summary.get("nodes", 0)) + "（品种 " + str(summary.get("Variety", 0)) +
