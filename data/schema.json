@@ -392,17 +392,17 @@
   "groups": {
     "A": {
       "predicate": "REQUIRES",
-      "target": 26,
+      "target": 27,
       "zh": "品种-储藏条件"
     },
     "B": {
       "predicate": "CONTRA_INDICATED_FOR",
-      "target": 3,
+      "target": 4,
       "zh": "禁忌"
     },
     "C": {
       "predicate": "AFFECTS",
-      "target": 19,
+      "target": 24,
       "zh": "条件-指标影响"
     },
     "D": {
@@ -438,10 +438,10 @@
   },
   "groups_rebalance_note": "S2b 期按 Lead 指令两次调整：(1) C 18→16（删 2 条同类边：低温→果梗褐变、常温→失重），I 6→8（补夏黑/玫瑰香耐贮性，Q2 品种对比依赖），总数仍 68；(2) 再补 3 条 C 组 AFFECTS（臭氧→腐烂率、低温→硬度、气调O2→维生素C），消除 3 个孤立节点（臭氧处理/硬度/维生素C），总数 68→71，Lead 已接受『≥68』。最终分组：A14 B3 C19 D8 E8 F6 G3 H2 I8 = 71。",
   "triple_targets": {
-    "target": 108,
+    "target": 115,
     "floor": 50,
     "shine_muscat_min": 20,
-    "note": "M8 国标条文入库后口径；原计划 68，现按实际条数维护"
+    "note": "截至 2026-11-22 实际条数（含 MOA 指南与 2018 温度试验论文新增）"
   },
   "validation_checks": [
     "1 列完整性：entities/triples/sources 表头与 csv_columns 一致",

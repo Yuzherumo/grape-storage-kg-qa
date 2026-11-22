@@ -2,7 +2,7 @@
 // graph/init_rels.cypher —— 图谱关系初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/triples.csv 生成
 // 幂等：MERGE (a)-[r:PREDICATE {sid: ...}]->(b) —— 可重复执行
-// 统计：共 108 条关系（REQUIRES 26，CONTRA_INDICATED_FOR 3，AFFECTS 19，SUSCEPTIBLE_TO 8，PREVENTED_BY 22，INDUCED_BY 7，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 18）
+// 统计：共 115 条关系（REQUIRES 27，CONTRA_INDICATED_FOR 4，AFFECTS 24，SUSCEPTIBLE_TO 8，PREVENTED_BY 22，INDUCED_BY 7，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 18）
 // 关系属性含 source_ids/locator/quote/status/confidence（证据溯源必需）
 // =============================================================================
 
@@ -10,7 +10,7 @@
 MATCH (n) RETURN count(n) AS node_count_before;
 
 
-// ---------------- REQUIRES（26 条） ----------------
+// ---------------- REQUIRES（27 条） ----------------
 MATCH (a:Variety {id: 'crimson_seedless'}), (b:Condition {id: 'ice_temp'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_crimson_ice',
@@ -105,11 +105,11 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.unit = '℃',
          r.stage = '贮藏',
          r.reason = '夏黑早熟皮薄，0±0.5℃ 冷藏可抑制呼吸并减少落粒',
-         r.source_ids = ['gbt16862_2026', 'review_grape_storage'],
+         r.source_ids = ['gbt16862_2026', 'review_grape_storage', 'moa_quality_2023'],
          r.locator = 'GB/T 16862-2026 冷藏技术要求相关条款（openstd 在线预览；条款号/页码待获取原文后补）',
          r.status = 'anchor',
          r.confidence = 0.64,
-         r.note = '待核验点：夏黑冷藏温度原文数据缺失，按通用冷藏区间填写，需试验验证';
+         r.note = 'MOA 2023：中早熟品种适宜 0±0.5℃；夏黑按中早熟类别归入，公开原文类别口径，待品种级验证；待核验';
 MATCH (a:Variety {id: 'victoria'}), (b:Condition {id: 'cold_chain_transport'})
 MERGE (a)-[r:REQUIRES]->(b)
   SET r.sid = 'a_victoria_coldchain',
@@ -404,9 +404,21 @@ MERGE (a)-[r:REQUIRES]->(b)
          r.quote = '纸箱容重不宜超过8kg,箱体应清洁、干燥、坚实牢固耐压、内壁平滑。木条箱和塑料周转箱容重不宜超过10kg,内衬柔性缓冲材料。',
          r.status = 'verified',
          r.confidence = 0.95,
-         r.note = '包装规格要求';
+         r.note = '包装规格要求；MOA 2023 补充：每件≤10kg、以5kg以内为宜（本行保留 GB 纸箱≤8kg 口径）';
+MATCH (a:Variety {id: 'kyoho'}), (b:Condition {id: 'precool_fast'})
+MERGE (a)-[r:REQUIRES]->(b)
+  SET r.sid = 'a_kyoho_precool',
+         r.subject = '巨峰',
+         r.predicate = 'REQUIRES',
+         r.object = '快速预冷（12h 内至 0℃）',
+         r.source_ids = ['moa_storage_2023'],
+         r.locator = '四、葡萄贮藏技术要点（七）预冷',
+         r.quote = '巨峰系预冷时间不超过12小时，以减少贮藏过程中脱粒，其他品种以品温达到0℃为预冷终点。',
+         r.status = 'verified',
+         r.confidence = 0.86,
+         r.note = '农业农村部 2023 操作规程；巨峰系 12h 预冷上限';
 
-// ---------------- CONTRA_INDICATED_FOR（3 条） ----------------
+// ---------------- CONTRA_INDICATED_FOR（4 条） ----------------
 MATCH (a:Condition {id: 'so2_fumigation'}), (b:Variety {id: 'muscat_hamburg'})
 MERGE (a)-[r:CONTRA_INDICATED_FOR]->(b)
   SET r.sid = 'b_kyoho_contra_so2',
@@ -450,8 +462,21 @@ MERGE (a)-[r:CONTRA_INDICATED_FOR]->(b)
          r.status = 'verified',
          r.confidence = 0.72,
          r.note = '待核验点：SO₂ 熏蒸剂量-伤害阈值（ppm·h）与漂白/异味的原文数据；本条目为禁忌（B 组），已备 3 篇来源待逐条核对；SO2 伤害通识依据；阳光玫瑰特异敏感性来自另两篇论文（note 保留）';
+MATCH (a:Condition {id: 'so2_fumigation'}), (b:Variety {id: 'red_globe'})
+MERGE (a)-[r:CONTRA_INDICATED_FOR]->(b)
+  SET r.sid = 'b_redglobe_contra_so2',
+         r.subject = 'SO₂ 熏蒸',
+         r.predicate = 'CONTRA_INDICATED_FOR',
+         r.object = '红地球',
+         r.severity = '中',
+         r.source_ids = ['moa_storage_2023'],
+         r.locator = '一、葡萄贮藏特性 2. 贮藏过程中易出现的问题；（三）采前处理',
+         r.quote = '红地球贮藏过程中易发生二氧化硫伤害。红地球等对二氧化硫敏感的葡萄品种，在贮藏过程中不能大量使用二氧化硫。',
+         r.status = 'verified',
+         r.confidence = 0.84,
+         r.note = '单来源，建议后续实验验证；农业农村部 2023 操作规程（红地球对 SO₂ 敏感）';
 
-// ---------------- AFFECTS（19 条） ----------------
+// ---------------- AFFECTS（24 条） ----------------
 MATCH (a:Condition {id: 'ca_co2'}), (b:QualityIndicator {id: 'decay_rate'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_caco2_decay',
@@ -744,6 +769,71 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.status = 'anchor',
          r.confidence = 0.75,
          r.note = '待核验点：不同 RH 下失重率对比数据原文；结露与灰霉风险的平衡点';
+MATCH (a:Condition {id: 'cold_0'}), (b:QualityIndicator {id: 'berry_drop'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_cold0_berrydrop',
+         r.subject = '低温冷藏 0±0.5℃',
+         r.predicate = 'AFFECTS',
+         r.object = '落粒率',
+         r.effect = 'decrease',
+         r.source_ids = ['paper_kyoho_temp_2018'],
+         r.locator = '2.1.2 不同贮藏温度对失重率、掉粒率、腐烂率的影响',
+         r.quote = '0℃贮藏的葡萄掉粒不明显，直至42天后掉粒率维持在10%以下。',
+         r.status = 'verified',
+         r.confidence = 0.82,
+         r.note = '巨峰 2018 试验；0℃ 42d 落粒率 <10%';
+MATCH (a:Condition {id: 'cold_0'}), (b:QualityIndicator {id: 'weight_loss'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_cold0_weightloss',
+         r.subject = '低温冷藏 0±0.5℃',
+         r.predicate = 'AFFECTS',
+         r.object = '失重率',
+         r.effect = 'decrease',
+         r.source_ids = ['paper_kyoho_temp_2018'],
+         r.locator = '2.1.2 不同贮藏温度对失重率、掉粒率、腐烂率的影响',
+         r.quote = '而0℃贮藏下的葡萄在42天后失重率维持在6%以下。',
+         r.status = 'verified',
+         r.confidence = 0.82,
+         r.note = '巨峰 2018 试验；0℃ 42d 失重率 <6%';
+MATCH (a:Condition {id: 'room_temp_storage'}), (b:QualityIndicator {id: 'decay_rate'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_roomtemp_decay',
+         r.subject = '常温贮运',
+         r.predicate = 'AFFECTS',
+         r.object = '腐烂率',
+         r.effect = 'increase',
+         r.source_ids = ['paper_kyoho_temp_2018'],
+         r.locator = '2.1.2 不同贮藏温度对失重率、掉粒率、腐烂率的影响',
+         r.quote = '贮藏7天后，25℃贮藏葡萄腐烂率由3.3%显著上升至23.0%。',
+         r.status = 'verified',
+         r.confidence = 0.82,
+         r.note = '巨峰 2018 试验；25℃ 7d 腐烂率 3.3%→23.0%';
+MATCH (a:Condition {id: 'room_temp_storage'}), (b:QualityIndicator {id: 'berry_drop'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_roomtemp_berrydrop',
+         r.subject = '常温贮运',
+         r.predicate = 'AFFECTS',
+         r.object = '落粒率',
+         r.effect = 'increase',
+         r.source_ids = ['paper_kyoho_temp_2018'],
+         r.locator = '2.1.1 不同贮藏温度下巨峰葡萄的外观变化',
+         r.quote = '25℃常温贮藏的葡萄在一周后就发生明显的掉粒，说明低温贮藏能延长巨峰葡萄的贮藏期。',
+         r.status = 'verified',
+         r.confidence = 0.82,
+         r.note = '巨峰 2018 试验；25℃ 1 周明显掉粒';
+MATCH (a:Condition {id: 'room_temp_storage'}), (b:QualityIndicator {id: 'weight_loss'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_roomtemp_weightloss',
+         r.subject = '常温贮运',
+         r.predicate = 'AFFECTS',
+         r.object = '失重率',
+         r.effect = 'increase',
+         r.source_ids = ['paper_kyoho_temp_2018'],
+         r.locator = '2.1.2 不同贮藏温度对失重率、掉粒率、腐烂率的影响',
+         r.quote = '其中，25℃贮藏下的葡萄在7天后失重率明显上升。',
+         r.status = 'verified',
+         r.confidence = 0.82,
+         r.note = '巨峰 2018 试验；25℃ 7d 后失重率明显上升';
 
 // ---------------- SUSCEPTIBLE_TO（8 条） ----------------
 MATCH (a:Variety {id: 'kyoho'}), (b:Disease {id: 'gray_mold'})
@@ -1352,25 +1442,27 @@ MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
          r.unit = '月',
          r.stage = '贮藏',
          r.reason = '规范冷藏条件下巨峰商品果耐贮期约 3~4 个月',
-         r.source_ids = ['review_grape_storage', 'review_table_grape_en'],
+         r.source_ids = ['review_grape_storage', 'moa_storage_2023'],
          r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
          r.status = 'anchor',
          r.confidence = 0.62,
-         r.note = '待核验点：巨峰耐贮期 3~4 月为 Lead 领域口径，原文区间与贮藏前提（温度/SO2/包装）待核验';
+         r.note = 'MOA 2023：优质巨峰一般不超过5个月；与本行 3~4 月区间并列保留（不同前提）；待核验';
 MATCH (a:Variety {id: 'muscat_hamburg'}), (b:QualityIndicator {id: 'shelf_life'})
 MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
   SET r.sid = 'i_muscat_hamburg_shelf',
          r.subject = '玫瑰香',
          r.predicate = 'HAS_INDICATOR_VALUE',
          r.object = '耐贮性',
+         r.value_max = 5,
          r.unit = '月',
          r.stage = '贮藏',
          r.reason = '玫瑰香为中熟浓香品种，耐贮性偏短（具体月数原文缺失，本条仅登记为待补项）',
-         r.source_ids = ['review_grape_storage', 'review_table_grape_en'],
-         r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
-         r.status = 'anchor',
+         r.source_ids = ['moa_storage_2023'],
+         r.locator = '四、葡萄贮藏技术要点（九）出库',
+         r.quote = '优质巨峰、玫瑰香、龙眼葡萄一般不超过5个月。',
+         r.status = 'verified',
          r.confidence = 0.5,
-         r.note = '待核验点：玫瑰香耐贮期原文数值缺失，暂不填数值（避免编造），待补文献后回填 value_min/value_max';
+         r.note = 'MOA 2023：优质玫瑰香不超过5个月；原空值回填，不再标注待补';
 MATCH (a:Variety {id: 'red_globe'}), (b:QualityIndicator {id: 'shelf_life'})
 MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
   SET r.sid = 'i_redglobe_shelf',
@@ -1382,11 +1474,11 @@ MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
          r.unit = '月',
          r.stage = '贮藏',
          r.reason = '红地球晚熟、果梗粗、较耐贮，规范冷藏可达 4~6 个月',
-         r.source_ids = ['review_grape_storage', 'gbt16862_2026'],
+         r.source_ids = ['review_grape_storage', 'moa_storage_2023'],
          r.locator = '《鲜食葡萄采后保鲜技术研究进展》（保鲜与加工 2024, 24(12)）综述正文；页码待获取原文后补',
          r.status = 'anchor',
          r.confidence = 0.64,
-         r.note = '待核验点：红地球耐贮期 4~6 月为 Lead 领域口径，原文区间与 SO2 处理前提待核验';
+         r.note = 'MOA 2023：西部优质红地球约3个月、东部一般不超过2.5个月；与本行 4~6 月不一致，保留待核；待核验';
 MATCH (a:Variety {id: 'summer_black'}), (b:QualityIndicator {id: 'shelf_life'})
 MERGE (a)-[r:HAS_INDICATOR_VALUE]->(b)
   SET r.sid = 'i_summer_black_shelf',

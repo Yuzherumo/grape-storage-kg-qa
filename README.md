@@ -4,7 +4,7 @@
 
 - 公网演示：<https://yuzherumo-grape-storage-kg-qa.ms.show>
 - 代码仓库：<https://github.com/Yuzherumo/grape-storage-kg-qa>
-- 当前版本：v1.1（2026-11-22）
+- 当前版本：v1.2（2026-11-22，新增农业农村部指南与 2018 温度试验数据）
 
 ## 1. 项目名称与一句话简介
 
@@ -85,12 +85,12 @@
 图谱规模按两个口径统计，避免混淆：
 
 - **知识实体 58 个**：品种 8、储藏条件 30、品质指标 13、病害 7；
-- **来源节点 16 个**：国标 1、综述 9、论文 5、行业资料 1；
-- **图谱节点 74 个** = 58 知识实体 + 16 来源节点（来源节点只用于溯源，不进入实体链接词表）；
-- **关系 108 条**：9 种谓词，`verified` 61 条、`anchor` 47 条；
+- **来源节点 19 个**：国标 1、综述 9、论文 6、行业资料 3；
+- **图谱节点 77 个** = 58 知识实体 + 19 来源节点（来源节点只用于溯源，不进入实体链接词表）；
+- **关系 115 条**：9 种谓词，`verified` 69 条、`anchor` 46 条；
 - 另有 28 个节点的科普描述（8 品种 / 7 病害 / 13 指标）、20 条阳光玫瑰核心子集快照。
 
-谓词分布：`REQUIRES` 26、`PREVENTED_BY` 22、`AFFECTS` 19、`HAS_INDICATOR_VALUE` 18、`SUSCEPTIBLE_TO` 8、`INDUCED_BY` 7、`CONTRA_INDICATED_FOR` 3、`ALTERNATIVE_TO` 3、`INDICATES` 2。
+谓词分布：`REQUIRES` 27、`PREVENTED_BY` 22、`AFFECTS` 24、`HAS_INDICATOR_VALUE` 18、`SUSCEPTIBLE_TO` 8、`INDUCED_BY` 7、`CONTRA_INDICATED_FOR` 4、`ALTERNATIVE_TO` 3、`INDICATES` 2。
 
 数据来源、字段含义、核验规则与统计依据见 [docs/data.md](docs/data.md)；来源清单与条文摘录见 [docs/sources.md](docs/sources.md)。
 
@@ -157,9 +157,9 @@ streamlit run app.py --server.port 8501
 |---|---|
 | pytest | 289 条收集，**287 passed / 2 skipped**（2 skipped：未安装 Neo4j 驱动的双后端一致性测试、默认跳过的 LLM 标记测试） |
 | 覆盖率 | `pytest --cov=app` → **82%**（`app/ui.py` 不在覆盖率统计内） |
-| 数据校验 | 十项校验通过，错误 0，告警 2（47 条 anchor 的 quote 为空、S2a 快照 11 条 quote 为空，均符合 anchor 规则） |
+| 数据校验 | 十项校验通过，错误 0，告警 2（46 条 anchor 的 quote 为空、S2a 快照 11 条 quote 为空，均符合 anchor 规则） |
 | Cypher | 13 个 `.cypher` 文件静态校验通过；CSV→Cypher 生成物无漂移 |
-| 图谱查询实跑 | Kùzu 0.11.3 内存库：74 节点 / 108 关系与 CSV 一致，6 道题结果与本地后端一致，4 条 verified 条文定点命中 |
+| 图谱查询实跑 | Kùzu 0.11.3 内存库：77 节点 / 115 关系与 CSV 一致，6 道题结果与本地后端一致，4 条 verified 条文定点命中 |
 | 黄金集评测 | 核心题 5/5、越界探针 1/1、口语变体意图 12/12、实体命中 12/12 |
 | CI | GitHub Actions 两个 job（Ubuntu test、Windows 脚本语法）通过 |
 
@@ -167,8 +167,8 @@ streamlit run app.py --server.port 8501
 
 ## 12. 已知限制
 
-- 图谱是演示级规模：8 个品种、7 种病害、30 个条件、13 个指标，共 108 条关系，不是全领域知识库；
-- 47 条关系仍为 `anchor`（原文未获取，标注待核验），其中多数依赖尚未获得的综述或论文；
+- 图谱是演示级规模：8 个品种、7 种病害、30 个条件、13 个指标，共 115 条关系，不是全领域知识库；
+- 46 条关系仍为 `anchor`（原文未获取，标注待核验），其中多数依赖尚未获得的综述或论文；
 - Neo4j 服务端未在当前网络实际运行（官方下载域名 403），以 Kùzu 等价查询、静态校验与便携安装脚本替代；双后端一致性测试因缺少驱动处于 skipped；
 - 引用与数值校验是规则启发式，不是自然语言事实蕴含，不能保证语义级正确；
 - 在线模式依赖外部 LLM 服务，回答有随机性；离线模板更稳定但表达较固定；
@@ -178,7 +178,7 @@ streamlit run app.py --server.port 8501
 
 ## 13. 后续改进方向
 
-1. 补齐未获取原文的文献，将 47 条 `anchor` 逐步升级为 `verified`；
+1. 补齐未获取原文的文献，将 46 条 `anchor` 逐步升级为 `verified`；
 2. 扩充品种、病害、贮藏条件与产地差异，建立数据更新与复核流程；
 3. 在真实 Neo4j 实例上完成导入、约束与双后端一致性验证；
 4. 引入人工评分集，评估答案可读性、可执行性与引用准确性，而不只做规则匹配；

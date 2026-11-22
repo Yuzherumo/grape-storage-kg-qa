@@ -2,7 +2,7 @@
 // graph/init_nodes.cypher —— 图谱节点初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/entities.csv + data/sources.csv 生成
 // 幂等：MERGE (n:Label {id: ...}) —— 可重复执行
-// 统计：共 74 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 16）
+// 统计：共 77 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 19）
 // 生成后校验：python scripts/gen_cypher.py --check
 // =============================================================================
 
@@ -525,7 +525,7 @@ MERGE (n:Disease {id: 'green_mold'})
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语';
 
-// ---------------- Source（16 个，来自 data/sources.csv） ----------------
+// ---------------- Source（19 个，来自 data/sources.csv） ----------------
 MERGE (n:Source {id: 'gbt16862_2026'})
   SET n.title = '鲜食葡萄冷藏技术（GB/T 16862-2026）',
          n.authors = '国家市场监督管理总局;国家标准化管理委员会（发布单位）',
@@ -643,6 +643,31 @@ MERGE (n:Source {id: 'review_dy_2017'})
          n.type = '综述',
          n.access = 'public',
          n.note = '用户提供 PDF 原文；品种耐贮性规律/茶多酚与壳聚糖';
+MERGE (n:Source {id: 'moa_storage_2023'})
+  SET n.title = '葡萄贮藏保鲜操作规程',
+         n.authors = '农业农村部农产品冷链物流标准化技术委员会',
+         n.year = '2023',
+         n.venue = '农业农村部市场与信息化司·农产品仓储保鲜冷链物流设施建设工程·技术指南',
+         n.type = '行业资料',
+         n.access = 'public',
+         n.note = '农业农村部官网技术指南（2023-02-03）；覆盖耐贮性、温度/湿度、预冷、包装、SO2 伤害、出库期';
+MERGE (n:Source {id: 'moa_quality_2023'})
+  SET n.title = '葡萄全程质量安全风险管控指南',
+         n.authors = '农业农村部农产品质量安全风险评估实验室（杭州）',
+         n.year = '2023',
+         n.venue = '农业农村部农产品质量安全监管司·风险评估',
+         n.type = '行业资料',
+         n.access = 'public',
+         n.note = '农业农村部官网（2023-06-30）；覆盖品种/园地/施肥/采收/分级/贮藏/包装/运输全流程';
+MERGE (n:Source {id: 'paper_kyoho_temp_2018'})
+  SET n.title = '贮藏温度对巨峰葡萄采后生理和贮藏品质的影响',
+         n.authors = '许蕙金兰;吴培文;陈仁驰;刘永美;陈存坤;田慧琴;朱本忠',
+         n.year = '2018',
+         n.venue = '食品研究与开发, 2018, 39(21): 192-197',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.3969/j.issn.1005-6521.2018.21.032',
+         n.access = 'public',
+         n.note = '0/5/10/25℃ 对照试验；0℃ 贮藏效果最好（失重、落粒、腐烂、呼吸强度、硬度）';
 
 // 节点写入完毕；随后执行 graph/init_rels.cypher
 MATCH (n) RETURN labels(n)[0] AS label, count(*) AS cnt ORDER BY label;

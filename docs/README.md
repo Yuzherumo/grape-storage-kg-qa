@@ -12,7 +12,7 @@
 | [limitations.md](limitations.md) | 覆盖范围、数据与 LLM 限制、校验边界、部署限制 | 评审、使用者 |
 | [api.md](api.md) | 数据结构、模块函数签名、稳定性承诺 | 二次开发 |
 | [spec.md](spec.md) | 数据 schema 契约、实体清单、校验规则（含早期规划说明） | 数据维护 |
-| [sources.md](sources.md) | 16 条来源清单、国标/综述条文摘录、科普描述来源 | 溯源核对 |
+| [sources.md](sources.md) | 19 条来源清单、国标/综述/指南条文摘录、科普描述来源 | 溯源核对 |
 | [neo4j_verify.md](neo4j_verify.md) | Neo4j 未实跑的原因、Cypher 静态校验与 Kùzu 替代验证 | 图数据库评审 |
 | [eval_results.md](eval_results.md) | 自动生成的问答评测报告 | 技术评审 |
 | [env_check.md](env_check.md) | 自动生成的依赖与后端的本机自检 | 复现者 |

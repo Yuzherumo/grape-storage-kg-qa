@@ -7,14 +7,14 @@
 | 术语 | 数量 | 说明 |
 |---|---|---|
 | **知识实体** | **58** | 品种 8、储藏条件 30、品质指标 13、病害 7；参与实体链接与问答检索 |
-| **来源节点** | **16** | 国标 1、综述 9、论文 5、行业资料 1；只用于溯源，不进入实体链接词表 |
-| **图谱节点** | **74** | = 58 知识实体 + 16 来源节点（Neo4j / Kùzu 中的节点总数） |
-| **三元组** | **108** | 9 种谓词；`verified` 61、`anchor` 47 |
+| **来源节点** | **19** | 国标 1、综述 9、论文 6、行业资料 3；只用于溯源，不进入实体链接词表 |
+| **图谱节点** | **77** | = 58 知识实体 + 19 来源节点（Neo4j / Kùzu 中的节点总数） |
+| **三元组** | **115** | 9 种谓词；`verified` 69、`anchor` 46 |
 | **科普描述** | **28** | 8 品种 / 7 病害 / 13 指标，见 `descriptions.csv` |
 | **S2a 快照** | **20** | 阳光玫瑰核心三元组，必须是主数据的严格子集 |
-| **数据总行数** | **182** | 58 + 108 + 16（`validate_data.py` 统计口径） |
+| **数据总行数** | **192** | 58 + 115 + 19（`validate_data.py` 统计口径） |
 
-> 注意：不要把 74 说成「74 个知识实体」。74 是图谱节点数，其中 16 个是来源节点。
+> 注意：不要把 77 说成「77 个知识实体」。77 是图谱节点数，其中 19 个是来源节点。
 
 统计依据：对 `data/entities.csv`、`data/triples.csv`、`data/sources.csv` 逐行计数（不含表头），并由 `scripts/validate_data.py` 的「总数据行」输出交叉核对。计算方式：
 
@@ -27,8 +27,8 @@
 | 文件 | 内容 | 使用方 |
 |---|---|---|
 | `data/entities.csv` | 58 个知识实体：id、label、name、别名、类别、数值区间、阶段/方向/方式、品种属性、病害症状与病原、note | 实体链接词表、图谱节点、描述 |
-| `data/triples.csv` | 108 条三元组：subject/object 名称与类型、predicate、数值/单位、effect/level/severity、source_ids、locator、quote、status、confidence、note | 问答检索、Cypher 生成、评测 |
-| `data/sources.csv` | 16 条来源：id、题名、作者、年份、期刊/出处、类型、可获取性、备注 | 证据溯源、来源展示 |
+| `data/triples.csv` | 115 条三元组：subject/object 名称与类型、predicate、数值/单位、effect/level/severity、source_ids、locator、quote、status、confidence、note | 问答检索、Cypher 生成、评测 |
+| `data/sources.csv` | 19 条来源：id、题名、作者、年份、期刊/出处、类型、可获取性、备注 | 证据溯源、来源展示 |
 | `data/descriptions.csv` | 28 个节点的科普描述：summary、detail、来源名称/链接、许可备注 | 图谱节点详情 |
 | `data/triples_shine_muscat.csv` | 20 条阳光玫瑰核心三元组（M1 门禁快照），必须与主数据逐字段一致 | 数据校验（检查10） |
 | `data/schema.json` | 标签/谓词枚举、类型-谓词组合、实体目标、校验规则、分组与置信度定义 | 校验脚本、生成脚本、测试 |
@@ -47,7 +47,7 @@
 | `kyoho` | 巨峰 | 欧美杂交种，中熟 |
 | `red_globe` | 红地球 | 红提，欧亚种，晚熟耐贮 |
 | `summer_black` | 夏黑 | 早熟无核 |
-| `muscat_hamburg` | 玫瑰香 | 中晚熟，耐贮性基线**留空**（未编造） |
+| `muscat_hamburg` | 玫瑰香 | 中晚熟；耐贮性 ≤5 个月（MOA 2023 优质果口径，已回填） |
 | `crimson_seedless` | 克瑞森无核 | 晚熟无核 |
 | `hutai_8` | 户太八号 | 巨峰系选育 |
 | `victoria` | 维多利亚 | 中早熟 |
@@ -64,23 +64,23 @@
 
 灰霉病、根霉腐败病、青霉病、炭疽病、酸腐病、黑斑病、绿霉病。其中灰霉病、青霉病、黑斑病、绿霉病、根霉腐败病与 GB/T 16862-2026 附录 B 对齐；炭疽病、酸腐病依据综述/植物病理学通识，标注为待核验。
 
-## 4. 关系分布（108 条）
+## 4. 关系分布（115 条）
 
 | 谓词 | 数量 | 含义 |
 |---|---|---|
-| `REQUIRES` | 26 | 品种需要某储藏条件 |
+| `REQUIRES` | 27 | 品种需要某储藏条件 |
 | `PREVENTED_BY` | 22 | 病害可通过某条件/处理预防或处置 |
-| `AFFECTS` | 19 | 条件影响某品质指标 |
+| `AFFECTS` | 24 | 条件影响某品质指标 |
 | `HAS_INDICATOR_VALUE` | 18 | 品种的指标基线（含数值区间） |
 | `SUSCEPTIBLE_TO` | 8 | 品种易感某病害 |
 | `INDUCED_BY` | 7 | 病害的诱因 |
-| `CONTRA_INDICATED_FOR` | 3 | 条件对某品种禁忌（含严重度） |
+| `CONTRA_INDICATED_FOR` | 4 | 条件对某品种禁忌（含严重度） |
 | `ALTERNATIVE_TO` | 3 | 条件/方案之间的替代关系 |
 | `INDICATES` | 2 | 指标指示某病害 |
 
-其中带数值（`value` 或 `value_min/max`）的关系 34 条。
+其中带数值（`value` 或 `value_min/max`）的关系 35 条。
 
-## 5. 来源（16 条）
+## 5. 来源（19 条）
 
 | id | 类型 | 年份 | 可获取性 | 题名（截断） |
 |---|---|---|---|---|
@@ -100,22 +100,25 @@
 | `review_so2_zyf` | 综述 | 2024 | 已获取 PDF | 二氧化硫在鲜食葡萄保鲜中的应用研究进展 |
 | `review_plant_wy_2022` | 综述 | 2022 | 已获取 PDF | 植物提取物在葡萄保鲜中的应用研究进展 |
 | `review_dy_2017` | 综述 | 2017 | 已获取 PDF | 鲜食葡萄保鲜研究新进展 |
+| `moa_storage_2023` | 行业资料 | 2023 | 公开 | 葡萄贮藏保鲜操作规程（农业农村部） |
+| `moa_quality_2023` | 行业资料 | 2023 | 公开 | 葡萄全程质量安全风险管控指南（农业农村部） |
+| `paper_kyoho_temp_2018` | 论文 | 2018 | 公开 | 贮藏温度对巨峰葡萄采后生理和贮藏品质的影响 |
 
-可获取性统计：`public` 2 条、`paywalled` 14 条。部分来源的题录字段（作者、DOI）仍不完整，已在 `sources.md` 标注，不影响当前引用展示。
+可获取性统计：`public` 5 条、`paywalled` 14 条。部分来源的题录字段（作者、DOI）仍不完整，已在 `sources.md` 标注，不影响当前引用展示。
 
 ## 6. 证据分级：`verified` 与 `anchor`
 
 | 状态 | 数量 | 含义 | 展示 |
 |---|---|---|---|
-| `verified` | 61 | 已获取原文，`quote` 为条级摘录，`locator` 为条款号/页码栏目 | 「已核验」 |
-| `anchor` | 47 | 原文未获取；`locator` 必填，`note` 写明待核验点 | 「待核验」 |
+| `verified` | 69 | 已获取原文，`quote` 为条级摘录，`locator` 为条款号/页码栏目 | 「已核验」 |
+| `anchor` | 46 | 原文未获取；`locator` 必填，`note` 写明待核验点 | 「待核验」 |
 
 `verified` 的构成需要说明清楚：
 
-- 按**升级依据**：51 条依据 GB/T 16862-2026 条文升级，10 条依据用户提供的 5 篇综述原文升级；
-- 按**当前 `source_ids`**：61 条 verified 中有 53 条引用国标、8 条仅引用综述/论文（其中 `c_cold0_decay`、`c_precool_decay` 同时含国标与综述来源）。
+- 按**升级依据**：51 条依据 GB/T 16862-2026 条文升级，10 条依据用户提供的 5 篇综述原文升级，8 条依据农业农村部 2023 指南与 2018 温度试验论文升级；
+- 按**当前 `source_ids`**：69 条 verified 中有 53 条引用国标、16 条仅引用其他来源（含 8 条原有综述/论文与 8 条新增 MOA/论文）；其中 `c_cold0_decay`、`c_precool_decay` 同时含国标与综述来源。
 
-两种口径不矛盾：这 10 条综述升级的条目中，有 2 条同时保留了国标来源。文档中统一写「61 条 verified（51 条按国标条文、10 条按综述原文升级）」，需要精确统计时以 `source_ids` 为准。
+两种口径不矛盾：10 条综述升级中 2 条同时保留国标来源；新增 8 条 verified 来自 MOA 指南（2 条）、2018 温度试验论文（5 条）与回填玫瑰香耐贮性（1 条）。文档统一写「69 条 verified（51 条按国标条文、10 条按综述原文、8 条按 MOA/2018 论文）」，精确统计以 `source_ids` 为准。
 
 校验器强制：`verified` 必须有非空 `quote`；`anchor` 必须有 `locator`，且 `note` 含「待核验」。`confidence` 是人工设定的来源置信度，不是统计概率；排序中 `verified` 权重 1.0、`anchor` 0.6。
 
@@ -142,7 +145,7 @@
 9. `triples` 的 subject/object 能在 `entities.csv` 按名称找到且类型一致；
 10. S2a 快照必须是主数据的严格子集（逐字段一致）。
 
-当前结果：**通过，错误 0，告警 2**（47 条 anchor 的 quote 为空、S2a 快照 11 条 quote 为空，均符合 anchor 规则）。此外 `scripts/validate_cypher.py` 校验 Cypher 标签/关系/参数/计数，`scripts/gen_cypher.py --check` 校验 CSV 与生成物无漂移。
+当前结果：**通过，错误 0，告警 2**（46 条 anchor 的 quote 为空、S2a 快照 11 条 quote 为空，均符合 anchor 规则）。此外 `scripts/validate_cypher.py` 校验 Cypher 标签/关系/参数/计数，`scripts/gen_cypher.py --check` 校验 CSV 与生成物无漂移。
 
 ## 9. 数据流
 

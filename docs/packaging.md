@@ -12,7 +12,7 @@
 | 原创与 AI 使用说明 | Markdown | `docs/ai_usage.md` |
 | 3 分钟录屏（建议） | 分镜脚本（视频待录） | `docs/demo_script.md` |
 | 评测证据 | 自动生成报告 | `docs/eval_results.md` |
-| 来源清单 | 16 条来源；61 条 verified（51 条按国标条文升级、10 条按综述原文升级） | `docs/sources.md`、`docs/data.md` |
+| 来源清单 | 19 条来源；69 条 verified（51 条按国标条文、10 条按综述原文、8 条按 MOA/2018 论文升级） | `docs/sources.md`、`docs/data.md` |
 
 ## 2. 打包原则：白名单收录、黑名单强校验
 
@@ -57,7 +57,7 @@
 ## 5. 打包后自检清单
 
 1. 解压到**全新目录**，运行 `.\install.ps1` → 应成功建 `.venv` 并装依赖；
-2. `.\run.ps1 -Check` → 十项数据校验 + Cypher 静态校验 + 图谱加载（74 节点 / 108 关系）全过；
+2. `.\run.ps1 -Check` → 十项数据校验 + Cypher 静态校验 + 图谱加载（77 节点 / 115 关系）全过；
 3. `.\run.ps1` → 8501 打开，6 个示例问题可答（离线模式）；
 4. `python -m pytest tests -q` → 287 passed / 2 skipped；
 5. 搜索包内不应出现 `sk-`、`.env`、`*.pdf`。
@@ -70,7 +70,7 @@
    - 负路径（`PIP_NO_INDEX=1`，模拟装不上）：**exit 1、~12.6s、无 REPL 挂起、无 `--python` 顺序错误**；
    - fallback 路径（venv 无 pip + ensurepip 失败 + 本地 wheel）：`Successfully installed six-1.17.0`，venv 内 `import six` OK，依赖自检按预期 exit 1；
    - 现有 `.venv`（无 pip）走 fallback：pip 退出 0，6 包 import 自检 `DEPS_OK streamlit 1.67.0 / openai 3.57.0 / pandas 3.1.1 / dotenv 1.2.4 / pytest 9.2.0 / kuzu 0.11.3` 通过（20s）；
-4. `run.ps1 -Check`（现有 .venv）→ exit 0、约 1s：十项数据校验 ✅、Cypher 静态校验 ✅、图谱加载 ✅（74 节点 / 108 关系）；
+4. `run.ps1 -Check`（现有 .venv）→ exit 0、约 1s：十项数据校验 ✅、Cypher 静态校验 ✅、图谱加载 ✅（77 节点 / 115 关系）；
 5. **未完成项（如实记录）**：本机 DSH 沙箱对 Python `tempfile(0o700)` 目录有 ACL 限制，全新 venv 的**真实全量联网安装**无法在本环境完成（pip 卡住/报 PermissionError，日志 `.tmp/install_test_logs/`）；需在正常 Windows + Python 3.12 机器上复跑一次 `install.ps1` 做最终确认。`install.ps1` 的负路径/fallback/现有 venv 路径均已实测通过。
 
 ## 7. 已知未完成项

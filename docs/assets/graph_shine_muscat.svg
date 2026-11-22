@@ -33,7 +33,7 @@
 <line x1="919.3" y1="310.4" x2="548.0" y2="426.1" stroke="#16a34a" stroke-width="1.6" stroke-opacity="0.55"/>
 <g><title>阳光玫瑰（品种，度 23）</title><circle cx="747.8" cy="406.5" r="24" fill="#4d6bfe" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="747.8" y="378.5" font-size="12" fill="#1f2328" text-anchor="middle">阳光玫瑰</text>
-<g><title>低温冷藏 0±0.5℃（储藏条件，度 10）</title><circle cx="1069.1" cy="415.0" r="20" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
+<g><title>低温冷藏 0±0.5℃（储藏条件，度 12）</title><circle cx="1069.1" cy="415.0" r="20" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="1069.1" y="391.0" font-size="10" fill="#1f2328" text-anchor="middle">低温冷藏 0±0.5℃</text>
 <g><title>低温冷藏 -1~0℃（储藏条件，度 11）</title><circle cx="548.0" cy="426.1" r="20" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="548.0" y="402.1" font-size="10" fill="#1f2328" text-anchor="middle">低温冷藏 -1~0℃</text>
@@ -47,12 +47,12 @@
 <text x="448.8" y="681.1" font-size="10" fill="#1f2328" text-anchor="middle">气调 CO₂ 1~3%</text>
 <g><title>高 CO₂ &gt;5%（储藏条件，度 3）</title><circle cx="173.6" cy="595.0" r="14.4" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="173.6" y="576.6" font-size="10" fill="#1f2328" text-anchor="middle">高 CO₂ &gt;5%</text>
-<g><title>SO₂ 熏蒸（储藏条件，度 4）</title><circle cx="395.0" cy="314.8" r="15.2" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
-<text x="395.0" y="295.6" font-size="10" fill="#1f2328" text-anchor="middle">SO₂ 熏蒸</text>
+<g><title>SO₂ 熏蒸（储藏条件，度 5）</title><circle cx="395.0" cy="314.8" r="16.0" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
+<text x="395.0" y="294.8" font-size="10" fill="#1f2328" text-anchor="middle">SO₂ 熏蒸</text>
 <g><title>1-MCP 处理（储藏条件，度 3）</title><circle cx="217.2" cy="463.0" r="14.4" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="217.2" y="444.6" font-size="10" fill="#1f2328" text-anchor="middle">1-MCP 处理</text>
-<g><title>快速预冷（12h 内至 0℃）（储藏条件，度 3）</title><circle cx="690.4" cy="239.6" r="14.4" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
-<text x="690.4" y="221.2" font-size="10" fill="#1f2328" text-anchor="middle">快速预冷（12h 内至 0℃）</text>
+<g><title>快速预冷（12h 内至 0℃）（储藏条件，度 4）</title><circle cx="690.4" cy="239.6" r="15.2" fill="#16a34a" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
+<text x="690.4" y="220.4" font-size="10" fill="#1f2328" text-anchor="middle">快速预冷（12h 内至 0℃）</text>
 <g><title>耐贮性（品质指标，度 8）</title><circle cx="1064.7" cy="567.2" r="18.4" fill="#ea580c" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>
 <text x="1064.7" y="544.8" font-size="10" fill="#1f2328" text-anchor="middle">耐贮性</text>
 <g><title>可溶性固形物SSC（品质指标，度 6）</title><circle cx="1018.4" cy="719.7" r="16.8" fill="#ea580c" fill-opacity="0.92" stroke="#ffffff" stroke-width="2"/></g>

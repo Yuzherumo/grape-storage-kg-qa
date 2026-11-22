@@ -29,8 +29,8 @@
 
 ### 2.1 数据校验细节
 
-- `validate_data.py` 输出「总数据行：182」（58 实体 + 108 三元组 + 16 来源）；
-- 两条告警是 **anchor 的 quote 为空**（`triples.csv` 47 行、`triples_shine_muscat.csv` 11 行），符合「anchor 只需 locator + note 待核验」的规则，不是失败；
+- `validate_data.py` 输出「总数据行：192」（58 实体 + 115 三元组 + 19 来源）；
+- 两条告警是 **anchor 的 quote 为空**（`triples.csv` 46 行、`triples_shine_muscat.csv` 11 行），符合「anchor 只需 locator + note 待核验」的规则，不是失败；
 - `check10` 确认 S2a 快照是主数据的严格子集；
 - `validate_cypher.py` 校验标签/关系类型/参数/MERGE 计数/10 个意图模板覆盖。
 
@@ -38,7 +38,7 @@
 
 `scripts/verify_cypher_engine.py` 在 Kùzu 0.11.3 内存库中：
 
-- 从 CSV 建 5 类节点表与 9 张关系表，灌入 **74 节点 / 108 关系**，与 CSV 精确比对；
+- 从 CSV 建 5 类节点表与 9 张关系表，灌入 **77 节点 / 115 关系**，与 CSV 精确比对；
 - 对 6 道题（温度、病害处置、品质判断、禁忌、品种对比、越界温度）执行等价 Cypher，结果与本地后端一致（本地证据集合是 Cypher 结果的子集）；
 - 4 条 verified 条文三元组定点命中（阳光玫瑰→RH 90~95%、灰霉病→焦亚硫酸盐缓释片、巨峰→耐贮性、黑斑病→采前降雨）。
 
@@ -52,7 +52,7 @@ Kùzu 是嵌入式 openCypher 引擎，**不是 Neo4j 服务端**；它证明的
 |---|---|---|---|---|---|
 | 阳光玫瑰放冷库该调到多少度？ | temperature | 5 | 11 | 通过 | 通过 |
 | 冷库里葡萄长白毛了怎么办？ | disease_control | 6 | 11 | 通过 | 通过 |
-| 葡萄发软掉粒是咋回事？ | quality_indicator | 1 | 3 | 通过 | 通过 |
+| 葡萄发软掉粒是咋回事？ | quality_indicator | 3 | 7 | 通过 | 通过 |
 | 用 SO₂ 熏阳光玫瑰行不行？ | contraindication | 3 | 7 | 通过 | 通过 |
 | 阳光玫瑰和巨峰哪个更能放？ | variety_compare | 13 | 11 | 通过 | 通过 |
 | -18℃ 冻起来能存一年吗？ | temperature | 6 | 7 | out_of_range（预期） | 通过 |
@@ -120,7 +120,7 @@ CI 通过只代表上述静态/离线步骤通过，不覆盖真实 Neo4j、在�
 
 ### 5.3 尚未完成
 
-- 47 条 anchor 的原文核验；
+- 46 条 anchor 的原文核验；
 - 人工评分集（可读性/可执行性/引用准确性）；
 - 跨机器复现记录（至少一台非当前开发机）。
 
