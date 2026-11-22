@@ -18,8 +18,9 @@
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any
 
 try:  # 兼容 `python app/ui.py`
     from app.contracts import Evidence, QuerySpec
@@ -37,7 +38,7 @@ from .base import (
 
 __all__ = ["Neo4jStore"]
 
-LIST_PARAMS: Tuple[str, ...] = (
+LIST_PARAMS: tuple[str, ...] = (
     "variety_ids",
     "condition_ids",
     "indicator_ids",
@@ -51,7 +52,7 @@ SOURCE_TITLES_QUERY = (
     "RETURN n.id AS id, coalesce(n.title, n.id) AS title"
 )
 
-STATS_QUERIES: Dict[str, str] = {
+STATS_QUERIES: dict[str, str] = {
     "nodes": "MATCH (n) RETURN count(n) AS c",
     "rels": "MATCH ()-[r]->() RETURN count(r) AS c",
     "varieties": "MATCH (n:Variety) RETURN count(n) AS c",
@@ -73,7 +74,7 @@ class Neo4jStore(GraphStore):
         user: str = "",
         password: str = "",
         *,
-        database: Optional[str] = None,
+        database: str | None = None,
         queries_dir: Path | str | None = None,
         connection_timeout: float = 5.0,
     ) -> None:
@@ -91,11 +92,11 @@ class Neo4jStore(GraphStore):
         )
         self._neo4j = neo4j
         self._driver = None
-        self._query_cache: Dict[str, str] = {}
-        self._source_titles_cache: Optional[Dict[str, str]] = None
+        self._query_cache: dict[str, str] = {}
+        self._source_titles_cache: dict[str, str] | None = None
 
         auth = (str(user or ""), str(password or ""))
-        driver_kwargs: Dict[str, Any] = {}
+        driver_kwargs: dict[str, Any] = {}
         try:
             driver_kwargs["connection_timeout"] = float(connection_timeout)
             driver = neo4j.GraphDatabase.driver(self.uri, auth=auth, **driver_kwargs)
@@ -118,7 +119,7 @@ class Neo4jStore(GraphStore):
         self._driver = driver
 
     # ---------------------------------------------------------------- 执行
-    def execute(self, spec: QuerySpec) -> List[Evidence]:
+    def execute(self, spec: QuerySpec) -> list[Evidence]:
         intent = str(getattr(spec, "intent", "") or "general").strip() or "general"
         query = self._query_text(intent, spec)
         params = self._prepare_params(spec)
@@ -157,12 +158,12 @@ class Neo4jStore(GraphStore):
             self._query_cache[name] = path.read_text(encoding="utf-8")
         return self._query_cache[name]
 
-    def _prepare_params(self, spec: QuerySpec) -> Dict[str, Any]:
-        merged: Dict[str, Any] = {}
+    def _prepare_params(self, spec: QuerySpec) -> dict[str, Any]:
+        merged: dict[str, Any] = {}
         for source in (getattr(spec, "params", None) or {}, getattr(spec, "cypher_params", None) or {}):
             if isinstance(source, Mapping):
                 merged.update(source)
-        params: Dict[str, Any] = {key: as_list(merged.get(key)) for key in LIST_PARAMS}
+        params: dict[str, Any] = {key: as_list(merged.get(key)) for key in LIST_PARAMS}
         limit_value = merged.get("limit", merged.get("k", DEFAULT_K))
         limit_number = to_float(limit_value)
         limit = int(limit_number) if limit_number is not None else DEFAULT_K
@@ -170,7 +171,7 @@ class Neo4jStore(GraphStore):
         return params
 
     @staticmethod
-    def _variety_ids(spec: QuerySpec) -> List[str]:
+    def _variety_ids(spec: QuerySpec) -> list[str]:
         params = getattr(spec, "params", None) or {}
         cypher_params = getattr(spec, "cypher_params", None) or {}
         ids = as_list(params.get("variety_ids")) or (
@@ -179,10 +180,10 @@ class Neo4jStore(GraphStore):
         return ids
 
     @staticmethod
-    def _record_to_row(record: Any) -> Dict[str, Any]:
+    def _record_to_row(record: Any) -> dict[str, Any]:
         """neo4j Record → 行 dict；缺失字段回落到关系 ``properties``。"""
         try:
-            row: Dict[str, Any] = dict(record)
+            row: dict[str, Any] = dict(record)
         except (TypeError, ValueError):  # pragma: no cover - 驱动版本差异
             keys = list(record.keys())
             row = {key: record[key] for key in keys}
@@ -199,10 +200,10 @@ class Neo4jStore(GraphStore):
         return row
 
     # ---------------------------------------------------------------- 连接/统计
-    def _source_titles(self) -> Dict[str, str]:
+    def _source_titles(self) -> dict[str, str]:
         if self._source_titles_cache is not None:
             return self._source_titles_cache
-        titles: Dict[str, str] = {}
+        titles: dict[str, str] = {}
         try:
             with self._session() as session:
                 for record in session.run(SOURCE_TITLES_QUERY):
@@ -212,8 +213,8 @@ class Neo4jStore(GraphStore):
         self._source_titles_cache = titles
         return titles
 
-    def stats(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
+    def stats(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
             "backend": self.name,
             "nodes": 0,
             "rels": 0,
@@ -235,7 +236,7 @@ class Neo4jStore(GraphStore):
             result["error"] = f"stats 查询失败：{exc}"
         return result
 
-    def health(self) -> Tuple[bool, str]:
+    def health(self) -> tuple[bool, str]:
         if self._driver is None:
             return False, "neo4j: 连接已关闭"
         try:
@@ -244,7 +245,7 @@ class Neo4jStore(GraphStore):
             return False, f"neo4j 连接失败（{self.uri}）：{exc}"
         return True, f"neo4j: 已连接 {self.uri}（database={self.database or 'default'}）"
 
-    def query_cypher(self, spec: QuerySpec) -> List[str]:
+    def query_cypher(self, spec: QuerySpec) -> list[str]:
         intent = str(getattr(spec, "intent", "") or "general").strip() or "general"
         try:
             query = self._query_text(intent, spec)

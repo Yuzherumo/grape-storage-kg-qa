@@ -13,7 +13,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -27,13 +27,13 @@ CORE_QUESTION_IDS = ("Q1", "Q2", "Q3", "Q4", "Q5")
 
 
 # ---------------------------------------------------------------- 读写
-def read_csv(name: str) -> List[Dict[str, str]]:
+def read_csv(name: str) -> list[dict[str, str]]:
     path = DATA / name
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return [dict(row) for row in csv.DictReader(handle)]
 
 
-def split_list(value: Any) -> List[str]:
+def split_list(value: Any) -> list[str]:
     return [part.strip() for part in re.split(r"[;；]", str(value or "")) if part.strip()]
 
 
@@ -42,12 +42,12 @@ def cell(text: Any) -> str:
     return str(text).replace("|", "/").replace("\n", " ").strip()
 
 
-def eids_in_answer(answer: str) -> List[str]:
+def eids_in_answer(answer: str) -> list[str]:
     return re.findall(r"\[(E\d+)\]", str(answer or ""))
 
 
-def evidence_blob(evidence: List[Any]) -> str:
-    parts: List[str] = []
+def evidence_blob(evidence: list[Any]) -> str:
+    parts: list[str] = []
     for item in evidence:
         parts.extend(
             [
@@ -64,10 +64,10 @@ def evidence_blob(evidence: List[Any]) -> str:
 
 
 # ---------------------------------------------------------------- 评测逻辑
-def evaluate_questions(store) -> List[Dict[str, Any]]:
+def evaluate_questions(store) -> list[dict[str, Any]]:
     from app.qa import answer_question
 
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for row in read_csv("eval_questions.csv"):
         question = row["question"]
         kind = str(row.get("kind") or "core").strip()
@@ -102,7 +102,7 @@ def evaluate_questions(store) -> List[Dict[str, Any]]:
             number_ok = not number_warnings
             number_detail = "通过" if number_ok else ",".join(number_warnings)
 
-        reasons: List[str] = []
+        reasons: list[str] = []
         if kind == "core":
             if not result.evidence:
                 reasons.append("证据为空")
@@ -146,12 +146,12 @@ def evaluate_questions(store) -> List[Dict[str, Any]]:
     return rows
 
 
-def evaluate_variants() -> List[Dict[str, Any]]:
+def evaluate_variants() -> list[dict[str, Any]]:
     from app.linking import link_entities, load_catalog
     from app.planner import route
 
     catalog = load_catalog(str(DATA / "entities.csv"))
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for row in read_csv("utterances.csv"):
         utterance = row["utterance"]
         hits = list(link_entities(utterance, catalog))
@@ -178,7 +178,7 @@ def evaluate_variants() -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------------- 报告
-def render_report(question_rows: List[Dict[str, Any]], variant_rows: List[Dict[str, Any]], store) -> str:
+def render_report(question_rows: list[dict[str, Any]], variant_rows: list[dict[str, Any]], store) -> str:
     core = [row for row in question_rows if row["id"] in CORE_QUESTION_IDS]
     probe = [row for row in question_rows if row["id"] not in CORE_QUESTION_IDS]
     core_passed = sum(1 for row in core if row["pass"])
@@ -192,7 +192,7 @@ def render_report(question_rows: List[Dict[str, Any]], variant_rows: List[Dict[s
         else "FAIL"
     )
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("# 问答评测报告（docs/eval_results.md）")
     lines.append("")
     lines.append("> 由 `scripts/eval_qa.py` 自动生成（离线模式：`allow_llm=False`，不联网、不需 API key）。")

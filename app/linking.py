@@ -20,7 +20,7 @@ import csv
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any
 
 try:  # 兼容 `python app/ui.py`（sys.path[0] 为 app/）
     from app.contracts import EntityHit
@@ -89,9 +89,9 @@ class Catalog:
     """实体词表（启动时由 :func:`load_catalog` 构建，可跨多轮问答复用）。"""
 
     path: str = ""
-    entries: List[CatalogEntry] = field(default_factory=list)
-    terms: Dict[str, List[CatalogEntry]] = field(default_factory=dict)
-    names: Dict[str, str] = field(default_factory=dict)  # node_id -> 规范名
+    entries: list[CatalogEntry] = field(default_factory=list)
+    terms: dict[str, list[CatalogEntry]] = field(default_factory=dict)
+    names: dict[str, str] = field(default_factory=dict)  # node_id -> 规范名
     max_term_len: int = 0
 
     def __len__(self) -> int:
@@ -146,14 +146,14 @@ def _latin_boundary_ok(text: str, start: int, end: int) -> bool:
     return True
 
 
-def normalize_text(text: Any) -> Tuple[str, List[int]]:
+def normalize_text(text: Any) -> tuple[str, list[int]]:
     """归一化问句，返回 ``(归一化文本, 每个字符对应的原文下标)``。
 
     用于把匹配位置映射回原始问句（``EntityHit.start/end``）。
     """
     raw = str(text or "")
-    chars: List[str] = []
-    mapping: List[int] = []
+    chars: list[str] = []
+    mapping: list[int] = []
     for index, original in enumerate(raw):
         ch = _to_halfwidth(original)
         if ch.isspace():
@@ -167,10 +167,10 @@ def normalize_text(text: Any) -> Tuple[str, List[int]]:
     return "".join(chars), mapping
 
 
-def _segments(text: str) -> List[str]:
+def _segments(text: str) -> list[str]:
     """把 "低温冷藏 0±0.5℃" / "Shine Muscat" 切成口语可能说出的中文名词段。"""
     parts = [part.strip() for part in _SEGMENT_SPLIT.split(str(text or ""))]
-    result: List[str] = []
+    result: list[str] = []
     for part in parts:
         if len(part) < 2:
             continue
@@ -180,15 +180,15 @@ def _segments(text: str) -> List[str]:
     return result
 
 
-def _cjk_runs(text: str) -> List[str]:
+def _cjk_runs(text: str) -> list[str]:
     """抽出词条里的**连续中文片段**（≥2 字），用于召回带数值/化学式的别名。
 
     例：``"0℃冷藏" -> ["冷藏"]``、``"SO2熏蒸" -> ["熏蒸"]``、
     ``"1甲基环丙烯" -> ["甲基环丙烯"]``。这样「冷藏温度多少」能命中 ``cold_0``，
     但不会把 ``0.5``/``90`` 之类的数字噪声放进词表。
     """
-    runs: List[str] = []
-    buffer: List[str] = []
+    runs: list[str] = []
+    buffer: list[str] = []
     for ch in str(text or ""):
         if _CJK_RANGE[0] <= ord(ch) <= _CJK_RANGE[1]:
             buffer.append(ch)
@@ -274,7 +274,7 @@ def _add_term(
     raw_term: str,
     source_kind: str,
     weight: float,
-    category_terms: Optional[set] = None,
+    category_terms: set | None = None,
 ) -> None:
     normalized, _ = normalize_text(raw_term)
     if len(normalized) < 2:  # 单字词极易误命中，直接丢弃（中文实体名最短 2 字）
@@ -294,7 +294,7 @@ def _add_term(
     )
 
 
-def _split_aliases(value: Any) -> List[str]:
+def _split_aliases(value: Any) -> list[str]:
     text = str(value or "").strip()
     if not text:
         return []
@@ -315,7 +315,7 @@ def link_entities(
     catalog: Catalog,
     *,
     max_hits: int = 8,
-) -> List[EntityHit]:
+) -> list[EntityHit]:
     """在问句中做最长匹配，返回按分数降序的 ``EntityHit`` 列表。
 
     - 命中区间互不重叠（最长优先，"香印青提" 不会退化成 "青提"）；
@@ -328,12 +328,12 @@ def link_entities(
     normalized, mapping = normalize_text(question)
     if not normalized:
         return []
-    candidates: List[Tuple[float, int, int, CatalogEntry, str]] = []
+    candidates: list[tuple[float, int, int, CatalogEntry, str]] = []
     length = len(normalized)
     max_term_len = min(catalog.max_term_len, length)
     index = 0
     while index < length:
-        matched: Optional[Tuple[int, List[CatalogEntry]]] = None
+        matched: tuple[int, list[CatalogEntry]] | None = None
         # 同起点按「最长别名」优先尝试；词边界不合法就缩到更短的别名
         for span in range(min(max_term_len, length - index), 0, -1):
             entries = catalog.terms.get(normalized[index : index + span])
@@ -358,7 +358,7 @@ def link_entities(
         return []
 
     # 同一 node_id 取最高分（同分取更早出现）
-    best: Dict[str, Tuple[float, int, int, CatalogEntry, str]] = {}
+    best: dict[str, tuple[float, int, int, CatalogEntry, str]] = {}
     for candidate in candidates:
         score, start, _, entry, _surface = candidate
         previous = best.get(entry.node_id)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """data/ 数据校验器（十项检查，中文报告，非 0 退出即失败）。
 
 用法：
@@ -18,7 +17,7 @@ import csv
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 BASE = Path(__file__).resolve().parents[1]
 DATA = BASE / "data"
@@ -88,9 +87,9 @@ NUMERIC_TOL = 1e-9
 
 class Report:
     def __init__(self) -> None:
-        self.errors: List[Tuple[int, str]] = []
-        self.warnings: List[Tuple[int, str]] = []
-        self.notes: List[Tuple[int, str]] = []
+        self.errors: list[tuple[int, str]] = []
+        self.warnings: list[tuple[int, str]] = []
+        self.notes: list[tuple[int, str]] = []
 
     def err(self, check: int, msg: str) -> None:
         self.errors.append((check, msg))
@@ -105,14 +104,14 @@ class Report:
         return sum(1 for c, _ in self.errors if c == check)
 
 
-def read_csv(path: Path) -> Tuple[List[str], List[Dict[str, str]]]:
+def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         rows = [{k: (v if v is not None else "") for k, v in row.items()} for row in reader]
         return list(reader.fieldnames or []), rows
 
 
-def to_float(value: str) -> Optional[float]:
+def to_float(value: str) -> float | None:
     if value is None:
         return None
     s = str(value).strip()
@@ -124,11 +123,11 @@ def to_float(value: str) -> Optional[float]:
         return None
 
 
-def split_ids(value: str) -> List[str]:
+def split_ids(value: str) -> list[str]:
     return [x.strip() for x in str(value or "").split(";") if x.strip()]
 
 
-def load_schema(rep: Report) -> Dict[str, Any]:
+def load_schema(rep: Report) -> dict[str, Any]:
     path = DATA / "schema.json"
     if not path.exists():
         rep.warn(1, "data/schema.json 不存在，使用内置兜底枚举（建议补齐 S1 产物）")
@@ -144,7 +143,7 @@ def load_schema(rep: Report) -> Dict[str, Any]:
     return merged
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="鲜食葡萄知识图谱数据校验（十项）")
     parser.add_argument("--quiet", action="store_true", help="只输出错误/告警")
     parser.add_argument("--json", action="store_true", help="输出 JSON 结果")
@@ -155,7 +154,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     cols = schema.get("csv_columns") or DEFAULT_COLUMNS
     cols = {**DEFAULT_COLUMNS, **cols}
     labels = set(schema.get("labels") or DEFAULT_SCHEMA["labels"])
-    predicates: Dict[str, Any] = schema.get("predicates") or DEFAULT_SCHEMA["predicates"]
+    predicates: dict[str, Any] = schema.get("predicates") or DEFAULT_SCHEMA["predicates"]
     combos = schema.get("predicate_type_combos") or {
         p: {"subject_type": v.get("subject_type"), "object_type": v.get("object_type")}
         for p, v in predicates.items()
@@ -189,8 +188,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("[失败] 数据文件缺失：" + ", ".join(missing))
         return 2
 
-    data: Dict[str, List[Dict[str, str]]] = {}
-    headers: Dict[str, List[str]] = {}
+    data: dict[str, list[dict[str, str]]] = {}
+    headers: dict[str, list[str]] = {}
     for key, path in files.items():
         try:
             headers[key], data[key] = read_csv(path)
@@ -426,7 +425,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 rep.warn(8, f"{sheet_name} 第{i}行 anchor 且 quote 为空，note 未写「待核验」")
 
     # ============================================================ 检查 9
-    name_to_labels: Dict[str, set] = {}
+    name_to_labels: dict[str, set] = {}
     for r in entities:
         n = (r.get("name") or "").strip()
         name_to_labels.setdefault(n, set()).add((r.get("label") or "").strip())

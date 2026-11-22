@@ -21,7 +21,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 try:  # 兼容 `python app/ui.py`（此时 sys.path[0] 是 app/，没有顶层 app 包）
     from app.contracts import EntityHit, Evidence, QuerySpec
@@ -55,7 +56,7 @@ DEFAULT_K = 6
 W_CONFIDENCE = 0.5
 W_STATUS = 0.3
 W_ENTITY_HIT = 0.2
-STATUS_WEIGHTS: Dict[str, float] = {"verified": 1.0, "anchor": 0.6}
+STATUS_WEIGHTS: dict[str, float] = {"verified": 1.0, "anchor": 0.6}
 STATUS_WEIGHT_DEFAULT = 0.6
 MAX_K = 50
 
@@ -105,7 +106,7 @@ def status_weight(status: Any) -> float:
     return STATUS_WEIGHTS.get(key, STATUS_WEIGHT_DEFAULT)
 
 
-def to_float(value: Any) -> Optional[float]:
+def to_float(value: Any) -> float | None:
     """宽松转 float：空串/None/'-'/无法解析 → None；不吞掉 ``0``。"""
     if value is None:
         return None
@@ -141,12 +142,12 @@ def to_float(value: Any) -> Optional[float]:
         return None
 
 
-def as_list(value: Any) -> List[str]:
+def as_list(value: Any) -> list[str]:
     """把 ``"a;b"`` / ``["a","b"]`` / ``None`` 统一成去空白的字符串列表。"""
     if value is None:
         return []
     if isinstance(value, (list, tuple, set)):
-        out: List[str] = []
+        out: list[str] = []
         for item in value:
             out.extend(as_list(item))
         return out
@@ -214,7 +215,7 @@ def _hit_terms_from_params(spec: QuerySpec) -> set:
     return terms
 
 
-def entity_hit_ratio(evidence: Evidence, hit_terms: Optional[Iterable[str]]) -> float:
+def entity_hit_ratio(evidence: Evidence, hit_terms: Iterable[str] | None) -> float:
     """实体命中度：查询实体出现在证据 subject/object 里的覆盖比例。
 
     无命中实体 → 1.0（不惩罚，退化为置信度+状态排序）。
@@ -238,7 +239,7 @@ def entity_hit_ratio(evidence: Evidence, hit_terms: Optional[Iterable[str]]) -> 
     return min(1.0, matched / denominator)
 
 
-def score_evidence(evidence: Evidence, hit_terms: Optional[Iterable[str]] = None) -> float:
+def score_evidence(evidence: Evidence, hit_terms: Iterable[str] | None = None) -> float:
     """按冻结规则计算并写回 ``evidence.score``，返回分数。"""
     score = (
         W_CONFIDENCE * clamp01(getattr(evidence, "confidence", 0.5), default=0.5)
@@ -253,8 +254,8 @@ def rank_evidence(
     evidences: Iterable[Evidence],
     *,
     k: int = DEFAULT_K,
-    hit_terms: Optional[Iterable[str]] = None,
-) -> List[Evidence]:
+    hit_terms: Iterable[str] | None = None,
+) -> list[Evidence]:
     """打分 → score 降序 → 按 (subject,predicate,object) 去重 → 截断 k。"""
     items = [ev for ev in (evidences or []) if ev is not None]
     if not items:
@@ -271,7 +272,7 @@ def rank_evidence(
         )
     )
     seen = set()
-    deduped: List[Evidence] = []
+    deduped: list[Evidence] = []
     for ev in items:
         key = (
             str(getattr(ev, "subject", "") or ""),
@@ -293,7 +294,7 @@ def rank_evidence(
 def build_evidence(
     row: Mapping[str, Any],
     *,
-    source_titles: Optional[Mapping[str, str]] = None,
+    source_titles: Mapping[str, str] | None = None,
 ) -> Evidence:
     """把「一行图查询结果」翻译成 :class:`Evidence`（local / neo4j 共用，保证两后端同构）。
 
@@ -301,7 +302,7 @@ def build_evidence(
     object_id, object, object_label, value, unit, value_min, value_max, status,
     confidence, source_ids, source_titles, locator, quote, properties``。
     """
-    props: Dict[str, Any] = dict(row.get("properties") or {})
+    props: dict[str, Any] = dict(row.get("properties") or {})
     for key in ("subject_id", "subject_label", "object_id", "object_label"):
         value = row.get(key)
         if value not in (None, ""):
@@ -310,7 +311,7 @@ def build_evidence(
         props.setdefault("object_category", row.get("object_category"))
 
     source_ids = as_list(row.get("source_ids"))
-    titles: List[str] = as_list(row.get("source_titles"))
+    titles: list[str] = as_list(row.get("source_titles"))
     if not titles and source_titles:
         titles = [str(source_titles.get(sid, sid)) for sid in source_ids]
 
@@ -353,22 +354,22 @@ class GraphStore(ABC):
     fallback_reason: str = ""
 
     @abstractmethod
-    def execute(self, spec: QuerySpec) -> List[Evidence]:
+    def execute(self, spec: QuerySpec) -> list[Evidence]:
         """执行一次结构化查询，返回证据（``eid`` 留空）。"""
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """返回 ``{"nodes": int, "rels": int, "varieties": int, ...}``。"""
         raise NotImplementedError(f"{self.name}: stats() 未实现")
 
-    def health(self) -> Tuple[bool, str]:
+    def health(self) -> tuple[bool, str]:
         """返回 ``(ok, message)``；默认视为不可用。"""
         return False, f"{self.name}: health() 未实现"
 
-    def query_cypher(self, spec: QuerySpec) -> List[str]:
+    def query_cypher(self, spec: QuerySpec) -> list[str]:
         """返回该次查询对应的 Cypher 文本（供 ``AnswerResult.query_cypher`` 展示）。"""
         return []
 
-    def close(self) -> None:
+    def close(self) -> None:  # noqa: B027
         """释放连接（local 无需操作）。"""
 
     # -- 内部工具 ---------------------------------------------------------
@@ -377,8 +378,8 @@ class GraphStore(ABC):
         evidences: Iterable[Evidence],
         spec: QuerySpec,
         *,
-        k_override: Optional[int] = None,
-    ) -> List[Evidence]:
+        k_override: int | None = None,
+    ) -> list[Evidence]:
         """按契约统一收尾：排序/去重/截断。
 
         命中度词表 = params 中的实体 id/名称；:class:`EntityHit` 的 surface/alias
@@ -404,13 +405,13 @@ class GraphStore(ABC):
 
     def _select_with_coverage(
         self,
-        pool: List[Evidence],
+        pool: list[Evidence],
         entity_ids: Iterable[str],
         k: int,
-    ) -> List[Evidence]:
+    ) -> list[Evidence]:
         """品种对比：先保证每个品种至少一条证据，再用分数补满 k（再按分数排序）。"""
         required = [entity_id for entity_id in (entity_ids or []) if entity_id]
-        selected: List[Evidence] = []
+        selected: list[Evidence] = []
         for entity_id in required:
             for evidence in pool:
                 if evidence not in selected and self._evidence_covers(evidence, entity_id):

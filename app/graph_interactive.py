@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """可交互知识图谱（自包含 HTML：内联 SVG + 原生 JS，无外部依赖、离线可用）。
 
 交互：
@@ -11,10 +10,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from app.graph_view import (
-    COLORS, LABEL_CN, PRED_COLOR, Graph, _esc, layout, load_descriptions, load_sources,
+    COLORS,
+    LABEL_CN,
+    PRED_COLOR,
+    Graph,
+    _esc,
+    layout,
+    load_descriptions,
+    load_sources,
 )
 
 PRED_CN = {
@@ -265,7 +270,7 @@ def _js_json(value: object) -> str:
 def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
                      title: str = "鲜食葡萄储藏知识图谱",
                      subtitle: str = "点击节点看具体描述与关联；滚轮缩放，拖拽平移",
-                     data_dir: Optional[Path | str] = None) -> str:
+                     data_dir: Path | str | None = None) -> str:
     layout(graph)
     W, H = width, height
     pad = 40
@@ -274,8 +279,8 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
     sources = load_sources(data_dir)
     descs = load_descriptions(data_dir)
     pos = {n.id: (pad + n.x * (W - 2 * pad), pad + 70 + n.y * (H - 2 * pad - 90)) for n in graph.nodes}
-    nodes_data: List[Dict] = []
-    size: Dict[str, int] = {}
+    nodes_data: list[dict] = []
+    size: dict[str, int] = {}
     for n in graph.nodes:
         base = 15 if n.label == "Variety" else 11
         r = int(base + (min(8, n.degree * 0.8) if n.degree else 0))

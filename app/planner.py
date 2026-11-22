@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Any, Iterable, List, Sequence, Tuple
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from app import planner_rules as R
 from app.contracts import INTENTS, EntityHit, QuerySpec
@@ -97,7 +98,7 @@ def score_intents(question: str, hits: Sequence[EntityHit]) -> dict[str, float]:
     return scores
 
 
-def route(question: str, hits: Sequence[EntityHit]) -> Tuple[str, float, List[Tuple[str, float]]]:
+def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tuple[str, float]]]:
     """返回 (intent, confidence, top3候选)。
 
     confidence = 最高分 / 总分；低于 LOW_CONFIDENCE 时由 qa 走澄清兜底。
@@ -133,8 +134,8 @@ def route(question: str, hits: Sequence[EntityHit]) -> Tuple[str, float, List[Tu
     return top_intent, round(confidence, 3), [(k, round(v, 2)) for k, v in ranked[:3]]
 
 
-def _ids(hits: Iterable[EntityHit], label: str) -> List[str]:
-    out: List[str] = []
+def _ids(hits: Iterable[EntityHit], label: str) -> list[str]:
+    out: list[str] = []
     for h in hits:
         if h.label == label and h.node_id not in out:
             out.append(h.node_id)

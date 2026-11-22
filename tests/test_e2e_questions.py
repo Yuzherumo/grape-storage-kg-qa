@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import pytest
-
 from _support import (
     DATA,
     cited_refs,
@@ -19,6 +18,7 @@ from _support import (
     split_keywords,
     unsupported_temperatures,
 )
+
 from app.contracts import INTENTS, WARN_OUT_OF_RANGE, AnswerResult
 
 

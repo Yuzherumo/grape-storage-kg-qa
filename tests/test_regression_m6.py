@@ -18,8 +18,8 @@ import subprocess
 import sys
 
 import pytest
-
 from _support import DATA, ROOT, SCRIPTS, csv_header, link, make_local_store, read_csv
+
 from app.contracts import WARN_NO_EVIDENCE
 
 
@@ -283,7 +283,7 @@ def test_shine_snapshot_is_strict_subset_of_triples() -> None:
         frozen = tuple(row.get(column, "") for column in header)
         assert frozen in main_rows, (
             f"快照行未与主数据逐字段一致（违规行 sid={row.get('sid')!r}）："
-            f"{dict(zip(header, frozen))}"
+            f"{dict(zip(header, frozen, strict=False))}"
         )
 
 

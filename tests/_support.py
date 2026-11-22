@@ -13,8 +13,9 @@ from __future__ import annotations
 import csv
 import re
 import unicodedata
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -24,7 +25,7 @@ SCRIPTS = ROOT / "scripts"
 TESTS = ROOT / "tests"
 
 # ---------------------------------------------------------------- 文件 / CSV
-def read_csv(path: Path | str) -> List[Dict[str, str]]:
+def read_csv(path: Path | str) -> list[dict[str, str]]:
     """读 UTF-8（容忍 BOM）CSV，返回 dict 行列表。相对路径按 ``data/`` 解析。"""
     target = Path(path)
     if not target.is_absolute():
@@ -33,7 +34,7 @@ def read_csv(path: Path | str) -> List[Dict[str, str]]:
         return [dict(row) for row in csv.DictReader(handle)]
 
 
-def csv_header(path: Path | str) -> List[str]:
+def csv_header(path: Path | str) -> list[str]:
     target = Path(path)
     if not target.is_absolute():
         target = DATA / target
@@ -49,7 +50,7 @@ def read_text(path: Path | str) -> str:
     return target.read_text(encoding="utf-8-sig")
 
 
-def split_ids(value: Any) -> List[str]:
+def split_ids(value: Any) -> list[str]:
     """``"a;b"`` / ``"a；b"`` → ``["a", "b"]``（api.md §1.5 分号分隔）。"""
     text = str(value or "").strip()
     if not text:
@@ -57,7 +58,7 @@ def split_ids(value: Any) -> List[str]:
     return [part.strip() for part in re.split(r"[;；]", text) if part.strip()]
 
 
-def split_keywords(value: Any) -> List[str]:
+def split_keywords(value: Any) -> list[str]:
     """忽略大小写与空白的弱关键词比较用列表。"""
     return [item.strip().lower() for item in split_ids(value)]
 
@@ -70,7 +71,7 @@ def make_local_store(data_dir: Path | str | None = None):
     return LocalStore(str(data_dir or DATA))
 
 
-_catalog_cache: Dict[str, Any] = {}
+_catalog_cache: dict[str, Any] = {}
 
 
 def get_catalog():
@@ -90,7 +91,7 @@ def link(question: str, *, max_hits: int = 8):
     return list(link_entities(question, get_catalog(), max_hits=max_hits))
 
 
-def hit_ids(hits: Iterable[Any]) -> List[str]:
+def hit_ids(hits: Iterable[Any]) -> list[str]:
     return [str(getattr(hit, "node_id", "")) for hit in hits]
 
 
@@ -122,9 +123,9 @@ def make_evidence(**overrides: Any):
 EID_REF_RE = re.compile(r"\[(E\d+)\]")
 
 
-def cited_refs(text: str) -> List[str]:
+def cited_refs(text: str) -> list[str]:
     """答案正文中出现的 ``[E#]`` 引用编号（去重保序）。"""
-    seen: List[str] = []
+    seen: list[str] = []
     for eid in EID_REF_RE.findall(str(text or "")):
         if eid not in seen:
             seen.append(eid)
@@ -157,10 +158,10 @@ _NEG_MARKERS = (
 )
 
 
-def temperatures_in(text: str, *, skip_negated: bool = False) -> List[float]:
+def temperatures_in(text: str, *, skip_negated: bool = False) -> list[float]:
     """抽取文本中的温度数值（含 ``±`` 的上偏差与区间两端）。"""
     normalized = _normalize_text(text)
-    values: List[float] = []
+    values: list[float] = []
     for match in _TEMP_RE.finditer(normalized):
         if skip_negated:
             prefix = normalized[max(0, match.start() - 10) : match.start()]
@@ -175,9 +176,9 @@ def temperatures_in(text: str, *, skip_negated: bool = False) -> List[float]:
     return values
 
 
-def evidence_temperature_intervals(evidence: Sequence[Any]) -> List[Tuple[float, float]]:
+def evidence_temperature_intervals(evidence: Sequence[Any]) -> list[tuple[float, float]]:
     """从证据推导「允许出现的温度区间」：优先结构化 value_min/max，其次 value，再次文本。"""
-    intervals: List[Tuple[float, float]] = []
+    intervals: list[tuple[float, float]] = []
     for item in evidence:
         unit = _normalize_text(getattr(item, "unit", "") or "")
         blob = _normalize_text(
@@ -216,13 +217,13 @@ def evidence_temperature_intervals(evidence: Sequence[Any]) -> List[Tuple[float,
     return intervals
 
 
-def unsupported_temperatures(answer: str, evidence: Sequence[Any]) -> List[float]:
+def unsupported_temperatures(answer: str, evidence: Sequence[Any]) -> list[float]:
     """返回答案中「无法被证据温度区间支撑」的温度数值（独立于 qa.check_numbers）。
 
     遇到「不宜零下18度」这类否定语境的数值会跳过（否定陈述不是推荐值）。
     """
     intervals = evidence_temperature_intervals(evidence)
-    unsupported: List[float] = []
+    unsupported: list[float] = []
     for value in temperatures_in(answer, skip_negated=True):
         if not any(low - 1e-6 <= value <= high + 1e-6 for low, high in intervals):
             unsupported.append(value)
@@ -239,7 +240,7 @@ def keyword_present(keyword: str, answer: str, evidence: Sequence[Any]) -> bool:
 
 
 def evidence_blob(evidence: Sequence[Any]) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
     for item in evidence:
         parts.extend(
             [
@@ -256,13 +257,13 @@ def evidence_blob(evidence: Sequence[Any]) -> str:
 
 
 # ---------------------------------------------------------------- 黄金集
-def load_utterances() -> List[Dict[str, str]]:
+def load_utterances() -> list[dict[str, str]]:
     return read_csv("utterances.csv")
 
 
-def load_eval_questions() -> List[Dict[str, str]]:
+def load_eval_questions() -> list[dict[str, str]]:
     return read_csv("eval_questions.csv")
 
 
-def row_param_id(row: Dict[str, str], id_field: str = "id") -> str:
+def row_param_id(row: dict[str, str], id_field: str = "id") -> str:
     return str(row.get(id_field) or "?").strip()

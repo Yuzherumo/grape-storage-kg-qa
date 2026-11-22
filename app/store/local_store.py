@@ -30,8 +30,9 @@ from __future__ import annotations
 import csv
 import re
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any
 
 try:  # 兼容 `python app/ui.py`（sys.path[0] 为 app/）
     from app.contracts import Evidence, QuerySpec
@@ -53,7 +54,7 @@ __all__ = ["LocalStore", "TRIPLE_FILES"]
 
 ENTITY_FILE = "entities.csv"
 SOURCES_FILE = "sources.csv"
-TRIPLE_FILES: Tuple[str, ...] = ("triples_shine_muscat.csv", "triples.csv")
+TRIPLE_FILES: tuple[str, ...] = ("triples_shine_muscat.csv", "triples.csv")
 
 # Condition.category 取值（docs/spec.md §1.2）
 CATEGORY_TEMPERATURE = "温度"
@@ -64,7 +65,7 @@ INDICATOR_SHELF_LIFE_NAME = "耐贮性"
 
 # query_cypher 展示用：Cypher 模板里的 $ 参数名，以及 QuerySpec 中对应的 list 参数
 _CYPHER_PARAM_RE = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)")
-_LIST_PARAM_NAMES: Tuple[str, ...] = (
+_LIST_PARAM_NAMES: tuple[str, ...] = (
     "variety_ids",
     "condition_ids",
     "indicator_ids",
@@ -74,7 +75,7 @@ _LIST_PARAM_NAMES: Tuple[str, ...] = (
 )
 
 # 边 dict 的统一字段（CSV 缺列时补空）
-EDGE_DEFAULTS: Dict[str, Any] = {
+EDGE_DEFAULTS: dict[str, Any] = {
     "sid": "",
     "subject_id": "",
     "subject_name": "",
@@ -105,9 +106,9 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
-def _template_param_names(template: str) -> List[str]:
+def _template_param_names(template: str) -> list[str]:
     """按首次出现顺序提取 Cypher 模板里实际用到的 ``$参数`` 名。"""
-    names: List[str] = []
+    names: list[str] = []
     for match in _CYPHER_PARAM_RE.finditer(template or ""):
         name = match.group(1)
         if name not in names:
@@ -145,17 +146,17 @@ class LocalStore(GraphStore):
         self.data_dir = Path(data_dir)
         self.k_default = max(1, int(k_default))
         self.queries_dir = Path(queries_dir) if queries_dir else self._default_queries_dir()
-        self.entities: Dict[str, Dict[str, Any]] = {}
-        self.by_name: Dict[str, str] = {}          # 规范 name -> id
-        self.by_alias: Dict[str, List[str]] = defaultdict(list)
-        self.sources: Dict[str, Dict[str, str]] = {}
-        self.edges: List[Dict[str, Any]] = []
-        self.unresolved: List[Dict[str, Any]] = []
-        self._lookup: Dict[str, str] = {}          # 归一化 id/name/alias -> id
-        self._out: Dict[str, List[int]] = defaultdict(list)
-        self._in: Dict[str, List[int]] = defaultdict(list)
-        self._by_predicate: Dict[str, List[int]] = defaultdict(list)
-        self._loaded_files: List[str] = []
+        self.entities: dict[str, dict[str, Any]] = {}
+        self.by_name: dict[str, str] = {}          # 规范 name -> id
+        self.by_alias: dict[str, list[str]] = defaultdict(list)
+        self.sources: dict[str, dict[str, str]] = {}
+        self.edges: list[dict[str, Any]] = []
+        self.unresolved: list[dict[str, Any]] = []
+        self._lookup: dict[str, str] = {}          # 归一化 id/name/alias -> id
+        self._out: dict[str, list[int]] = defaultdict(list)
+        self._in: dict[str, list[int]] = defaultdict(list)
+        self._by_predicate: dict[str, list[int]] = defaultdict(list)
+        self._loaded_files: list[str] = []
         self._load(require_triples=require_triples)
 
     # ================================================================ 加载
@@ -193,7 +194,7 @@ class LocalStore(GraphStore):
             name = _clean(row.get("name"))
             if not entity_id or not label or not name:
                 continue
-            entity: Dict[str, Any] = {
+            entity: dict[str, Any] = {
                 "id": entity_id,
                 "label": label,
                 "name": name,
@@ -258,7 +259,7 @@ class LocalStore(GraphStore):
                 f"缺少三元组数据文件：期望 {expected} 至少存在一个（docs/api.md §1.2）。"
                 "请等待 kg-builder 产出 data/triples_shine_muscat.csv（M1 门禁）或 data/triples.csv。"
             )
-        merged: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        merged: dict[tuple[str, str, str], dict[str, Any]] = {}
         for path in existing:
             self._loaded_files.append(path.name)
             for raw in self._read_csv(path, required=("subject", "predicate", "object")):
@@ -280,11 +281,11 @@ class LocalStore(GraphStore):
             self._by_predicate[edge["predicate"]].append(idx)
 
     @staticmethod
-    def _edge_quality(edge: Mapping[str, Any]) -> Tuple[int, float]:
+    def _edge_quality(edge: Mapping[str, Any]) -> tuple[int, float]:
         status_rank = 1 if edge.get("status") == "verified" else 0
         return status_rank, float(edge.get("confidence") or 0.0)
 
-    def _parse_triple(self, row: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    def _parse_triple(self, row: Mapping[str, Any]) -> dict[str, Any] | None:
         subject_token = _clean(row.get("subject"))
         object_token = _clean(row.get("object"))
         predicate = _clean(row.get("predicate"))
@@ -351,7 +352,7 @@ class LocalStore(GraphStore):
 
     # ---------------------------------------------------------------- CSV
     @staticmethod
-    def _read_csv(path: Path, *, required: Sequence[str] = (), strict: bool = True) -> List[Dict[str, str]]:
+    def _read_csv(path: Path, *, required: Sequence[str] = (), strict: bool = True) -> list[dict[str, str]]:
         try:
             with path.open("r", encoding="utf-8-sig", newline="") as handle:
                 reader = csv.DictReader(handle)
@@ -363,7 +364,7 @@ class LocalStore(GraphStore):
                             f"{path} 缺少必需列：{', '.join(missing)}；实际表头：{', '.join(fieldnames) or '(空)'}。"
                             "请对照 docs/api.md §1.2 修正。"
                         )
-                rows: List[Dict[str, str]] = []
+                rows: list[dict[str, str]] = []
                 for raw in reader:
                     rows.append({str(key or "").strip(): value for key, value in raw.items() if key is not None})
                 return rows
@@ -386,26 +387,26 @@ class LocalStore(GraphStore):
         keys: Sequence[str],
         *,
         also_entity_ids: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         params = getattr(spec, "params", None) or {}
-        tokens: List[str] = []
+        tokens: list[str] = []
         for key in keys:
             tokens.extend(as_list(params.get(key)))
         if also_entity_ids:
             tokens.extend(as_list(params.get("entity_ids")))
-        ids: List[str] = []
+        ids: list[str] = []
         for token in tokens:
             entity_id = self._resolve_entity_id(token)
             if entity_id and self.entities.get(entity_id, {}).get("label") == label and entity_id not in ids:
                 ids.append(entity_id)
         return ids
 
-    def _all_ids(self, spec: QuerySpec) -> List[str]:
+    def _all_ids(self, spec: QuerySpec) -> list[str]:
         params = getattr(spec, "params", None) or {}
-        tokens: List[str] = []
+        tokens: list[str] = []
         for key in ("entity_ids", "variety_ids", "condition_ids", "indicator_ids", "disease_ids", "hit_terms"):
             tokens.extend(as_list(params.get(key)))
-        ids: List[str] = []
+        ids: list[str] = []
         for token in tokens:
             entity_id = self._resolve_entity_id(token)
             if entity_id and entity_id not in ids:
@@ -432,8 +433,8 @@ class LocalStore(GraphStore):
             return ("气调" in name) or ("O₂" in name) or ("O2" in name) or ("CO₂" in name) or ("CO2" in name)
         return False
 
-    def _shelf_life_indicator_ids(self) -> List[str]:
-        ids: List[str] = []
+    def _shelf_life_indicator_ids(self) -> list[str]:
+        ids: list[str] = []
         for entity_id, entity in self.entities.items():
             if entity.get("label") != "QualityIndicator":
                 continue
@@ -442,7 +443,7 @@ class LocalStore(GraphStore):
         return ids
 
     # ================================================================ 执行入口
-    def execute(self, spec: QuerySpec) -> List[Evidence]:
+    def execute(self, spec: QuerySpec) -> list[Evidence]:
         intent = _clean(getattr(spec, "intent", "")) or "general"
         handler = {
             "temperature": self._load_temperature,
@@ -468,12 +469,12 @@ class LocalStore(GraphStore):
         self,
         edge: Mapping[str, Any],
         *,
-        predicates: Optional[Iterable[str]] = None,
-        subject_ids: Optional[Iterable[str]] = None,
-        object_ids: Optional[Iterable[str]] = None,
-        object_category: Optional[str] = None,
-        subject_label: Optional[str] = None,
-        object_label: Optional[str] = None,
+        predicates: Iterable[str] | None = None,
+        subject_ids: Iterable[str] | None = None,
+        object_ids: Iterable[str] | None = None,
+        object_category: str | None = None,
+        subject_label: str | None = None,
+        object_label: str | None = None,
     ) -> bool:
         if predicates is not None and edge["predicate"] not in set(predicates):
             return False
@@ -492,15 +493,15 @@ class LocalStore(GraphStore):
     def _collect(
         self,
         *,
-        predicates: Optional[Iterable[str]] = None,
-        subject_ids: Optional[Iterable[str]] = None,
-        object_ids: Optional[Iterable[str]] = None,
-        object_category: Optional[str] = None,
-        subject_label: Optional[str] = None,
-        object_label: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        predicates: Iterable[str] | None = None,
+        subject_ids: Iterable[str] | None = None,
+        object_ids: Iterable[str] | None = None,
+        object_category: str | None = None,
+        subject_label: str | None = None,
+        object_label: str | None = None,
+    ) -> list[dict[str, Any]]:
         """按条件过滤边 dict（图谱很小，直接线性扫描，保证可读性）。"""
-        selected: List[Dict[str, Any]] = []
+        selected: list[dict[str, Any]] = []
         for edge in self.edges:
             if self._edge_matches(
                 edge,
@@ -514,14 +515,14 @@ class LocalStore(GraphStore):
                 selected.append(edge)
         return selected
 
-    def _edge_row(self, edge: Mapping[str, Any]) -> Dict[str, Any]:
+    def _edge_row(self, edge: Mapping[str, Any]) -> dict[str, Any]:
         """边 dict → :func:`build_evidence` 需要的行 dict。
 
         ``properties`` 里保留 qa 层依赖的元数据：subject_id / object_id / category /
         stage / effect / severity / efficacy / reason（qa 的 compose_steps 用 category/stage，
         数值校验用 value/unit/value_min/value_max，禁忌提示用 severity/efficacy/reason）。
         """
-        properties: Dict[str, Any] = {
+        properties: dict[str, Any] = {
             key: edge.get(key)
             for key in ("sid", "stage", "effect", "level", "severity", "efficacy", "reason")
             if edge.get(key) not in (None, "")
@@ -561,10 +562,10 @@ class LocalStore(GraphStore):
             "properties": properties,
         }
 
-    def _source_titles(self) -> Dict[str, str]:
+    def _source_titles(self) -> dict[str, str]:
         return {source_id: source.get("title", source_id) for source_id, source in self.sources.items()}
 
-    def _finish(self, edges: Iterable[Mapping[str, Any]], spec: QuerySpec, *, k_override: Optional[int] = None) -> List[Evidence]:
+    def _finish(self, edges: Iterable[Mapping[str, Any]], spec: QuerySpec, *, k_override: int | None = None) -> list[Evidence]:
         rows = [self._edge_row(edge) for edge in edges]
         titles = self._source_titles()
         evidences = [build_evidence(row, source_titles=titles) for row in rows]
@@ -582,14 +583,14 @@ class LocalStore(GraphStore):
         evidences: Iterable[Evidence],
         spec: QuerySpec,
         *,
-        k_override: Optional[int] = None,
-    ) -> List[Evidence]:
+        k_override: int | None = None,
+    ) -> list[Evidence]:
         """local 后端能用节点表把实体 id 展开成中文 name/别名，命中度更有意义。"""
         params = getattr(spec, "params", None) or {}
-        terms: List[str] = []
+        terms: list[str] = []
         for key in ("hit_terms", "entity_names"):
             terms.extend(as_list(params.get(key)))
-        tokens: List[str] = []
+        tokens: list[str] = []
         for key in ("entity_ids", "variety_ids", "condition_ids", "indicator_ids", "disease_ids"):
             tokens.extend(as_list(params.get(key)))
         for token in tokens:
@@ -604,10 +605,10 @@ class LocalStore(GraphStore):
         return rank_evidence(evidences, k=max(1, min(50, int(k))), hit_terms=terms)
 
     # ================================================================ 意图：温度/湿度/气调
-    def _load_condition_intent(self, spec: QuerySpec, category: str) -> List[Evidence]:
+    def _load_condition_intent(self, spec: QuerySpec, category: str) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         condition_ids = self._ids_for_label(spec, "Condition", ("condition_ids", "target_condition_ids"))
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if condition_ids:
             # 只保留属于本意图类别的条件；若命中的条件全不属于该类（例如 temperature 问句里
             # 附带命中了 SO₂ 熏蒸），回落到类别过滤，避免“有实体反而 0 证据”。
@@ -641,20 +642,20 @@ class LocalStore(GraphStore):
                 edges.extend(self._collect(predicates=("REQUIRES",), subject_ids=variety_ids or None))
         return self._finish(_dedupe_edges(edges), spec)
 
-    def _load_temperature(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_temperature(self, spec: QuerySpec) -> list[Evidence]:
         return self._load_condition_intent(spec, CATEGORY_TEMPERATURE)
 
-    def _load_humidity(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_humidity(self, spec: QuerySpec) -> list[Evidence]:
         return self._load_condition_intent(spec, CATEGORY_HUMIDITY)
 
-    def _load_atmosphere(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_atmosphere(self, spec: QuerySpec) -> list[Evidence]:
         return self._load_condition_intent(spec, CATEGORY_ATMOSPHERE)
 
     # ================================================================ 意图：耐贮性
-    def _load_shelf_life(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_shelf_life(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         indicator_ids = self._shelf_life_indicator_ids()
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if indicator_ids:
             edges.extend(
                 self._collect(
@@ -672,13 +673,12 @@ class LocalStore(GraphStore):
         return self._finish(_dedupe_edges(edges), spec)
 
     # ================================================================ 意图：病害
-    def _related_disease_ids(self, spec: QuerySpec, variety_ids: Sequence[str]) -> List[str]:
-        params = getattr(spec, "params", None) or {}
+    def _related_disease_ids(self, spec: QuerySpec, variety_ids: Sequence[str]) -> list[str]:
         disease_ids = self._ids_for_label(spec, "Disease", ("disease_ids",))
         if disease_ids:
             return disease_ids
         if variety_ids:
-            related: List[str] = []
+            related: list[str] = []
             for edge in self._collect(predicates=("SUSCEPTIBLE_TO",), subject_ids=variety_ids):
                 if edge["object_id"] and edge["object_id"] not in related:
                     related.append(edge["object_id"])
@@ -690,10 +690,10 @@ class LocalStore(GraphStore):
             if entity.get("label") == "Disease"
         ]
 
-    def _load_disease_control(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_disease_control(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         disease_ids = self._related_disease_ids(spec, variety_ids)
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if disease_ids:
             edges.extend(self._collect(predicates=("PREVENTED_BY",), subject_ids=disease_ids))
             edges.extend(self._collect(predicates=("INDUCED_BY",), subject_ids=disease_ids))
@@ -702,10 +702,10 @@ class LocalStore(GraphStore):
             edges.extend(self._collect(predicates=("INDUCED_BY",)))
         return self._finish(_dedupe_edges(edges), spec)
 
-    def _load_disease_risk(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_disease_risk(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         disease_ids = self._related_disease_ids(spec, variety_ids)
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if disease_ids:
             edges.extend(self._collect(predicates=("INDUCED_BY",), subject_ids=disease_ids))
             edges.extend(
@@ -723,10 +723,10 @@ class LocalStore(GraphStore):
         return self._finish(_dedupe_edges(edges), spec)
 
     # ================================================================ 意图：品质指标
-    def _load_quality_indicator(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_quality_indicator(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         indicator_ids = self._ids_for_label(spec, "QualityIndicator", ("indicator_ids",))
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if indicator_ids:
             edges.extend(self._collect(predicates=("AFFECTS",), object_ids=indicator_ids))
             edges.extend(
@@ -751,9 +751,9 @@ class LocalStore(GraphStore):
         return self._finish(_dedupe_edges(edges), spec)
 
     # ================================================================ 意图：品种对比
-    def _load_variety_compare(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_variety_compare(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         for variety_id in variety_ids:
             edges.extend(self._collect(predicates=("HAS_INDICATOR_VALUE",), subject_ids=[variety_id]))
             edges.extend(
@@ -774,10 +774,10 @@ class LocalStore(GraphStore):
         return self._select_with_coverage(pool, variety_ids, k)
 
     # ================================================================ 意图：禁忌
-    def _load_contraindication(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_contraindication(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         condition_ids = self._ids_for_label(spec, "Condition", ("condition_ids",))
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         if condition_ids:
             # 条件既可能是禁忌的“施加对象”（subject），也可能作为对照词出现（object）
             edges.extend(self._collect(predicates=("CONTRA_INDICATED_FOR",), subject_ids=condition_ids))
@@ -806,10 +806,10 @@ class LocalStore(GraphStore):
         return self._finish(_dedupe_edges(edges), spec)
 
     # ================================================================ 意图：general
-    def _load_general(self, spec: QuerySpec) -> List[Evidence]:
+    def _load_general(self, spec: QuerySpec) -> list[Evidence]:
         params = getattr(spec, "params", None) or {}
         entity_ids = self._all_ids(spec)
-        edges: List[Dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
         for entity_id in entity_ids:
             edges.extend(self.edges[index] for index in self._out.get(entity_id, []))
             edges.extend(self.edges[index] for index in self._in.get(entity_id, []))
@@ -818,7 +818,7 @@ class LocalStore(GraphStore):
         # 关键词兜底：实体名/别名出现在问题里 → 补其相连边；quote 命中关键词 → 补该边
         keywords = as_list(params.get("keywords"))
         question = _clean(params.get("question"))
-        fallback_ids: List[str] = []
+        fallback_ids: list[str] = []
         if question:
             normalized_question = normalize_term(question)
             for entity_id, entity in self.entities.items():
@@ -854,7 +854,7 @@ class LocalStore(GraphStore):
         return self._finish(edges, spec)
 
     # ================================================================ 展示/健康
-    def query_cypher(self, spec: QuerySpec) -> List[str]:
+    def query_cypher(self, spec: QuerySpec) -> list[str]:
         """返回 ``[header, params, template]`` 三个**非空**元素（供 UI 原样展示）。
 
         - 不再返回空分隔元素（UI 逐元素 ``st.code``，空串会渲染空白代码框）；
@@ -863,7 +863,7 @@ class LocalStore(GraphStore):
         - 找不到模板时只返回 header（列表仍非空，qa-tester e2e 不依赖模板存在）。
         """
         intent = _clean(getattr(spec, "intent", "")) or "general"
-        lines: List[str] = ["// backend=local（内存邻接表检索，下方为该意图的等价 Cypher 模板，参数见 QuerySpec）"]
+        lines: list[str] = ["// backend=local（内存邻接表检索，下方为该意图的等价 Cypher 模板，参数见 QuerySpec）"]
         template = self._template_text(intent)
         if template:
             rendered = self._render_cypher_params(spec, template)
@@ -875,14 +875,14 @@ class LocalStore(GraphStore):
             lines.append(template)
         return [line for line in lines if line.strip()]
 
-    def _render_cypher_params(self, spec: QuerySpec, template: str) -> List[Tuple[str, Any]]:
+    def _render_cypher_params(self, spec: QuerySpec, template: str) -> list[tuple[str, Any]]:
         """按模板参数名收集并格式化参数值（只保留模板实际用到的 ``$`` 参数）。"""
         names = _template_param_names(template)
         if not names:
             return []
         params = getattr(spec, "params", None) or {}
         cypher_params = getattr(spec, "cypher_params", None) or {}
-        merged: Dict[str, Any] = {}
+        merged: dict[str, Any] = {}
         if isinstance(params, Mapping):
             merged.update(params)
         if isinstance(cypher_params, Mapping):
@@ -891,10 +891,10 @@ class LocalStore(GraphStore):
         limit_value = merged.get("limit", merged.get("k"))
         limit_number = to_float(limit_value)
         limit = int(limit_number) if limit_number is not None else self.k_default
-        values: Dict[str, Any] = {name: as_list(merged.get(name)) for name in _LIST_PARAM_NAMES}
+        values: dict[str, Any] = {name: as_list(merged.get(name)) for name in _LIST_PARAM_NAMES}
         values["limit"] = max(1, min(50, limit))
 
-        rendered: List[Tuple[str, Any]] = []
+        rendered: list[tuple[str, Any]] = []
         for name in names:
             if name in values:
                 rendered.append((name, values[name]))
@@ -911,8 +911,8 @@ class LocalStore(GraphStore):
         except OSError:
             return ""
 
-    def stats(self) -> Dict[str, Any]:
-        counts: Dict[str, int] = defaultdict(int)
+    def stats(self) -> dict[str, Any]:
+        counts: dict[str, int] = defaultdict(int)
         for entity in self.entities.values():
             counts[entity.get("label", "")] += 1
         return {
@@ -928,7 +928,7 @@ class LocalStore(GraphStore):
             "data_files": list(self._loaded_files),
         }
 
-    def health(self) -> Tuple[bool, str]:
+    def health(self) -> tuple[bool, str]:
         if not self.entities or not self.edges:
             return False, f"local: 数据为空（nodes={len(self.entities)}, rels={len(self.edges)}，data_dir={self.data_dir}）"
         return True, (
@@ -940,10 +940,10 @@ class LocalStore(GraphStore):
         return None
 
 
-def _dedupe_edges(edges: Iterable[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+def _dedupe_edges(edges: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """按 (subject_id/name, predicate, object_id/name) 去重，保留首次出现（保持顺序确定）。"""
     seen: set = set()
-    result: List[Dict[str, Any]] = []
+    result: list[dict[str, Any]] = []
     for edge in edges:
         key = (
             edge.get("subject_id") or edge.get("subject_name"),

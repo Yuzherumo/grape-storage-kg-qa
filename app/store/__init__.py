@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any
 
 from .base import BackendFallback, DataError, GraphStore, StoreError
 from .local_store import LocalStore
@@ -70,7 +70,7 @@ def _setting(settings: Any, *names: str, default: Any = None) -> Any:
     return default
 
 
-def _resolve_backend(settings: Any, backend: Optional[str]) -> str:
+def _resolve_backend(settings: Any, backend: str | None) -> str:
     value = _first(
         backend,
         _setting(settings, "graph_backend", "backend", "GRAPH_BACKEND"),
@@ -101,7 +101,7 @@ def _resolve_queries_dir(settings: Any) -> Path:
     return _project_root() / "graph" / "queries"
 
 
-def _neo4j_config(settings: Any) -> Dict[str, Any]:
+def _neo4j_config(settings: Any) -> dict[str, Any]:
     return {
         "uri": str(
             _first(
@@ -135,7 +135,7 @@ def _neo4j_config(settings: Any) -> Dict[str, Any]:
 def get_store(
     settings: Any = None,
     *,
-    backend: Optional[str] = None,
+    backend: str | None = None,
     data_dir: Any = None,
 ) -> GraphStore:
     """按配置创建后端；neo4j 不可用时自动回落 local 并打标记。

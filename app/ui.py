@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Streamlit 演示界面（DeepSeek 网页版风格）。
 
 设计参考 DeepSeek 网页版：
@@ -20,9 +19,10 @@ import os
 import re
 import sys
 import traceback
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -33,11 +33,11 @@ import streamlit.components.v1 as components
 
 from app.contracts import AnswerResult, Evidence
 from app.graph_interactive import interactive_html
-from app.graph_view import ego_graph, graph_summary, load_graph, to_svg
+from app.graph_view import ego_graph, graph_summary, load_graph
 
 DATA = ROOT / "data"
 
-EXAMPLES: List[str] = [
+EXAMPLES: list[str] = [
     "阳光玫瑰放冷库该调到多少度？",
     "冷库里葡萄长白毛了怎么办？",
     "阳光玫瑰库房湿度要调到多少？",
@@ -91,7 +91,7 @@ def _cite_html(text: str) -> str:
     return re.sub(r"\[(E\d+)\]", r'<span class="ds-cite">\1</span>', text or "")
 
 
-def _split_answer(answer: str) -> Tuple[str, str, str]:
+def _split_answer(answer: str) -> tuple[str, str, str]:
     """拆成 结论 / 依据 / 行动 三段，兼容模板与 LLM 输出。"""
     raw = (answer or "").strip()
     if not raw:
@@ -109,7 +109,7 @@ def _split_answer(answer: str) -> Tuple[str, str, str]:
     return concl.strip(), basis.strip(), tail.strip()
 
 
-def _order_evidence(evidence: Sequence[Evidence], cited: Sequence[str]) -> List[Evidence]:
+def _order_evidence(evidence: Sequence[Evidence], cited: Sequence[str]) -> list[Evidence]:
     cited_set = set(cited or [])
     return sorted(evidence or [], key=lambda e: (e.eid not in cited_set, -float(e.confidence or 0)))
 
@@ -212,7 +212,7 @@ def _call_supported(func: Any, *args: Any, **kwargs: Any) -> Any:
 
 
 def _ask(rt: Runtime, question: str, *, topk: int, allow_llm: bool,
-         context: Optional[dict]) -> Tuple[Optional[AnswerResult], Optional[str]]:
+         context: dict | None) -> tuple[AnswerResult | None, str | None]:
     if not rt.ready or rt.answer_question is None:
         return _stub_result(question), None
     try:
@@ -235,7 +235,7 @@ def _rows(path: Path) -> int:
 
 
 @st.cache_data(show_spinner=False)
-def build_graph_html(view: str) -> Tuple[str, Dict[str, int]]:
+def build_graph_html(view: str) -> tuple[str, dict[str, int]]:
     """生成可交互知识图谱 HTML（点击节点看邻居；view=all|shine）。"""
     try:
         graph = load_graph(DATA)
@@ -257,7 +257,7 @@ def build_graph_html(view: str) -> Tuple[str, Dict[str, int]]:
         return "<p>图谱渲染失败：" + _esc(exc) + "</p>", {}
 
 
-def graph_stats(rt: Runtime) -> Dict[str, int]:
+def graph_stats(rt: Runtime) -> dict[str, int]:
     out = {"entities": _rows(DATA / "entities.csv"), "sources": _rows(DATA / "sources.csv"),
            "triples": _rows(DATA / "triples.csv")}
     out["nodes"] = out["entities"] + out["sources"]
@@ -271,9 +271,9 @@ def graph_stats(rt: Runtime) -> Dict[str, int]:
     return out
 
 
-def load_vocab() -> Tuple[List[str], List[str]]:
-    varieties: List[str] = []
-    diseases: List[str] = []
+def load_vocab() -> tuple[list[str], list[str]]:
+    varieties: list[str] = []
+    diseases: list[str] = []
     try:
         with (DATA / "entities.csv").open(encoding="utf-8-sig") as f:
             for row in csv.DictReader(f):
@@ -390,7 +390,7 @@ html{ font-size:18px; }
 
 
 # ---------------------------------------------------------------- 侧栏
-def render_sidebar(rt: Runtime) -> Dict[str, Any]:
+def render_sidebar(rt: Runtime) -> dict[str, Any]:
     with st.sidebar:
         st.markdown('<div class="ds-logo"><span class="mark">葡</span>葡萄冷库知识库</div>', unsafe_allow_html=True)
         if st.button("＋ 新建对话", use_container_width=True, key="new_chat"):
@@ -452,7 +452,7 @@ def render_sidebar(rt: Runtime) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------- 渲染
-def _warn_cls(raw: str) -> Tuple[str, str]:
+def _warn_cls(raw: str) -> tuple[str, str]:
     if raw.startswith("unsourced_number") or raw.startswith("out_of_range") or raw == "out_of_range":
         return "amber", "越界"
     if raw in ("no_evidence", "no_citation") or raw.startswith("invalid_citation"):

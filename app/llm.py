@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Dict, List
+from typing import Any
 
 from app.config import Settings, load_settings
 
@@ -22,7 +22,7 @@ class LLMClient:
     def __init__(self, settings: Settings | None = None, *, timeout: float | None = None):
         self.settings = settings or load_settings()
         self.timeout = float(timeout if timeout is not None else getattr(self.settings, "llm_timeout", 20.0))
-        self.last_usage: Dict[str, Any] = {}
+        self.last_usage: dict[str, Any] = {}
         self._lock = threading.Lock()
         self._client = None
         if self.settings.llm_configured:
@@ -48,7 +48,7 @@ class LLMClient:
 
     def complete(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         *,
         timeout: float | None = None,
         retries: int = 2,
@@ -100,7 +100,7 @@ class StubLLM:
     def available(self) -> bool:
         return not self.raise_error
 
-    def complete(self, messages: List[Dict[str, str]], **_: Any) -> str:
+    def complete(self, messages: list[dict[str, str]], **_: Any) -> str:
         self.calls += 1
         if self.raise_error:
             raise LLMUnavailable("stub")

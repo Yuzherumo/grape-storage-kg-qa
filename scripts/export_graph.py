@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """导出知识图谱可视化资产（SVG；PNG 见 .tmp/render_graph_png.py 或 --png 参数）。"""
 from __future__ import annotations
 

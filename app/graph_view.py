@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """知识图谱可视化（纯标准库，生成自包含 SVG；UI 与导出脚本共用）。
 
 数据来源：data/entities.csv + data/triples.csv（Source 节点作为溯源属性，不画进主图）。
@@ -12,7 +11,6 @@ import math
 import random
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
 
 LABEL_CN = {
     "Variety": "品种", "Condition": "储藏条件", "QualityIndicator": "品质指标",
@@ -39,7 +37,7 @@ class GNode:
     x: float = 0.0
     y: float = 0.0
     degree: int = 0
-    attrs: Dict[str, str] = field(default_factory=dict)
+    attrs: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -62,16 +60,16 @@ class GEdge:
 
 @dataclass
 class Graph:
-    nodes: List[GNode] = field(default_factory=list)
-    edges: List[GEdge] = field(default_factory=list)
+    nodes: list[GNode] = field(default_factory=list)
+    edges: list[GEdge] = field(default_factory=list)
 
-    def by_id(self) -> Dict[str, GNode]:
+    def by_id(self) -> dict[str, GNode]:
         return {n.id: n for n in self.nodes}
 
 
 def load_graph(data_dir: Path | str, *, include_sources: bool = False, include_isolated: bool = True) -> Graph:
     data = Path(data_dir)
-    nodes: Dict[str, GNode] = {}
+    nodes: dict[str, GNode] = {}
     attr_keys = ("category", "species", "berry_color", "seedless", "maturity", "region",
                  "pathogen_latin", "symptom", "method", "stage", "direction", "value_min", "value_max", "unit", "note", "aliases")
     with (data / "entities.csv").open(encoding="utf-8-sig") as f:
@@ -87,7 +85,7 @@ def load_graph(data_dir: Path | str, *, include_sources: bool = False, include_i
         except FileNotFoundError:
             pass
     name_to_id = {n.name: n.id for n in nodes.values()}
-    edges: List[GEdge] = []
+    edges: list[GEdge] = []
     with (data / "triples.csv").open(encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
             s = name_to_id.get(row["subject"])
@@ -124,10 +122,10 @@ def ego_graph(graph: Graph, node_id: str) -> Graph:
     return Graph(nodes=nodes, edges=edges)
 
 
-def _seed_positions(nodes: List[GNode]) -> None:
+def _seed_positions(nodes: list[GNode]) -> None:
     """按类型分簇放在圆周上，簇内均匀散开（确定性）。"""
     rng = random.Random(20261122)
-    groups: Dict[str, List[GNode]] = {lab: [] for lab in LABEL_ORDER}
+    groups: dict[str, list[GNode]] = {lab: [] for lab in LABEL_ORDER}
     for n in nodes:
         groups.setdefault(n.label, []).append(n)
     active = [lab for lab in LABEL_ORDER if groups.get(lab)]
@@ -217,7 +215,7 @@ def _esc(text: str) -> str:
 
 
 def to_svg(graph: Graph, *, width: int = 1600, height: int = 980, title: str = "知识图谱",
-           subtitle: str = "", max_labels: Optional[int] = None) -> str:
+           subtitle: str = "", max_labels: int | None = None) -> str:
     """生成自包含 SVG（带 hover 提示、图例、边按谓词着色）。"""
     if not graph.nodes:
         return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"></svg>'
@@ -231,7 +229,7 @@ def to_svg(graph: Graph, *, width: int = 1600, height: int = 980, title: str = "
         base = 16 if n.label == "Variety" else 12
         size[n.id] = base + min(8, n.degree * 0.8) if n.degree else base
 
-    parts: List[str] = [
+    parts: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
         f'viewBox="0 0 {W} {H}" font-family="Microsoft YaHei, PingFang SC, sans-serif">',
         f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
@@ -293,7 +291,7 @@ def to_svg(graph: Graph, *, width: int = 1600, height: int = 980, title: str = "
     return "\n".join(parts)
 
 
-def graph_summary(graph: Graph) -> Dict[str, int]:
+def graph_summary(graph: Graph) -> dict[str, int]:
     c = {lab: sum(1 for n in graph.nodes if n.label == lab) for lab in LABEL_ORDER}
     verified = sum(1 for e in graph.edges if e.status == "verified")
     return {"nodes": len(graph.nodes), "edges": len(graph.edges), **c,
@@ -304,9 +302,9 @@ def svg_hash(svg: str) -> str:
     return hashlib.md5(svg.encode("utf-8")).hexdigest()[:8]
 
 
-def load_sources(data_dir: Path | str) -> Dict[str, str]:
+def load_sources(data_dir: Path | str) -> dict[str, str]:
     """来源 id -> 标题（用于图谱详情的来源展示）。"""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     path = Path(data_dir) / "sources.csv"
     try:
         with path.open(encoding="utf-8-sig") as f:
@@ -317,9 +315,9 @@ def load_sources(data_dir: Path | str) -> Dict[str, str]:
     return out
 
 
-def load_descriptions(data_dir: Path | str) -> Dict[str, Dict[str, str]]:
+def load_descriptions(data_dir: Path | str) -> dict[str, dict[str, str]]:
     """节点 id -> 科普描述（data/descriptions.csv；没有的节点返回空字典）。"""
-    out: Dict[str, Dict[str, str]] = {}
+    out: dict[str, dict[str, str]] = {}
     path = Path(data_dir) / "descriptions.csv"
     try:
         with path.open(encoding="utf-8-sig") as f:

@@ -1,7 +1,0 @@
-id,question,expected_intent,expected_predicate,must_keywords,forbidden_keywords,kind
-Q1,阳光玫瑰放冷库该调到多少度？,temperature,REQUIRES,阳光玫瑰;℃,,core
-Q2,冷库里葡萄长白毛了怎么办？,disease_control,PREVENTED_BY,灰霉,,core
-Q3,葡萄发软掉粒是咋回事？,quality_indicator,AFFECTS,落粒,,core
-Q4,用 SO₂ 熏阳光玫瑰行不行？,contraindication,CONTRA_INDICATED_FOR,SO₂,,core
-Q5,阳光玫瑰和巨峰哪个更能放？,variety_compare,HAS_INDICATOR_VALUE,阳光玫瑰;巨峰,,core
-Q6,-18℃ 冻起来能存一年吗？,temperature,REQUIRES,,零下18;可存一年,probe

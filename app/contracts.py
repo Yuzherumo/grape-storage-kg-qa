@@ -5,8 +5,8 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 # ---------------------------------------------------------------- 意图枚举
 INTENTS = (
@@ -54,13 +54,13 @@ class Evidence:
     subject: str
     predicate: str
     object: str
-    value: Optional[float] = None
+    value: float | None = None
     unit: str = ""
-    value_min: Optional[float] = None
-    value_max: Optional[float] = None
-    properties: Dict[str, Any] = field(default_factory=dict)
-    source_ids: List[str] = field(default_factory=list)
-    source_titles: List[str] = field(default_factory=list)
+    value_min: float | None = None
+    value_max: float | None = None
+    properties: dict[str, Any] = field(default_factory=dict)
+    source_ids: list[str] = field(default_factory=list)
+    source_titles: list[str] = field(default_factory=list)
     locator: str = ""
     quote: str = ""
     status: str = "anchor"         # verified | anchor
@@ -71,7 +71,7 @@ class Evidence:
     def single_source(self) -> bool:
         return len(self.source_ids) < 2
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -80,9 +80,9 @@ class QuerySpec:
     """意图 → 一次结构化查询。cypher 参数化，禁止拼接。"""
 
     intent: str
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
     cypher_file: str = ""
-    cypher_params: Dict[str, Any] = field(default_factory=dict)
+    cypher_params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -90,20 +90,20 @@ class AnswerResult:
     """问答结果（UI / CLI / 测试共用）。"""
 
     question: str
-    entities: List[EntityHit] = field(default_factory=list)
+    entities: list[EntityHit] = field(default_factory=list)
     intent: str = "general"
     intent_confidence: float = 0.0
-    evidence: List[Evidence] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)
     answer: str = ""
-    steps: List[str] = field(default_factory=list)
-    cited_ids: List[str] = field(default_factory=list)
+    steps: list[str] = field(default_factory=list)
+    cited_ids: list[str] = field(default_factory=list)
     mode: str = "template"         # llm | template
     elapsed_ms: int = 0
-    query_cypher: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    llm_meta: Dict[str, Any] = field(default_factory=dict)
+    query_cypher: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    llm_meta: dict[str, Any] = field(default_factory=dict)
     context_note: str = ""  # 多轮追问承接提示（如「承接上一轮：阳光玫瑰」），单轮为空
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         d = asdict(self)
         return d

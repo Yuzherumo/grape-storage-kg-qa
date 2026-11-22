@@ -1,5 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-"""在嵌入式 openCypher 引擎 Kùzu 上实跑图谱查询，并与本地后端做一致性对照。
+﻿"""在嵌入式 openCypher 引擎 Kùzu 上实跑图谱查询，并与本地后端做一致性对照。
 
 为什么不是 Neo4j：当前网络对 dist.neo4j.org / dist.neo4j.com 均返回 403，
 无法下载 Neo4j 5 分发包（详见 docs/neo4j_verify.md）。Kùzu 是嵌入式 openCypher
@@ -20,7 +19,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -110,13 +108,13 @@ def in_list(ids: list[str]) -> str:
 
 
 def intent_queries(intent: str, ids: dict) -> list[str]:
-    v, c, d, qid = ids.get("variety_ids") or [], ids.get("condition_ids") or [], \
-        ids.get("disease_ids") or [], ids.get("indicator_ids") or []
+    v = ids.get("variety_ids") or []
+    d = ids.get("disease_ids") or []
     every = ids.get("entity_ids") or []
     qs: list[str] = []
     if intent == "temperature":
-        qs.append(f"MATCH (s:Variety)-[:REQUIRES]->(c:Condition) "
-                  f"WHERE c.category = '温度' RETURN s.name, 'REQUIRES', c.name")
+        qs.append("MATCH (s:Variety)-[:REQUIRES]->(c:Condition) "
+                  "WHERE c.category = '温度' RETURN s.name, 'REQUIRES', c.name")
     elif intent == "humidity":
         qs.append("MATCH (s:Variety)-[:REQUIRES]->(c:Condition) "
                   "WHERE c.category = '湿度' RETURN s.name, 'REQUIRES', c.name")
@@ -168,7 +166,7 @@ def intent_queries(intent: str, ids: dict) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--keep-db", action="store_true", help="（已废弃，内存库无需保留）")
-    args = ap.parse_args()
+    ap.parse_args()
 
     try:
         import kuzu  # type: ignore

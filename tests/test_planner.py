@@ -8,8 +8,8 @@ from __future__ import annotations
 import json
 
 import pytest
+from _support import link, load_utterances
 
-from _support import load_utterances, link, split_ids
 from app.contracts import INTENTS, QuerySpec
 
 

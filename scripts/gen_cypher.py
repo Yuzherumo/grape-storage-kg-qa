@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """CSV → Cypher 生成器（MERGE 幂等）。
 
 输入：data/entities.csv、data/sources.csv、data/triples.csv
@@ -20,7 +19,6 @@ import csv
 import sys
 from collections import Counter, OrderedDict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 BASE = Path(__file__).resolve().parents[1]
 DATA = BASE / "data"
@@ -87,7 +85,7 @@ def lit(value: str) -> str:
     return "'" + esc(value) + "'"
 
 
-def num_lit(raw: str) -> Optional[str]:
+def num_lit(raw: str) -> str | None:
     s = str(raw).strip()
     if s == "":
         return None
@@ -105,8 +103,8 @@ def list_lit(raw: str) -> str:
     return "[" + ", ".join(lit(i) for i in items) + "]"
 
 
-def prop_assignments(row: Dict[str, str], keys: List[str], numeric: set, lists: set) -> List[str]:
-    parts: List[str] = []
+def prop_assignments(row: dict[str, str], keys: list[str], numeric: set, lists: set) -> list[str]:
+    parts: list[str] = []
     for k in keys:
         raw = row.get(k, "")
         if raw is None:
@@ -125,8 +123,8 @@ def prop_assignments(row: Dict[str, str], keys: List[str], numeric: set, lists: 
     return parts
 
 
-def rel_prop_assignments(row: Dict[str, str]) -> List[str]:
-    parts: List[str] = []
+def rel_prop_assignments(row: dict[str, str]) -> list[str]:
+    parts: list[str] = []
     for k in REL_PROP_ORDER:
         raw = row.get(k, "")
         if raw is None:
@@ -145,18 +143,18 @@ def rel_prop_assignments(row: Dict[str, str]) -> List[str]:
     return parts
 
 
-def read_csv(path: Path) -> List[Dict[str, str]]:
+def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         return [{k: (v if v is not None else "") for k, v in row.items()} for row in reader]
 
 
-def build_nodes(entities: List[Dict[str, str]], sources: List[Dict[str, str]]) -> str:
+def build_nodes(entities: list[dict[str, str]], sources: list[dict[str, str]]) -> str:
     counts = Counter((r.get("label") or "").strip() for r in entities)
     counts["Source"] = len(sources)
     breakdown = "，".join(f"{k} {v}" for k, v in counts.items() if v)
     total = len(entities) + len(sources)
-    lines: List[str] = [HEADER_NODES.format(total=total, breakdown=breakdown)]
+    lines: list[str] = [HEADER_NODES.format(total=total, breakdown=breakdown)]
 
     for label in NODE_LABELS:
         rows = [r for r in entities if (r.get("label") or "").strip() == label]
@@ -189,10 +187,10 @@ def build_nodes(entities: List[Dict[str, str]], sources: List[Dict[str, str]]) -
     return "\n".join(lines)
 
 
-def build_rels(triples: List[Dict[str, str]], entities: List[Dict[str, str]],
-               sources: List[Dict[str, str]]) -> Tuple[str, List[str]]:
-    errors: List[str] = []
-    name_to: Dict[str, Tuple[str, str]] = {}
+def build_rels(triples: list[dict[str, str]], entities: list[dict[str, str]],
+               sources: list[dict[str, str]]) -> tuple[str, list[str]]:
+    errors: list[str] = []
+    name_to: dict[str, tuple[str, str]] = {}
     for r in entities:
         n = (r.get("name") or "").strip()
         if n:
@@ -204,9 +202,9 @@ def build_rels(triples: List[Dict[str, str]], entities: List[Dict[str, str]],
 
     counts = Counter((r.get("predicate") or "").strip() for r in triples)
     breakdown = "，".join(f"{k} {v}" for k, v in counts.items())
-    lines: List[str] = [HEADER_RELS.format(total=len(triples), breakdown=breakdown)]
+    lines: list[str] = [HEADER_RELS.format(total=len(triples), breakdown=breakdown)]
 
-    by_pred: "OrderedDict[str, List[Dict[str, str]]]" = OrderedDict()
+    by_pred: OrderedDict[str, list[dict[str, str]]] = OrderedDict()
     for r in triples:
         by_pred.setdefault((r.get("predicate") or "").strip(), []).append(r)
 
@@ -271,7 +269,7 @@ def diff_summary(expected: str, actual_path: Path) -> str:
     return (f"{actual_path.relative_to(BASE)} 行数不同：期望 {len(exp_lines)} 行，实际 {len(act_lines)} 行")
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CSV → Cypher（MERGE 幂等）生成器")
     parser.add_argument("--check", action="store_true", help="只比对是否漂移，不写盘；有漂移退出码 1")
     parser.add_argument("--stats", action="store_true", help="打印节点/关系统计")

@@ -8,8 +8,8 @@ from __future__ import annotations
 import os
 
 import pytest
+from _support import link, make_local_store
 
-from _support import make_local_store, link
 from app.contracts import INTENTS, QuerySpec
 
 

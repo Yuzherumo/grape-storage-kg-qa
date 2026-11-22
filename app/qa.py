@@ -16,7 +16,8 @@ import os
 import re
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from app.contracts import (
     WARN_BACKEND_FALLBACK,
@@ -101,15 +102,15 @@ def _evidence_line(e: Evidence) -> str:
     )
 
 
-def _assign_eids(evidence: List[Evidence]) -> List[Evidence]:
+def _assign_eids(evidence: list[Evidence]) -> list[Evidence]:
     for i, e in enumerate(evidence, start=1):
         e.eid = f"E{i}"
     return evidence
 
 
-def _dedupe(evidence: Sequence[Evidence]) -> List[Evidence]:
+def _dedupe(evidence: Sequence[Evidence]) -> list[Evidence]:
     seen = set()
-    out: List[Evidence] = []
+    out: list[Evidence] = []
     for e in evidence:
         key = (e.subject, e.predicate, e.object)
         if key in seen:
@@ -179,11 +180,11 @@ _STEP_RULES = (
 )
 
 
-def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> List[str]:
+def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> list[str]:
     """由证据派生「现在该做什么」，≤3 步；无证据返回 []。"""
     if intent == "general":  # 实体中心检索不硬编动作，避免「按腐烂率分拣」这类错位建议
         return []
-    steps: List[str] = []
+    steps: list[str] = []
     for e in evidence:
         cat = e.properties.get("category") or ""
         if e.predicate == "CONTRA_INDICATED_FOR":
@@ -208,7 +209,7 @@ def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> 
                     steps.append(tpl.format(obj=e.object) + f"（[{e.eid}]）")
                     break
     # 去重保序
-    out: List[str] = []
+    out: list[str] = []
     seen: set[str] = set()
     for s in steps:
         key = re.sub(r"（\[E\d+\]）$", "", s)
@@ -228,7 +229,7 @@ def template_answer(
     evidence: Sequence[Evidence],
     entities: Sequence[EntityHit],
     out_of_range: bool,
-    missing_shelf_ids: Optional[set] = None,
+    missing_shelf_ids: set | None = None,
 ) -> str:
     """模板答案：结论 + 依据。每句带 [E#]。"""
     if not evidence:
@@ -257,7 +258,7 @@ def template_answer(
                 head += f"同时要避免{'、'.join(e.object for e in risk[:2])}。"
             head += "已发病的果穗先挑出隔离，工具消毒后再处理健康果。"
         else:
-            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
+            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3], strict=False)) + "。"
 
     elif intent == "variety_compare":
         # 先算「哪些命中品种在图里没有耐贮性基线」（以 missing_shelf_ids / 有效证据为准）
@@ -266,7 +267,7 @@ def template_answer(
             if e.predicate == "HAS_INDICATOR_VALUE" and e.object == "耐贮性"
             and (e.value is not None or e.value_min is not None or e.value_max is not None)
         }
-        missing: List[str] = []
+        missing: list[str] = []
         seen_ids: set[str] = set()
         for h in [x for x in entities if x.label == "Variety"]:
             if h.node_id in seen_ids:
@@ -293,7 +294,7 @@ def template_answer(
                     parts.append(f"图谱未收录{e.subject}的{e.object}数值（[{e.eid}]）")
             head = "结论：" + "；".join(parts)
         else:
-            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3]))
+            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3], strict=False))
         # 去重：同一品种同一句不重复出现
         if not missing and missing_shelf_ids is None:
             # 回退（无 entities 的合成场景）：直接从证据里找「有耐贮性边但没数值」的品种
@@ -318,9 +319,9 @@ def template_answer(
             elif c.properties.get("reason"):
                 head += f"原因：{c.properties.get('reason')}。"
         else:
-            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
+            head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3], strict=False)) + "。"
     else:
-        head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3])) + "。"
+        head = "结论：" + "；".join(f"{f}（[{e.eid}]）" for f, e in zip(facts, evidence[:3], strict=False)) + "。"
 
     basis = "依据：\n" + "\n".join(f"- {_evidence_line(e)}" for e in evidence[:5])
     # 温度口径冲突时显式解释（国标通用区间 vs 文献工程口径）
@@ -372,14 +373,14 @@ def _ranges_from_text(text: str):
     return out
 
 
-def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "") -> List[str]:
+def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "") -> list[str]:
     """单位感知 + 区间感知的数值一致性校验。
 
     - 带单位的数字：与证据同单位区间比对，落在区间外 → ``out_of_range:<num><unit>``；
     - 不带单位/证据无同单位区间的数字：与证据文本中的数字比对，否则 ``unsourced_number:<num>``；
     - 先剥 ``[E#]`` 与行首步骤序号，避免把引用编号、列表序号当数字。
     """
-    fam_ranges: Dict[str, List[Tuple[float, float]]] = {}
+    fam_ranges: dict[str, list[tuple[float, float]]] = {}
     bare_allowed: set[float] = set()
 
     def _add_bare(text: Any) -> None:
@@ -415,7 +416,7 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
     clean = re.sub(r"(?m)^\s*\d+[.、)）]\s*", "", clean)     # 行首步骤序号
     clean = clean.replace("1-MCP", "MCP")                   # 避免把 1-MCP 的 1 当数值
 
-    warnings: List[str] = []
+    warnings: list[str] = []
 
     def _warn(code: str) -> None:
         if code not in warnings:
@@ -443,12 +444,12 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
 
 
 
-def verify_citations(answer: str, evidence: Sequence[Evidence]) -> Tuple[List[str], List[str]]:
+def verify_citations(answer: str, evidence: Sequence[Evidence]) -> tuple[list[str], list[str]]:
     valid_ids = {e.eid for e in evidence}
     cited = re.findall(r"\[(E\d+)\]", answer or "")
     uniq = [c for c in dict.fromkeys(cited) if c in valid_ids]
     invalid = [c for c in dict.fromkeys(cited) if c not in valid_ids]
-    warnings: List[str] = [] if uniq else [WARN_NO_CITATION]
+    warnings: list[str] = [] if uniq else [WARN_NO_CITATION]
     for cid in invalid:
         code = f"invalid_citation:{cid}"
         if code not in warnings:
@@ -477,7 +478,7 @@ def detect_out_of_range(question: str, evidence: Sequence[Evidence]) -> bool:
 
 
 # ------------------------------------------------------------------ Prompt
-def build_prompt(question: str, evidence: Sequence[Evidence]) -> List[Dict[str, str]]:
+def build_prompt(question: str, evidence: Sequence[Evidence]) -> list[dict[str, str]]:
     ev_lines = "\n".join(f"[{e.eid}] {e.subject} | {PRED_LABEL.get(e.predicate, e.predicate)} | {e.object}"
                          + (f" | 值={_fmt_value(e)}" if _fmt_value(e) else "")
                          + f" | 来源={_sources_cn(e)} | {_status_cn(e)}" for e in evidence)
@@ -504,7 +505,7 @@ def build_prompt(question: str, evidence: Sequence[Evidence]) -> List[Dict[str, 
     ]
 
 
-def _split_llm_text(text: str) -> Tuple[str, List[str]]:
+def _split_llm_text(text: str) -> tuple[str, list[str]]:
     """把「结论/依据/现在该做什么」拆成 answer 与 steps。"""
     raw = (text or "").strip()
     if not raw:
@@ -512,7 +513,7 @@ def _split_llm_text(text: str) -> Tuple[str, List[str]]:
     m = re.search(r"(现在该做什么|现在要做什么|该做什么|操作建议|下一步建议)", raw)
     head, tail = (raw, "") if not m else (raw[: m.start()], raw[m.start():])
     tail = re.sub(r"^.*?(现在该做什么|现在要做什么|该做什么|操作建议|下一步建议)[:：]?", "", tail)
-    steps: List[str] = []
+    steps: list[str] = []
     for line in tail.splitlines():
         line = line.strip()
         if not line:
@@ -526,8 +527,8 @@ def _split_llm_text(text: str) -> Tuple[str, List[str]]:
 
 
 # ------------------------------------------------------------------ 词表缓存
-_CATALOG_CACHE: Dict[str, Any] = {}
-_LLM_CACHE: Dict[str, str] = {}
+_CATALOG_CACHE: dict[str, Any] = {}
+_LLM_CACHE: dict[str, str] = {}
 _LLM_CACHE_MAX = 64
 
 
@@ -569,12 +570,12 @@ def answer_question(
     allow_llm: bool = True,
     steps: bool = True,
     settings: Any = None,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> AnswerResult:
     t0 = time.perf_counter()
     q = (question or "").strip()
     result = AnswerResult(question=q)
-    warnings: List[str] = []
+    warnings: list[str] = []
     result.warnings = warnings
 
     if not q:
@@ -632,7 +633,7 @@ def answer_question(
         return result
 
     # 3) 查询图谱
-    evidence: List[Evidence] = []
+    evidence: list[Evidence] = []
     store_obj = None
     try:
         store_obj = _get_store(store, settings)
@@ -781,7 +782,7 @@ def answer_question(
                 text2 = llm.complete(messages2)
                 cited2, w2 = verify_citations(text2, evidence)
                 if cited2:
-                    answer, cited, w = text2, cited2, w2
+                    answer, cited = text2, cited2
                 else:
                     warnings.extend(w2)
                     warnings.append(WARN_NO_CITATION)
@@ -827,13 +828,13 @@ def answer_question(
 
     # 9) 元信息
     if llm is not None and hasattr(llm, "last_usage"):
-        result.llm_meta = dict(getattr(llm, "last_usage") or {})
+        result.llm_meta = dict(llm.last_usage or {})
     result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
     return result
 
 
 # ------------------------------------------------------------------ CLI
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="鲜食葡萄储藏知识图谱问答 CLI")
     parser.add_argument("question", nargs="*", help="用户问题")
     parser.add_argument("--k", type=int, default=6, help="证据条数上限")

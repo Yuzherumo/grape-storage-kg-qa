@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Cypher 脚本静态校验（无需 Neo4j 服务端）。
 
 检查项：
@@ -83,7 +82,7 @@ def main() -> int:
     if schema.exists():
         s = schema.read_text(encoding="utf-8").upper()
         for label in LABELS:
-            if f"REQUIRE N.ID IS UNIQUE" in s and f":{label.upper()}" not in s:
+            if "REQUIRE N.ID IS UNIQUE" in s and f":{label.upper()}" not in s:
                 errors.append(f"schema.cypher: 缺少 {label} 的唯一约束")
         if "CONSTRAINT" not in s:
             errors.append("schema.cypher: 没有 CONSTRAINT 语句")

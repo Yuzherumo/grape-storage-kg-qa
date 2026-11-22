@@ -15,7 +15,7 @@ import platform
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -93,8 +93,8 @@ def graph_backend() -> str:
     return os.environ.get("GRAPH_BACKEND", "local") or "local"
 
 
-def check_local_graph() -> Dict[str, Any]:
-    result: Dict[str, Any] = {"ok": False, "message": "", "stats": {}}
+def check_local_graph() -> dict[str, Any]:
+    result: dict[str, Any] = {"ok": False, "message": "", "stats": {}}
     try:
         from app.store.local_store import LocalStore
 
@@ -123,8 +123,8 @@ def check_neo4j() -> str:
         return f"连接失败（可回落 local）：{exc}"
 
 
-def check_llm() -> Dict[str, Any]:
-    result: Dict[str, Any] = {"available": None, "detail": ""}
+def check_llm() -> dict[str, Any]:
+    result: dict[str, Any] = {"available": None, "detail": ""}
     try:
         from app.llm import LLMClient
 
@@ -157,7 +157,7 @@ def render_report() -> str:
     backend = graph_backend()
     offline_ready = bool(local["ok"])
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("# 环境自检（docs/env_check.md）")
     lines.append("")
     lines.append("> 由 `scripts/env_check.py` 自动生成（不联网）。")

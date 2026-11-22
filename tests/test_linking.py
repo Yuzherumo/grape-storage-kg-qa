@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import pytest
-
 from _support import DATA, get_catalog, hit_ids, link, load_utterances, read_csv, split_ids
 
 ENTITIES_CSV = DATA / "entities.csv"

@@ -16,3 +16,8 @@ docs/_shots/*.tmp
 .venv314/
 *.pdf
 _ms_update/
+_ms_upload/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
