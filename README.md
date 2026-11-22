@@ -98,6 +98,7 @@
 ![阳光玫瑰子图](docs/assets/graph_shine_muscat.png)
 
 - 生成：`python scripts\export_graph.py`（SVG，纯标准库、离线可跑）；PNG 在 `docs/assets/`
+- 点击节点可看**科普描述**：28 个节点（8 品种 / 7 病害 / 13 指标）来自科普中国、百度百科与国标，已改写并注明来源与许可；条件节点显示类别、数值区间与关联事实
 - 应用内：侧栏开关 **知识图谱视图**，可切换「全图 / 阳光玫瑰子图」；**点击节点**看具体描述（类型/属性/备注/数值区间）与按谓词分组的关联事实（可点邻居继续跳转），支持滚轮缩放、拖拽平移、类型筛选与按名称搜索
 - 配色：品种蓝、条件绿、指标橙、病害红；实线=已核验，虚线=待核验；来源通过 `source_ids` 关联
 - 用途：答辩/PPT 展示、农技培训与冷库 SOP 单页图
@@ -157,6 +158,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 │  ├─ triples.csv              # 108 条三元组（61 verified / 47 anchor）
 │  ├─ triples_shine_muscat.csv # 20 条阳光玫瑰核心三元组（M1 门禁产物）
 │  ├─ sources.csv              # 16 条来源（国标/5 篇综述/论文/行业标准）
+│  ├─ descriptions.csv         # 28 个节点的科普描述（品种/病害/指标，注明来源、改写引用）
 │  ├─ utterances.csv           # 12 条农户口语黄金集
 │  ├─ eval_questions.csv       # 5 典型 + 1 越界探针
 │  └─ schema.json              # 类型/谓词枚举、分组与双来源规则

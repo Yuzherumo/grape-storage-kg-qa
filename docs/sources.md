@@ -66,6 +66,25 @@
 | 邵千朔 2024 | `sm_aff_berrydrop_1mcp` | 1-MCP+辐照复合处理抑制腐烂率、掉粒率、失重率（note 标注为复合处理） |
 | 邵千朔 2024 | `sm_aff_ethylene_1mcp` | 1-MCP 是乙烯拮抗抑制剂 |
 
+## 2.3 科普描述来源（`data/descriptions.csv`，28 个节点）
+
+> 节点详情中的科普段落为**改写引用**，非逐字转载；来源与许可在 CSV 的 `source_name / source_url / license_note` 中逐条注明。
+
+| 节点 | 来源 | 链接 |
+|---|---|---|
+| 阳光玫瑰 | 科普中国《从夏黑到阳光玫瑰》+ 湖南农康《浅谈阳光玫瑰葡萄》 | [kepuchina](https://h5.kepuchina.cn/scientificwebsite/article?id=759763) |
+| 巨峰 | 科普中国《巨峰葡萄》 | [kepuchina](https://cloud.kepuchina.cn/h5/detail?id=6974098159198248960) |
+| 红地球（红提） | 科普中国《红提》 | [kepuchina](https://cloud.kepuchina.cn/h5/detail?id=6974097864569249793) |
+| 夏黑 | 科普中国《夏黑无核葡萄》 | [kepuchina](https://cloud.kepuchina.cn/h5/detail?id=6974092622310146048) |
+| 玫瑰香 | 科普中国《玫瑰香》 | [kepuchina](https://www.kepuchina.cn/xc/201712/t20171218_307896.shtml) |
+| 克瑞森无核 | 科普中国《克瑞森葡萄》 | [kepuchina](https://cloud.kepuchina.cn/h5/detail?id=6974091333425696768) |
+| 维多利亚 | 科普中国《维多利亚葡萄》 | [kepuchina](https://cloud.kepuchina.cn/newSearch/imgText?from=1&id=6974088772480000000&is_self=2) |
+| 户太八号 | 百度百科《户太八号葡萄》 | [baike](https://bkso.baidu.com/item/%E6%88%B7%E5%A4%AA%E5%85%AB%E5%8F%B7%E8%91%A1%E8%90%84/4369241) |
+| 7 种病害 | GB/T 16862-2026 附录B + 科普中国《葡萄贮藏期常见病害》 | [longshang](https://m-longshang.965333.com/p/10967.html) |
+| 13 项指标 | GB/T 16862-2026 附录A / 综述指标体系 | 见 CSV 各行 |
+
+许可说明：科普中国内容版权归原作者，百度百科内容仅作科普参考；本作品对上述内容进行了改写与压缩，并保留来源链接；标准只引用条级摘录。
+
 ## 3. 已知冲突与保留策略
 
 | 冲突点 | 处理 |

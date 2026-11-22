@@ -34,6 +34,7 @@
 | 实体（5 类，59 实体 + 16 来源 = 74 节点） | Variety 8、Condition 30、QualityIndicator 13、Disease 7、Source 16 |
 | 关系（9 种谓词，108 条） | REQUIRES 26、CONTRA_INDICATED_FOR 3、AFFECTS 19、SUSCEPTIBLE_TO 8、PREVENTED_BY 22、INDUCED_BY 7、ALTERNATIVE_TO 3、INDICATES 2、HAS_INDICATOR_VALUE 18 |
 | 单源真相 | `data/entities.csv / triples.csv / sources.csv`，Cypher 由脚本生成（`scripts/gen_cypher.py`，`--check` 防漂移）；阳光玫瑰核心子集另有 `triples_shine_muscat.csv` 门禁快照 |
+| 科普描述 | `data/descriptions.csv`：28 个节点（8 品种 / 7 病害 / 13 指标）的科普段落，来源为科普中国、百度百科与国标，**改写引用并注明来源/许可**；图谱点击节点即可查看 |
 | 受控词表 | 谓词主/宾类型、数值单位与区间、来源外键；`scripts/validate_data.py` 十项校验（列完整、枚举、区间、类型-谓词组合、来源外键、B/G/H 双来源、S2a 快照严格子集等） |
 
 ## 4. 证据分级与溯源

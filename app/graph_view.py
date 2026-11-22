@@ -315,3 +315,19 @@ def load_sources(data_dir: Path | str) -> Dict[str, str]:
     except FileNotFoundError:
         pass
     return out
+
+
+def load_descriptions(data_dir: Path | str) -> Dict[str, Dict[str, str]]:
+    """节点 id -> 科普描述（data/descriptions.csv；没有的节点返回空字典）。"""
+    out: Dict[str, Dict[str, str]] = {}
+    path = Path(data_dir) / "descriptions.csv"
+    try:
+        with path.open(encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                nid = (row.get("id") or "").strip()
+                if nid:
+                    out[nid] = {k: (row.get(k) or "").strip()
+                                for k in ("summary", "detail", "source_name", "source_url", "license_note")}
+    except FileNotFoundError:
+        pass
+    return out

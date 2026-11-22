@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from app.graph_view import (
-    COLORS, LABEL_CN, PRED_COLOR, Graph, _esc, layout, load_sources,
+    COLORS, LABEL_CN, PRED_COLOR, Graph, _esc, layout, load_descriptions, load_sources,
 )
 
 PRED_CN = {
@@ -58,6 +58,10 @@ body{margin:0;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#1f23
 #panel .sec{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;
             margin:12px 0 4px}
 #panel .desc{background:#eef2ff;border-radius:8px;padding:8px 10px;color:#374151;margin:6px 0}
+#panel .desc b{display:block;margin-bottom:2px}
+#panel .desc-src{color:#6b7280;font-size:11px;margin-top:2px}
+#panel .desc-src a{color:#4d6bfe}
+#panel .note{color:#6b7280;font-size:11.5px;margin:4px 0 0}
 #panel table{border-collapse:collapse;width:100%;font-size:12px}
 #panel td{padding:2px 0;vertical-align:top}
 #panel td.k{color:#6b7280;width:78px;white-space:nowrap}
@@ -155,7 +159,8 @@ function select(id){
   });
 
   const a = n.attrs || {};
-  const desc = a.note || '';
+  const d = n.desc || {};
+  const note = a.note || '';
   const range = fmtRange(a);
   const rows = Object.keys(ATTR_CN).filter(k => k !== 'aliases' && k !== 'value_min' &&
       k !== 'value_max' && k !== 'unit' && a[k]).map(k =>
@@ -208,7 +213,13 @@ function select(id){
     `<div><span class="tag" style="background:${COL[n.label]}22;color:${COL[n.label]}">${CN[n.label]}</span>` +
     `<span style="color:#6b7280;font-size:11px">连接度 ${n.degree}</span></div>` +
     `<div class="sec">具体描述</div>` +
-    `<div class="desc">${desc ? esc(desc) : '该节点暂无人工备注，下面是从图谱关系归纳的信息。'}</div>` +
+    (d.summary || d.detail
+      ? `<div class="desc">${d.summary ? `<b>${esc(d.summary)}</b>` : ''}${d.detail ? esc(d.detail) : ''}` +
+        (d.source_name ? `<div class="desc-src">来源：${d.source_url
+            ? `<a href="${esc(d.source_url)}" target="_blank" rel="noopener">${esc(d.source_name)}</a>`
+            : esc(d.source_name)}</div>` : '') + `</div>`
+      : `<div class="desc">${note ? esc(note) : '该节点暂无科普描述，下面是从图谱关系归纳的信息。'}</div>`) +
+    (note && (d.summary || d.detail) ? `<div class="note">图谱备注：${esc(note)}</div>` : '') +
     (attrTable ? `<div class="sec">属性</div>${attrTable}` : '') +
     (facts ? `<div class="sec">关联事实</div>${facts}` : '') +
     srcHtml +
@@ -258,6 +269,10 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
     layout(graph)
     W, H = width, height
     pad = 40
+    if data_dir is None:
+        data_dir = Path(__file__).resolve().parents[1] / "data"
+    sources = load_sources(data_dir)
+    descs = load_descriptions(data_dir)
     pos = {n.id: (pad + n.x * (W - 2 * pad), pad + 70 + n.y * (H - 2 * pad - 90)) for n in graph.nodes}
     nodes_data: List[Dict] = []
     size: Dict[str, int] = {}
@@ -267,16 +282,13 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
         size[n.id] = r
         nodes_data.append({"id": n.id, "name": n.name, "label": n.label, "degree": n.degree,
                            "x": round(pos[n.id][0], 1), "y": round(pos[n.id][1], 1),
-                           "attrs": n.attrs})
+                           "attrs": n.attrs, "desc": descs.get(n.id, {})})
     edges_data = [{
         "s": e.source, "t": e.target, "p": e.predicate, "status": e.status,
         "value": e.value, "unit": e.unit, "value_min": e.value_min, "value_max": e.value_max,
         "level": e.level, "severity": e.severity, "reason": e.reason, "effect": e.effect,
         "src": e.source_ids,
     } for e in graph.edges if e.source in pos and e.target in pos]
-    if data_dir is None:
-        data_dir = Path(__file__).resolve().parents[1] / "data"
-    sources = load_sources(data_dir)
 
     svg_parts = [
         f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet" '
