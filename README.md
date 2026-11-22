@@ -155,13 +155,12 @@ streamlit run app.py --server.port 8501
 
 | 项 | 结果 |
 |---|---|
-| pytest | 289 条收集，**287 passed / 2 skipped**（2 skipped：未安装 Neo4j 驱动的双后端一致性测试、默认跳过的 LLM 标记测试） |
-| 覆盖率 | `pytest --cov=app` → **82%**（`app/ui.py` 不在覆盖率统计内） |
+| pytest | **325 passed / 2 skipped**（2 skipped：未安装 Neo4j 驱动的双后端一致性测试、默认跳过的 LLM 标记测试） |
 | 数据校验 | 十项校验通过，错误 0，告警 2（46 条 anchor 的 quote 为空、S2a 快照 11 条 quote 为空，均符合 anchor 规则） |
 | Cypher | 13 个 `.cypher` 文件静态校验通过；CSV→Cypher 生成物无漂移 |
 | 图谱查询实跑 | Kùzu 0.11.3 内存库：77 节点 / 115 关系与 CSV 一致，6 道题结果与本地后端一致，4 条 verified 条文定点命中 |
 | 黄金集评测 | 核心题 5/5、越界探针 1/1、口语变体意图 12/12、实体命中 12/12 |
-| CI | GitHub Actions 两个 job（Ubuntu test、Windows 脚本语法）通过 |
+| CI | GitHub Actions 两个 job（Ubuntu test、Windows 脚本语法）通过（run 44987585590） |
 
 详细命令、历史记录、未验证项与 CI 状态见 [docs/validation.md](docs/validation.md)；评测报告由 `scripts/eval_qa.py` 生成到 [docs/eval_results.md](docs/eval_results.md)。
 
