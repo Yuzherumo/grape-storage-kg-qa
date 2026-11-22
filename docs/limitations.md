@@ -57,7 +57,7 @@
 - 公网 Demo 部署在魔搭创空间免费 CPU 实例：空闲会休眠，首次访问冷启动数十秒；并发能力有限。
 - 在线模式需要外部 API 可用；API Key 只存在本地 `.env` 或平台环境变量中，不随仓库分发。
 - 仓库脚本以 Windows PowerShell 为主（`install.ps1`、`run.ps1`、打包与便携 Neo4j 脚本）；Linux/macOS 仅提供手动命令，未在 Linux 实机验证安装脚本。
-- 当前远端 GitHub Actions 在 Kùzu 步骤失败（CI 环境找不到 `app` 包），修复已在本地工作区但未推送；仓库 CI 尚不能作为「全绿」证据。
+- GitHub Actions 已于 2026-11-22 通过（Ubuntu test + Windows scripts 两个 job）；CI 只覆盖静态与离线步骤，不覆盖真实 Neo4j、在线 LLM 与浏览器 UI。
 - UI 回归使用 Streamlit `AppTest` 与安全测试，没有真实浏览器像素级验证；仓库中的界面截图来自真实运行实例，但不是自动化截图。
 
 ## 8. 功能边界
@@ -75,6 +75,6 @@
 3. 不能保证大模型回答在语义上完全忠实于证据；
 4. 不能替代农技员、冷库技术负责人或官方标准的最终解释；
 5. 不能保证公网 Demo 长期在线、低延迟或高并发；
-6. 不能保证当前仓库 CI 为绿色（见第 7 节）。
+6. 不能保证 CI 覆盖真实 Neo4j、在线 LLM 与浏览器 UI（CI 只覆盖静态与离线步骤）。
 
 如果以上限制影响评审判断，请以 `data/` 中的原始数据、`docs/sources.md` 的引文与 `docs/validation.md` 的实际运行记录为准。

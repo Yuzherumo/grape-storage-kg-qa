@@ -161,6 +161,7 @@ streamlit run app.py --server.port 8501
 | Cypher | 13 个 `.cypher` 文件静态校验通过；CSV→Cypher 生成物无漂移 |
 | 图谱查询实跑 | Kùzu 0.11.3 内存库：74 节点 / 108 关系与 CSV 一致，6 道题结果与本地后端一致，4 条 verified 条文定点命中 |
 | 黄金集评测 | 核心题 5/5、越界探针 1/1、口语变体意图 12/12、实体命中 12/12 |
+| CI | GitHub Actions 两个 job（Ubuntu test、Windows 脚本语法）通过 |
 
 详细命令、历史记录、未验证项与 CI 状态见 [docs/validation.md](docs/validation.md)；评测报告由 `scripts/eval_qa.py` 生成到 [docs/eval_results.md](docs/eval_results.md)。
 

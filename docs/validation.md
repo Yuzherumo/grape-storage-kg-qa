@@ -90,9 +90,15 @@ Kùzu 是嵌入式 openCypher 引擎，**不是 Neo4j 服务端**；它证明的
 
 ## 4. GitHub Actions（CI）状态
 
-- 工作流：`.github/workflows/ci.yml`，Ubuntu + Python 3.12，依次执行 ruff、数据校验、Cypher 静态校验、生成漂移、Kùzu 实跑、pytest + coverage、eval。
-- 最近一次公开 CI 运行（run `44972634896`，head `4099009`）：前 6 步通过，**Kùzu 步骤失败**，原因为脚本在 CI 中报 `ModuleNotFoundError: No module named 'app'`（缺少 `PYTHONPATH`），后续测试与 eval 被跳过。
-- 本地工作区已准备修复：脚本内自举 `sys.path` + CI job 级 `PYTHONPATH`（`scripts/verify_cypher_engine.py`、`.github/workflows/ci.yml`），但**尚未推送**，因此远端 CI 仍显示失败。这一点不应被描述为「CI 全绿」。
+- 工作流：`.github/workflows/ci.yml`，包含两个 job：
+  - `test`（Ubuntu + Python 3.12）：ruff、数据校验、Cypher 静态校验、生成漂移、Kùzu 实跑、pytest + coverage、eval；
+  - `windows-scripts`（Windows + PowerShell 5.1）：5 个 `.ps1` 的语法检查。
+- 最新运行（run `44980363203`，head `a73f89e`）：**两个 job 全部通过**。
+- 历史问题已修复：
+  1. 早期 Kùzu 步骤在 CI 中报 `ModuleNotFoundError: No module named 'app'`（缺 `PYTHONPATH`）→ 脚本自举 `sys.path` + CI job 级 `PYTHONPATH`；
+  2. Windows job 的 BOM 检查在 runner 上失败（本地同样文件均带 BOM）→ 将 BOM 检查移到 Ubuntu 的字节级检查，Windows job 保留 PowerShell 5.1 语法门禁。
+
+CI 通过只代表上述静态/离线步骤通过，不覆盖真实 Neo4j、在线 LLM、真实浏览器 UI（见第 5 节）。
 
 ## 5. 已运行 / 未验证 / 未完成
 
@@ -114,7 +120,6 @@ Kùzu 是嵌入式 openCypher 引擎，**不是 Neo4j 服务端**；它证明的
 
 ### 5.3 尚未完成
 
-- 远端 CI 走通（修复未推送）；
 - 47 条 anchor 的原文核验；
 - 人工评分集（可读性/可执行性/引用准确性）；
 - 跨机器复现记录（至少一台非当前开发机）。
@@ -125,6 +130,7 @@ Kùzu 是嵌入式 openCypher 引擎，**不是 Neo4j 服务端**；它证明的
 |---|---|---|---|
 | 2026-11-21 | M9（`7e34732` 前后） | 118 条通过 / 2 跳过；在线 LLM 6 题通过 | 当时测试规模较小；后续可靠性加固新增测试 |
 | 2026-11-22 | 工作区（基于 `af80a52`，含未提交改动） | 287 passed / 2 skipped；覆盖率 82%；数据/Cypher/Kùzu/eval 通过 | 本文主要记录 |
-| 2026-11-22 | 远端 `4099009` | CI 在 Kùzu 步骤失败 | `ModuleNotFoundError: app`，修复未推送 |
+| 2026-11-22 | 远端 `4099009` | CI 在 Kùzu 步骤失败 | `ModuleNotFoundError: app`，随后修复 |
+| 2026-11-22 | 远端 `a73f89e` | **CI 两个 job 全部通过** | 当前记录；Ubuntu test + Windows scripts |
 
 历史数据只对应其记录时的代码与数据，不能直接当作当前版本结论。
