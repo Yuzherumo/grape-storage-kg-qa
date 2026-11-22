@@ -44,13 +44,13 @@
 没有 API Key 也能完整演示：系统自动进入**离线模板模式**，答案仍带 `[E#]` 引用、来源与分步动作。
 要启用 DeepSeek 在线生成：把 key 填进 `.env` 的 `DEEPSEEK_API_KEY`（见 `.env.example`；`.env` 不进仓库、不进交付包）。
 
-## 5. 界面（参考 DeepSeek 网页版）
+## 3. 界面（参考 DeepSeek 网页版）
 
 - 左侧极简侧栏：新建对话、后端/模型状态、设置（离线/大字/Top-K/Cypher）、图谱规模与词表、最近提问；
 - 中间单列对话流（约 820px）：用户消息右侧浅蓝气泡，助手回答正文 + 「依据 · N 条证据」可折叠卡片（`[E1]` 角标、已核验/待核验标签、来源与条款）；
 - 底部圆角输入框与建议问题卡片；浅色/深色跟随系统，大字模式适配投影与农户。
 
-## 5.1 架构与关键设计
+## 4. 架构与关键设计
 
 ```
 用户提问（农户口语：青提搁冷库多少度 / 长白毛咋办）
@@ -72,7 +72,7 @@
 | **双层幻觉拦截** | 引用 `[E#]` 必须存在；数字必须落在证据区间内，否则告警 | `qa.verify_citations` / `qa.check_numbers` |
 | **答案落地成动作** | 方向二要的是「一用就懂」，第三段固定为分步操作 | `qa.compose_steps` |
 
-## 4. 知识图谱
+## 5. 知识图谱
 
 - **74 节点**：品种 8、储藏条件 30、品质指标 13、病害 7、来源 16（`Source` 为溯源辅助节点，不进实体链接词表）
 - **108 条关系 / 9 种谓词**：`REQUIRES`(26)、`CONTRA_INDICATED_FOR`(3)、`AFFECTS`(19)、`SUSCEPTIBLE_TO`(8)、`PREVENTED_BY`(22)、`INDUCED_BY`(7)、`ALTERNATIVE_TO`(3)、`INDICATES`(2)、`HAS_INDICATOR_VALUE`(18)
@@ -91,7 +91,18 @@
 
 数据流：`data/entities.csv + triples.csv`（唯一真相）→ `scripts/gen_cypher.py` → `graph/init_nodes.cypher`、`init_rels.cypher`（MERGE 幂等）；`scripts/validate_data.py` **十项**校验作为加载前门禁（含「S2a 快照必须是主数据严格子集」的一致性检查）。
 
-## 5. 降级与失败模式（稳定性 = 40 分完成度）
+## 5.1 知识图谱可视化
+
+![知识图谱全貌](docs/assets/graph_overview.png)
+
+![阳光玫瑰子图](docs/assets/graph_shine_muscat.png)
+
+- 生成：`python scripts\export_graph.py`（SVG，纯标准库、离线可跑）；PNG 在 `docs/assets/`
+- 应用内：侧栏开关 **知识图谱视图**，可切换「全图 / 阳光玫瑰子图」，悬停节点看名称与度
+- 配色：品种蓝、条件绿、指标橙、病害红；实线=已核验，虚线=待核验；来源通过 `source_ids` 关联
+- 用途：答辩/PPT 展示、农技培训与冷库 SOP 单页图
+
+## 6. 降级与失败模式（稳定性 = 40 分完成度）
 
 | 场景 | 行为 |
 |---|---|
@@ -106,7 +117,7 @@
 | Neo4j 连不上 | 自动回落 `local`，UI 徽标提示 |
 | 意图不明确 | 低置信 → 澄清兜底，不硬答 |
 
-## 6. 评测（离线可复现）
+## 7. 评测（离线可复现）
 
 ```
 .\.venv\Scripts\python.exe -m pytest tests -q      # → 118 passed, 2 skipped（无网可跑）
@@ -122,7 +133,7 @@ Cypher 实跑（无 Neo4j 服务端时）：`scripts/verify_cypher_engine.py` �
 判定口径（证据非空、引用有效、±区间/单位数值校验、意图与谓词、越界探针）见报告末尾。
 M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验防张冠李戴 / 怎么做路由 / 因果路由 / 零下归一化 / 空指标占位文案 / 无效引用告警 / 证据重排 / 十项数据校验」。
 
-## 7. 与方向二「生命系统」的契合
+## 8. 与方向二「生命系统」的契合
 
 | 评分口径 | 本作品回应 |
 |---|---|
@@ -131,7 +142,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 | AI 对解决问题有实际帮助 | AI 只把「证据」翻成可执行步骤，每句可溯源；无证据直说没收录 |
 | 农业技术走完最后一里地 | 口语容错、大字模式、离线可用、分步动作、条级来源 |
 
-## 8. 目录结构
+## 9. 目录结构
 
 ```
 .
@@ -151,14 +162,15 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 │  └─ schema.json              # 类型/谓词枚举、分组与双来源规则
 ├─ graph/                      # schema.cypher + 生成物 + 10 个查询模板
 ├─ app/                        # contracts / planner / qa / llm / linking / store / ui
-├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable / make_release
+├─ scripts/                    # validate_data / validate_cypher / verify_cypher_engine / gen_cypher / eval_qa / env_check / load_neo4j / setup_neo4j_portable / make_release / export_graph
 ├─ tests/                      # 120 个测试（118 passed / 2 skipped，含 M6/M8 回归）
-├─ docs/                       # api / spec / sources / eval_results / neo4j_verify / packaging / deploy / demo_script / submission / ai_usage
+├─ docs/                       # api / spec / sources / eval / neo4j_verify / packaging / deploy / demo_script / submission / ai_usage
+│  └─ assets/                  # 知识图谱可视化（graph_overview / graph_shine_muscat 的 SVG+PNG）
 ├─ .refs/                      # 本机文献 PDF（gitignore，不随包分发）
 └─ dist/                       # 打包产物（gitignore）
 ```
 
-## 9. 命令速查
+## 10. 命令速查
 
 | 目的 | 命令 |
 |---|---|
@@ -177,7 +189,7 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 | 单问 CLI（离线） | `.\.venv\Scripts\python.exe -m app.qa "阳光玫瑰放冷库该调到多少度？" --no-llm` |
 | 导入 Neo4j（可选） | `.\.venv\Scripts\python.exe scripts\load_neo4j.py`（先装 `neo4j` 驱动） |
 
-## 10. 诚实声明与已知限制
+## 11. 诚实声明与已知限制
 
 1. **证据分级：61 条 verified + 47 条 anchor**：已获取 **GB/T 16862-2026 全文 PDF** 与 **5 篇综述 PDF（用户提供）**。国标条文直接支撑的 51 条、综述原文直接支撑的 10 条已升级 `verified`（带条款号 / PDF 页码栏目 + 原文摘录）；其余 47 条因论文正文未获取仍 `anchor` 并在 `note` 写待核验点。**未转载标准或论文全文，仅引用条级摘录。**
 2. **Neo4j 服务端**：官方下载域名（`dist.neo4j.org` / `dist.neo4j.com`）在当前网络**一律 403**，本机也无 JDK 21/Aura 账号，因此没有启动 Neo4j 服务端。替代方案已落地：**① 在嵌入式 openCypher 引擎 Kùzu 上真跑等价查询**（74 节点/108 关系建表灌数、6 题与本地后端一致、4 条 verified 条文定点命中）；**② Cypher 脚本静态校验**（标签/关系/参数/MERGE 计数/10 意图覆盖）；**③ 便携版脚本** `scripts/setup_neo4j_portable.ps1`（拿到 zip 后一条命令完成 JDK+Neo4j+导入+幂等校验）。详见 `docs/neo4j_verify.md`；演示默认走本地后端。
@@ -185,12 +197,12 @@ M6 加固回归：`tests/test_regression_m6.py`（20 条）覆盖「覆盖校验
 4. **LLM 在线模式**：已用 `deepseek-chat` 实测通过（答案带 `[E#]`、无编造数字）；key 只存本机 `.env`（已 gitignore，不入库），换机器需自行配置。无 key 时功能完整但答案是模板拼装（非自然语言润色）。
 5. 玫瑰香耐贮性等个别数值留空未编造，`note` 标注「待补文献回填」。
 
-## 11. 原创与 AI 使用
+## 12. 原创与 AI 使用
 
 - 代码、数据、文档在 2026-11-21 从空仓库开始开发，git 历史即开发过程证据；依赖全部为公开开源库（streamlit / openai / pandas / python-dotenv / pytest）。
 - AI 使用情况（DeepSeek 辅助编码与文案、多智能体协作开发）已在 `docs/ai_usage.md` 如实说明；数值、来源、结论均由人工核验口径把控，未编造来源或 DOI。
 
-## 12. 交付物清单
+## 13. 交付物清单
 
 | 交付物 | 位置 |
 |---|---|

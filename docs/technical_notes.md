@@ -25,6 +25,8 @@
 
 技术栈：Python 3.12 + Streamlit 1.67 + 纯标准库数据层 + Neo4j 5 Cypher 脚本（可选后端）+ DeepSeek API（可选，缺省离线模板）。不依赖数据库即可运行。
 
+**图谱可视化**：`app/graph_view.py` 用纯标准库实现力导向布局并生成自包含 SVG（悬停见节点名称/度），UI 侧栏「知识图谱视图」可切换「全图 / 阳光玫瑰子图」；`scripts/export_graph.py` 导出 `docs/assets/*.svg`，PNG 版本随仓库提供，可直接用于 PPT 与培训材料。
+
 ## 3. 知识图谱设计
 
 | 项 | 内容 |
