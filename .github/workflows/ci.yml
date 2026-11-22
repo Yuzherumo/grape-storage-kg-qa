@@ -57,6 +57,29 @@ jobs:
           tail -n 40 kuzu.log | while IFS= read -r line; do echo "::error file=scripts/verify_cypher_engine.py::$line"; done
           exit $code
 
+      - name: Check PowerShell scripts are UTF-8 with BOM
+        run: |
+          python - <<'PY'
+          import pathlib
+          import sys
+
+          files = [
+              "install.ps1",
+              "run.ps1",
+              "scripts/make_release.ps1",
+              "scripts/setup_neo4j_portable.ps1",
+              "scripts/run_public_tunnel.ps1",
+          ]
+          missing = []
+          for f in files:
+              data = pathlib.Path(f).read_bytes()
+              if not data.startswith(b"\xef\xbb\xbf"):
+                  missing.append(f)
+          if missing:
+              print("::error::缺少 UTF-8 BOM：" + ", ".join(missing))
+              sys.exit(1)
+          print(f"UTF-8 BOM OK: {len(files)} files")
+
       - name: Offline test suite with coverage (no API key, no network)
         run: python -m pytest tests -q --cov=app --cov-report=term-missing
 
@@ -99,27 +122,3 @@ jobs:
           }
           if ($failed) { exit 1 }
           Write-Host "全部 5 个 .ps1 语法检查通过"
-
-      - name: Check UTF-8 BOM (Chinese text compatibility)
-        shell: powershell
-        run: |
-          $files = @(
-            "install.ps1",
-            "run.ps1",
-            "scripts/make_release.ps1",
-            "scripts/setup_neo4j_portable.ps1",
-            "scripts/run_public_tunnel.ps1"
-          )
-          $failed = $false
-          foreach ($f in $files) {
-            $bytes = [System.IO.File]::ReadAllBytes((Join-Path $PWD $f))
-            $hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
-            if (-not $hasBom) {
-              $failed = $true
-              Write-Host "::error file=$f::$f 缺少 UTF-8 BOM：Windows PowerShell 5.1 会按 ANSI/GBK 解析，中文注释可能触发语法错误"
-            } else {
-              Write-Host "[BOM 正常] $f"
-            }
-          }
-          if ($failed) { exit 1 }
-          Write-Host "全部 5 个 .ps1 均为 UTF-8 BOM"
