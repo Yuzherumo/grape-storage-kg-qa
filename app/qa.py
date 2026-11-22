@@ -53,6 +53,8 @@ PRED_LABEL = {
     "HAS_INDICATOR_VALUE": "指标基线",
 }
 
+WARN_ANCHOR_OVERCLAIM = "anchor_overclaim"
+
 SINGLE_SOURCE_PREDS = {"CONTRA_INDICATED_FOR", "ALTERNATIVE_TO", "INDICATES"}
 
 # ------------------------------------------------------------------ 证据分级（verified / anchor）
@@ -789,6 +791,97 @@ def _anchor_high_risk_warnings(answer: str, evidence: Sequence[Evidence]) -> lis
     return []
 
 
+_ANCHOR_CERTAINTY_TERMS = (
+    "已核验", "已验证", "已证实", "已证明", "已经证明", "研究已经证明",
+    "已充分验证", "充分验证", "充分证明", "确凿", "确认无误", "已确认",
+    "确定结论", "可以确定", "证实了", "证明了",
+)
+_ANCHOR_HEDGE_TERMS = (
+    "待核验", "待验证", "尚需验证", "尚需核实", "需人工确认", "需进一步核验",
+    "初步线索", "初步结论", "未逐字核对", "不确定", "不能确定", "无法确认",
+    "仅供参考", "可能", "推测", "研究提示", "提示", "待补",
+)
+_NEGATION_PREFIXES = ("不", "未", "非", "没有", "尚未")
+
+
+def _contains_unnegated(text: str, terms: Sequence[str]) -> bool:
+    for term in terms:
+        start = 0
+        while True:
+            index = text.find(term, start)
+            if index < 0:
+                break
+            prefix = text[max(0, index - 2):index]
+            if not any(neg in prefix for neg in _NEGATION_PREFIXES):
+                return True
+            start = index + len(term)
+    return False
+
+
+def _answer_cites_anchor(answer: str, evidence: Sequence[Evidence]) -> bool:
+    by_id = {e.eid: e for e in evidence}
+    for cid in re.findall(r"\[(E\d+)\]", _canonicalize_citations(answer or "")):
+        item = by_id.get(cid)
+        if item is not None and item.status != "verified":
+            return True
+    return False
+
+
+def _anchor_overclaim_warnings(answer: str, evidence: Sequence[Evidence]) -> list[str]:
+    """anchor 证据被写成“已核验/已证实”等确定性结论 → anchor_overclaim。
+
+    这是**逐句**启发式：只判断同一句内被引用的 anchor 与该句的确定性/限定措辞，
+    无法可靠判断复句中的分句级证据归属，也不能证明语句语义蕴含。
+    """
+    by_id = {e.eid: e for e in evidence}
+    for sentence in _sentences(answer):
+        cited = [
+            by_id[c]
+            for c in re.findall(r"\[(E\d+)\]", _canonicalize_citations(sentence))
+            if c in by_id
+        ]
+        anchors = [e for e in cited if e.status != "verified"]
+        if not anchors:
+            continue
+        text = re.sub(r"\[E\d+\]", "", _canonicalize_citations(sentence))
+        if _contains_unnegated(text, _ANCHOR_HEDGE_TERMS):
+            continue
+        if _contains_unnegated(text, _ANCHOR_CERTAINTY_TERMS):
+            return [WARN_ANCHOR_OVERCLAIM]
+    return []
+
+
+def _sanitize_invalid_citations(
+    answer: str, evidence: Sequence[Evidence]
+) -> tuple[str, list[str], list[str]]:
+    """删除含无效引用编号的句子；返回 (清理后答案, 无效编号, 剩余有效引用)。
+
+    - 句内同时有有效+无效引用时，整句删除（保守，避免留下无依据陈述）；
+    - 只删除含无效编号的句子，其他句子的有效内容保留；
+    - 不把无效编号简单去掉后继续保留无依据陈述。
+    """
+    valid_ids = {e.eid for e in evidence}
+    invalid_ids: list[str] = []
+    pattern = re.compile(r"[^。！？!?；;\n]+[。！？!?；;]?|\n")
+    out: list[str] = []
+    for match in pattern.finditer(answer or ""):
+        chunk = match.group(0)
+        if not chunk.strip() or chunk.strip() == "\n":
+            out.append(chunk)
+            continue
+        cited = re.findall(r"\[(E\d+)\]", _canonicalize_citations(chunk))
+        bad = [cid for cid in dict.fromkeys(cited) if cid not in valid_ids]
+        if bad:
+            for cid in bad:
+                if cid not in invalid_ids:
+                    invalid_ids.append(cid)
+            continue  # 删除整句/整行
+        out.append(chunk)
+    cleaned = "".join(out).strip()
+    remaining = verify_citations(cleaned, evidence)[0]
+    return cleaned, invalid_ids, remaining
+
+
 def validate_llm_answer(
     answer: str, evidence: Sequence[Evidence], question: str = ""
 ) -> tuple[list[str], bool]:
@@ -802,8 +895,13 @@ def validate_llm_answer(
     issues.extend(_uncited_fact_warnings(answer, evidence))
     issues.extend(_citation_mismatch_warnings(answer, evidence))
     issues.extend(_anchor_high_risk_warnings(answer, evidence))
-    critical_prefixes = ("out_of_range", "unsourced_number", WARN_ANCHOR_HIGH_RISK)
+    issues.extend(_anchor_overclaim_warnings(answer, evidence))
+    critical_prefixes = ("out_of_range", "unsourced_number", WARN_ANCHOR_HIGH_RISK, WARN_ANCHOR_OVERCLAIM)
     critical = any(w.startswith(prefix) for w in issues for prefix in critical_prefixes)
+    # anchor 答案里若出现无引用事实句（unsupported_fact），不能把 anchor 当成其他陈述的依据；
+    # 保守回退模板。此规则仍是启发式，不能完整识别同一复句内的分句级归属。
+    if WARN_UNSUPPORTED_FACT in issues and _answer_cites_anchor(answer, evidence):
+        critical = True
     return list(dict.fromkeys(issues)), critical
 
 
@@ -1318,6 +1416,22 @@ def answer_question(
             warnings.append(WARN_LLM_UNAVAILABLE)
             answer, result.mode = tpl, "template"
 
+    if result.mode == "llm":
+        cleaned, invalid_ids, remaining = _sanitize_invalid_citations(answer, evidence)
+        if invalid_ids:
+            for cid in invalid_ids:
+                code = f"invalid_citation:{cid}"
+                if code not in warnings:
+                    warnings.append(code)
+            if remaining:
+                answer = cleaned
+                result.cited_ids = remaining
+            else:
+                warnings.append(WARN_LLM_ANSWER_REJECTED)
+                answer = tpl
+                result.mode = "template"
+                result.cited_ids = []
+
     if result.mode == "template":
         cited, _w = verify_citations(answer, evidence)
         result.cited_ids = cited
@@ -1344,6 +1458,19 @@ def answer_question(
     for code in cite_warnings:
         if code not in warnings:
             warnings.append(code)
+    # 最终兜底：无论哪条路径，用户看到的答案都不得含无效引用编号。
+    invalid_final = [code for code in cite_warnings if code.startswith("invalid_citation:")]
+    if invalid_final:
+        warnings.append(WARN_LLM_ANSWER_REJECTED)
+        result.answer = tpl
+        result.steps = compose_steps(evidence, intent) if steps else []
+        if steps and result.steps:
+            result.answer += "\n\n现在该做什么：\n" + "\n".join(
+                f"{i}. {step}" for i, step in enumerate(result.steps, start=1)
+            )
+        result.mode = "template"
+        cited_final, _ = verify_citations(result.answer, evidence)
+        result.cited_ids = cited_final
 
     # 8) 数值校验 + 越界告警
     if out_of_range:
