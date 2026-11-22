@@ -39,6 +39,7 @@ class GNode:
     x: float = 0.0
     y: float = 0.0
     degree: int = 0
+    attrs: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -47,6 +48,16 @@ class GEdge:
     target: str
     predicate: str
     status: str = "anchor"
+    value: str = ""
+    unit: str = ""
+    value_min: str = ""
+    value_max: str = ""
+    level: str = ""
+    severity: str = ""
+    reason: str = ""
+    effect: str = ""
+    source_ids: str = ""
+    note: str = ""
 
 
 @dataclass
@@ -61,9 +72,12 @@ class Graph:
 def load_graph(data_dir: Path | str, *, include_sources: bool = False, include_isolated: bool = True) -> Graph:
     data = Path(data_dir)
     nodes: Dict[str, GNode] = {}
+    attr_keys = ("category", "species", "berry_color", "seedless", "maturity", "region",
+                 "pathogen_latin", "symptom", "method", "stage", "direction", "value_min", "value_max", "unit", "note", "aliases")
     with (data / "entities.csv").open(encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
-            nodes[row["id"]] = GNode(id=row["id"], name=row["name"], label=row["label"])
+            attrs = {k: (row.get(k) or "").strip() for k in attr_keys if (row.get(k) or "").strip()}
+            nodes[row["id"]] = GNode(id=row["id"], name=row["name"], label=row["label"], attrs=attrs)
     if include_sources:
         try:
             with (data / "sources.csv").open(encoding="utf-8-sig") as f:
@@ -80,7 +94,14 @@ def load_graph(data_dir: Path | str, *, include_sources: bool = False, include_i
             o = name_to_id.get(row["object"])
             if not s or not o:
                 continue
-            edges.append(GEdge(s, o, row["predicate"], row.get("status", "anchor")))
+            edges.append(GEdge(
+                s, o, row["predicate"], row.get("status", "anchor"),
+                value=(row.get("value") or "").strip(), unit=(row.get("unit") or "").strip(),
+                value_min=(row.get("value_min") or "").strip(), value_max=(row.get("value_max") or "").strip(),
+                level=(row.get("level") or "").strip(), severity=(row.get("severity") or "").strip(),
+                reason=(row.get("reason") or "").strip(), effect=(row.get("effect") or "").strip(),
+                source_ids=(row.get("source_ids") or "").strip(), note=(row.get("note") or "").strip(),
+            ))
     for e in edges:
         if e.source in nodes:
             nodes[e.source].degree += 1
@@ -281,3 +302,16 @@ def graph_summary(graph: Graph) -> Dict[str, int]:
 
 def svg_hash(svg: str) -> str:
     return hashlib.md5(svg.encode("utf-8")).hexdigest()[:8]
+
+
+def load_sources(data_dir: Path | str) -> Dict[str, str]:
+    """来源 id -> 标题（用于图谱详情的来源展示）。"""
+    out: Dict[str, str] = {}
+    path = Path(data_dir) / "sources.csv"
+    try:
+        with path.open(encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                out[row.get("id", "")] = (row.get("title") or "").strip()
+    except FileNotFoundError:
+        pass
+    return out
