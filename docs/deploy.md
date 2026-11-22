@@ -1,16 +1,16 @@
 # 公网 Demo 部署指南（docs/deploy.md）
 
-## 已部署实例（2026-11-21）
+## 已部署实例（2026-11-21 首次上线；2026-11-22 真实复核）
 
 | 项 | 值 |
 |---|---|
 | 平台 | 魔搭 ModelScope 创空间（免费 CPU 2vCPU/8GB，Streamlit SDK） |
 | 应用直达地址 | **https://yuzherumo-grape-storage-kg-qa.ms.show** |
 | 空间主页 | https://www.modelscope.cn/studios/YUZHERUMO/grape-storage-kg-qa |
-| 状态 | Running（`_stcore/health` = ok，已从外部网络实测） |
-| 代码版本 | 本地 commit `4fbafaf`（网页上传的 23 个运行必需文件） |
+| 服务可达性 | Running（2026-11-22 10:40 实测：`/`=HTTP 200、`/_stcore/health`=ok） |
+| 线上代码版本 | **未同步到本地最新工作树**：线上仓库最后提交 2026-11-22 09:10（28 个文件）；本轮修复后本地与线上有 16 个文件内容差异，且线上缺 `.streamlit/config.toml` |
+| 待办（需账号） | 登录魔搭 → 上传 `dist/modelscope-studio-upload.zip`（26 个运行必需文件，SHA256 见 §E）→ 重启/构建 → 按 §E 复核；**上传成功前不得声称线上已更新** |
 | 环境变量 | `DEEPSEEK_API_KEY`（密文）+ `DEEPSEEK_MODEL` / `DEEPSEEK_BASE_URL` / `GRAPH_BACKEND`（明文） |
-| 说明 | 网页上传未包含 `.streamlit/config.toml`（隐藏目录不便拖拽），主题走平台默认；不影响功能 |
 
 > 注：Streamlit Community Cloud 在该网络登录被 403 拦截（平台反滥用误伤），故改走魔搭；详见下文方案 B。
 
@@ -134,7 +134,7 @@ streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 
 ```powershell
 .\run.ps1 -Check          # 数据十项 + Cypher 静态校验 + 图谱加载
-.\scripts\make_release.ps1 -Version v1.0   # 生成干净快照（自动排除 .env / PDF）
+.\scripts\make_release.ps1 -Version v1.1   # 生成干净快照（自动排除 .env / PDF）
 ```
 
 1. 仓库/上传包里**没有** `.env`、`*.pdf`；
@@ -143,8 +143,37 @@ streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 4. 记录 Demo URL + 对应 commit（`git rev-parse --short HEAD`）写进提交材料；
 5. 赛事结束后吊销 key、关闭实例。
 
+
+## E. 线上核验与重新部署（2026-11-22 真实检查记录）
+
+**检查方式（真实线上 API，不依赖本地文件）**：调用魔搭创空间仓库接口
+`https://modelscope.cn/api/v1/studio/yuzherumo/grape-storage-kg-qa/repo/files?Revision=master` 列目录，再用
+`.../repo?Revision=master&FilePath=<path>` 取文件内容，与本地工作树逐文件比对。
+
+**核验结果**：
+- 线上仓库 28 个文件，最后提交时间 **2026-11-22 09:10:24**；
+- 线上**缺少** `.streamlit/config.toml`（网页上传隐藏目录的遗漏）；
+- 与当前本地工作树相比，`app.py`、`app/config.py`、`app/contracts.py`、`app/graph_interactive.py`、`app/graph_view.py`、`app/linking.py`、`app/llm.py`、`app/planner.py`、`app/qa.py`、`app/store/*`、`app/ui.py`、`data/triples.csv` 等 **16 个文件内容不同**；
+- 因此**当前线上不是最新版本**（README 中「演示桩/HTML 转义/引用回退/多轮继承」等第三轮行为尚未上线）。
+
+**已准备好的上传包**（本地生成，未上传）：
+- 路径：`dist/modelscope-studio-upload.zip`
+- 文件数：**26**（`app.py`、`requirements.txt`、`.streamlit/config.toml`、`app/**`、`data/**` 全部运行必需文件；含 `app/graph_interactive.py`、`app/graph_view.py`、`data/descriptions.csv`）
+- SHA256：`f2eff9990379dd9b384d0e86e92f02d02123aeadc9ff7c0737bbad8e55668cd3`
+- 生成方式：按白名单从工作树打包（无 `.env`、无 PDF、无 `.git/.venv/.tmp/__pycache__`）。
+
+**重新部署步骤（需魔搭账号，本环境无凭据，未执行）**：
+1. 打开空间 → 设置/文件管理 → 上传上述 zip 或逐文件覆盖（务必包含 `.streamlit/config.toml`）；
+2. 重启/重新构建空间，等待 Running；
+3. 复检命令（PowerShell，无需账号）：
+   ```powershell
+   Invoke-WebRequest "https://yuzherumo-grape-storage-kg-qa.ms.show/_stcore/health" -UseBasicParsing
+   # 再取线上 app/qa.py 与本地对比 SHA256（见上文的 repo API 方法）
+   ```
+4. 记录新的线上提交时间/文件数，回填本表「线上代码版本」。
+
 ## 已知限制
 
 - 免费实例会休眠、并发低，不适合压测；
-- 公网 Demo 与本地是同一份代码（同一 commit），数据相同；PDF 原文不随部署上传（版权）；
+- 公网 Demo 当前**并非**与本地同一版本（线上 09:10，本地第三轮修复后更新）；重新上传后需按 §E 复核，PDF 原文不随部署上传（版权）；
 - 若评委网络访问 Streamlit Cloud 慢，优先给 B（魔搭）或 C（临时隧道）地址。

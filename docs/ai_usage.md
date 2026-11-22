@@ -32,7 +32,7 @@
 ```powershell
 git log --oneline                              # 开发过程
 .\.venv\Scripts\python.exe scripts\validate_data.py    # 数据十项校验
-.\.venv\Scripts\python.exe -m pytest tests -q          # 96 passed / 2 skipped
+.\.venv\Scripts\python.exe -m pytest tests -q          # 287 passed / 2 skipped
 .\.venv\Scripts\python.exe scripts\eval_qa.py          # 评测报告（引用有效/数值校验逐题可见）
 ```
 

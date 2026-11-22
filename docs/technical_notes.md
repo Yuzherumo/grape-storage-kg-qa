@@ -1,82 +1,57 @@
-# 技术说明（technical notes）
+# 技术摘要（technical notes）
 
-> 作品：鲜食葡萄储藏知识图谱问答（农客松 2026，主赛道·方向二「生命系统」）
-> 在线体验：https://yuzherumo-grape-storage-kg-qa.ms.show
-> 代码仓库：https://github.com/Yuzherumo/grape-storage-kg-qa
-> 版本：v1.0（2026-11-22）
+> 本页是面向评审的一页技术摘要；详细内容分别见 [architecture.md](architecture.md)、[data.md](data.md)、[validation.md](validation.md)、[limitations.md](limitations.md)。
 
 ## 1. 作品定位
 
-面向种植户、冷库管理员、采购/质检的技术问答系统：把现行国标 **GB/T 16862-2026《鲜食葡萄冷藏技术》** 与 5 篇综述中的储藏规范，拆成可查询、可溯源的知识图谱；用户用大白话提问，系统先识别品种/病害/条件实体，再参数化查图取证据，最后让大模型**只能依据证据**生成「结论 + 依据 + 现在该做什么」，并对引用与数字做机器校验；图谱没收录就明确拒答。
+面向鲜食葡萄采后贮藏与保鲜管理的知识图谱增强问答系统。把 GB/T 16862-2026《鲜食葡萄冷藏技术》与相关综述拆成可溯源的知识图谱；提问时先做实体链接与意图路由，参数化检索证据，再由大语言模型在证据约束下生成「结论 + 依据 + 现在该做什么」，并对引用与数值做机器校验；图谱未覆盖的问题明确拒答。
 
-## 2. 系统架构
+## 2. 技术路线
 
-```
-用户问题
- → 归一化（全角/口语/₂→2）
- → 实体链接（app/linking.py，词典最长匹配 + 拉丁词边界 + 口语别名 + 症状词）
- → 意图路由（app/planner.py，触发词加权 + 实体先验 + 句式模式 + 低分澄清）
- → 参数化查图（app/store/，LocalStore 纯标准库 / Neo4jStore Cypher 模板）
- → 证据 Evidence（三元组 + 值 + 来源 + 定位 + 状态 + 置信）
- → 生成（app/qa.py：DeepSeek OpenAI 兼容接口，或离线模板）
- → 后校验（引用校验 + 数值单位/区间/越界 + 覆盖守卫）
- → AnswerResult → Streamlit UI
+```text
+问题 → 归一化/实体链接 → 意图路由 → 参数化查图 → 证据（三元组+来源+定位+状态）
+     → 覆盖守卫/越界检测 → 模板或 LLM 生成 → 引用与数值校验 → AnswerResult → UI
 ```
 
-技术栈：Python 3.12 + Streamlit 1.67 + 纯标准库数据层 + Neo4j 5 Cypher 脚本（可选后端）+ DeepSeek API（可选，缺省离线模板）。不依赖数据库即可运行。
+规则负责「问的是什么、该查什么」，图谱负责「有什么证据」，LLM 只负责把证据写成自然语言。完整模块与函数对应关系见 [architecture.md](architecture.md)。
 
-**图谱可视化**：`app/graph_view.py` 纯标准库力导向布局；`app/graph_interactive.py` 生成自包含 HTML（内联 SVG + 原生 JS，无外部依赖、离线可用）：**点击节点**显示具体描述（类型/属性/备注/数值区间）与按谓词分组的关联事实（含数值、等级/严重度、来源），可点邻居跳转，支持缩放、拖拽、类型筛选与搜索。UI 侧栏「知识图谱视图」切换全图/阳光玫瑰子图；`scripts/export_graph.py` 导出 `docs/assets/*.svg`，PNG 版本随仓库提供，用于 PPT 与培训材料。
+技术栈：Python 3.12、Streamlit 1.67、纯标准库数据层；本地后端无需数据库，Neo4j 5 为可选后端；LLM 使用 OpenAI 兼容接口（默认 DeepSeek），未配置时自动使用离线模板。
 
-## 3. 知识图谱设计
+## 3. 数据口径
 
-| 项 | 内容 |
-|---|---|
-| 实体（5 类，59 实体 + 16 来源 = 74 节点） | Variety 8、Condition 30、QualityIndicator 13、Disease 7、Source 16 |
-| 关系（9 种谓词，108 条） | REQUIRES 26、CONTRA_INDICATED_FOR 3、AFFECTS 19、SUSCEPTIBLE_TO 8、PREVENTED_BY 22、INDUCED_BY 7、ALTERNATIVE_TO 3、INDICATES 2、HAS_INDICATOR_VALUE 18 |
-| 单源真相 | `data/entities.csv / triples.csv / sources.csv`，Cypher 由脚本生成（`scripts/gen_cypher.py`，`--check` 防漂移）；阳光玫瑰核心子集另有 `triples_shine_muscat.csv` 门禁快照 |
-| 科普描述 | `data/descriptions.csv`：28 个节点（8 品种 / 7 病害 / 13 指标）的科普段落，来源为科普中国、百度百科与国标，**改写引用并注明来源/许可**；图谱点击节点即可查看 |
-| 受控词表 | 谓词主/宾类型、数值单位与区间、来源外键；`scripts/validate_data.py` 十项校验（列完整、枚举、区间、类型-谓词组合、来源外键、B/G/H 双来源、S2a 快照严格子集等） |
+- 知识实体 **58**（品种 8、条件 30、指标 13、病害 7）；来源节点 **16**；图谱节点 **74**（58 + 16）。
+- 三元组 **108**：`verified` 61、`anchor` 47；9 种谓词。
+- 科普描述 28 个节点；阳光玫瑰 S2a 快照 20 条。
+- 数据唯一真相是 `data/*.csv`，Cypher 由脚本生成；统计口径、来源清单与核验规则见 [data.md](data.md)、[sources.md](sources.md)。
 
-## 4. 证据分级与溯源
+## 4. 可信机制
 
-每条三元组带 `source_ids + locator + quote + status + confidence`：
+1. 覆盖守卫：typed 意图的证据必须触达命中的品种/病害主实体，否则 `no_evidence`；
+2. 引用校验：`[E#]` 必须存在且与事实句相关，缺失/不匹配允许纠正一次，失败回退模板；
+3. 数值校验：单位/区间感知，证据外数字记 `unsourced_number`，温度越界记 `out_of_range`；
+4. 证据分级：`verified` 可作确定结论；`anchor` 必须标「待核验」，高风险参数只给方向；
+5. 失败降级：无 Key/超时/401/429/5xx/图谱不可用等均有明确告警与模板兜底。
 
-- **verified 61 条**：GB/T 16862-2026 条文 51 条（`7.3 冷藏条件`、`5.3.2 预冷`、`6.3.4 保鲜剂`、`附录A 表A.1`、`附录B 表B.1` 等条款号 + 原文摘录）+ 用户提供的 5 篇综述原文 10 条（PDF 页码/栏目 + 引文）；
-- **anchor 47 条**：论文正文未获取，`note` 写明待核验点，UI 显示「待核验」，不冒充原文；
-- 冲突不合成：SO₂ 对阳光玫瑰保留 CONTRA（禁忌，高）+ ALTERNATIVE（缓释片/1-MCP）两侧证据，答案并列陈述并注明争议。
+以上校验是规则启发式，不能替代语义级事实核查，边界见 [limitations.md](limitations.md)。
 
-## 5. 可信问答机制
-
-1. **覆盖守卫**：typed intent 的证据必须触达命中实体，否则返回 `no_evidence`，不拿别的品种凑答案；
-2. **引用校验**：答案里的 `[E#]` 必须存在于本轮证据；越界引用记 `invalid_citation`；
-3. **数字校验**：单位/±区间感知，答案中数字必须来自证据（含多值区间、结构化值）；不在证据内的数字记 `unsourced_number`；问题数值超出证据温度区间时记 `out_of_range` 并明确「不可行」；
-4. **模板兜底**：LLM 超时/不可用/未配置 key 时自动降级为模板答案，功能完整、仍带引用；
-5. **多轮上下文**：仅当本轮没有新实体时继承上一轮实体，避免误覆盖。
-
-## 6. 评测与验证
+## 5. 验证结果（2026-11-22，当前工作区）
 
 | 项 | 结果 |
 |---|---|
-| 离线测试 | **118 passed / 2 skipped**（2 skip：未装 neo4j 驱动的 parity 测试、默认跳过的 LLM 标记测试） |
-| 黄金集 | 核心题 5/5、越界探针 1/1、口语变体意图 12/12、实体命中 12/12 |
-| 数据校验 | 十项全绿（错误 0） |
-| Cypher | 13 个 `.cypher` 静态校验通过（标签/关系/参数/计数/10 意图覆盖）+ 生成物无漂移；在嵌入式 openCypher 引擎 Kùzu 上实跑（74 节点/108 关系，6 题与本地后端一致） |
-| 在线模式 | `deepseek-chat` 实测 6 题均有有效引用、无编造数字；Q6 正确触发越界；单题 1.3~2.8s，缓存命中 ~5ms |
+| pytest | 289 收集，287 passed / 2 skipped；覆盖率 82% |
+| 数据校验 | 十项通过，错误 0，告警 2（anchor quote 为空，符合规则） |
+| Cypher | 静态校验通过、生成物无漂移；Kùzu 实跑 74 节点/108 关系，6 题与本地后端一致 |
+| 黄金集 | 核心题 5/5、越界探针 1/1、口语意图 12/12、实体命中 12/12 |
 
-## 7. 部署与复现
+详细命令、在线 LLM 历史记录与 CI 状态见 [validation.md](validation.md)。
 
-- **公网 Demo**：魔搭 ModelScope 创空间（Streamlit SDK，免费 CPU，Running；`_stcore/health`=ok）；
-- **本地**：`.\install.ps1` → `.\run.ps1`（`http://127.0.0.1:8501`），无网络/无 Key 可跑；
-- **打包**：`.\scripts\make_release.ps1` 生成不含密钥与 PDF 的干净快照（白名单 + 解包强校验 + SHA256）；
-- **自检**：`.\run.ps1 -Check`（数据十项 + Cypher 静态校验 + 图谱加载）。
+## 6. 部署与复现
 
-## 8. 已知限制
+- 公网演示：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间）；
+- 本地：`.\install.ps1` → `.\run.ps1` → `http://127.0.0.1:8501`；无 Key/断网可用；
+- 部署与打包细节见 [deploy.md](deploy.md)、[packaging.md](packaging.md)。
 
-1. 图谱为演示级规模（108 条），覆盖阳光玫瑰 + 7 个对照品种、7 种病害（5 种与国标附录B 对齐），不是全领域知识库；
-2. 47 条 anchor 依赖未获取的论文原文（主要在 2024 综述、包装工程综述、阳光玫瑰 SO₂/ClO₂ 论文等），已如实标注不冒充；
-3. Neo4j 服务端未在本网络实跑（官方下载域名 403），以嵌入式引擎实跑 + 静态校验 + 便携安装脚本替代，详见 `docs/neo4j_verify.md`；
-4. 云端免费实例会休眠，首次访问冷启动数十秒；在线模式依赖 DeepSeek API 可用性，离线模板为保底。
+## 7. 限制与 AI 使用
 
-## 9. AI 使用说明
-
-见 `docs/ai_usage.md`：AI 用于辅助编码、文档整理与多智能体协作开发；数值/来源/结论由人工核验口径把控，未编造来源、DOI 或条文；引用的标准与论文仅保留题录与条级摘录，PDF 原件不随作品分发。
+- 限制摘要：演示级数据规模、47 条 anchor 待核验、Neo4j 服务端未实跑、校验为启发式、在线 LLM 有随机性；完整列表见 [limitations.md](limitations.md)。
+- AI 参与编码、文档与多智能体协作，数值/来源由人工把关；详见 [ai_usage.md](ai_usage.md)。

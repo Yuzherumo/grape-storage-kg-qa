@@ -3,7 +3,7 @@
 > 由 `scripts/eval_qa.py` 自动生成（离线模式：`allow_llm=False`，不联网、不需 API key）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\eval_qa.py`
 
-- 生成时间：2026-11-22 09:42:51
+- 生成时间：2026-11-22 11:11:33
 - 后端：`local`；图谱统计：`{'backend': 'local', 'nodes': 58, 'rels': 108, 'varieties': 8, 'conditions': 30, 'indicators': 13, 'diseases': 7, 'sources': 16, 'unresolved_edges': 0, 'data_files': ['triples_shine_muscat.csv', 'triples.csv']}`
 - 总判定：**PASS** —— 核心题 5/5 通过；越界探针 1/1 通过；口语变体意图命中 12/12（门槛 10）；实体命中 12/12
 

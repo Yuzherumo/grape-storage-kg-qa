@@ -1,4 +1,7 @@
-# 实施规格（docs/spec.md）—— 数据与验收的唯一口径
+# 实施规格（docs/spec.md）—— 数据与验收口径（历史规划文档）
+
+> **状态说明（2026-11-22）**：本文件是项目早期（M1-M3）的数据与验收规格，保留用于追溯实体清单与 schema 冻结过程。
+> 当前数据规模已从「68 条目标」增长到 108 条，**当前统计口径以 [data.md](data.md) 为准**；实体 id 与谓词约束仍有效。
 
 > 配套 `docs/api.md`（接口契约）与本文件（数据/实体/三元组/验收）。两份都读完再动手。
 > 赛道：农客松 2026 主赛道 · 方向二「生命系统」（农业/食品 · 鲜食葡萄采后贮藏）。
@@ -90,13 +93,13 @@
 
 ## 3. S2a：20 条阳光玫瑰三元组（M1 门禁，先做这个）
 即 `data/triples_shine_muscat.csv` 的 20 行（内容见批准计划 §5.3）：
-1 阳光玫瑰-REQUIRES-低温冷藏 0±0.5℃；2 -RH90~95%；3 -气调O₂3~5%；4 -气调CO₂1~3%；5 -快速预冷12h；6 -1-MCP 1μL/L×12h；7 -冰温-0.5~0℃；8 -CONTRA_INDICATED_FOR-SO₂熏蒸（severity=高，双来源）；9 -HAS_INDICATOR_VALUE-耐贮性2~4月；10 -SSC≥16%；11 -TA0.4~0.6%；12 -SUSCEPTIBLE_TO-灰霉病(高)；13 -炭疽病(中)；14 -酸腐病(低)；15 低温冷藏-AFFECTS-呼吸强度(decrease)；16 1-MCP-AFFECTS-落粒率(decrease)；17 1-MCP-AFFECTS-乙烯释放率(decrease)；18 RH90~95%-AFFECTS-失重率(decrease)；19 SO₂熏蒸-AFFECTS-褐变指数(increase)；20 灰霉病-PREVENTED_BY-快速预冷(efficacy=中)。
+1 阳光玫瑰-REQUIRES-低温冷藏 0±0.5℃；2 -RH90~95%；3 -气调O₂3~5%；4 -气调CO₂1~3%；5 -快速预冷12h；6 -1-MCP 1μL/L×12h；7 -冰温-0.5~0℃；8 -CONTRA_INDICATED_FOR-SO₂熏蒸（severity=高，双来源）；9 -HAS_INDICATOR_VALUE-耐贮性2~4月；10 -SSC≥16%；11 -TA≤0.35%；12 -SUSCEPTIBLE_TO-灰霉病(高)；13 -炭疽病(中)；14 -酸腐病(低)；15 低温冷藏-AFFECTS-呼吸强度(decrease)；16 1-MCP-AFFECTS-落粒率(decrease)；17 1-MCP-AFFECTS-乙烯释放率(decrease)；18 RH90~95%-AFFECTS-失重率(decrease)；19 SO₂熏蒸-AFFECTS-褐变指数(increase)；20 灰霉病-PREVENTED_BY-快速预冷(efficacy=中)。
 
 ## 4. S2b：补足到 68 条（保底 50）
 按批准计划 §5.4 的 A~I 九组（A14 B3 C18 D8 E8 F6 G3 H2 I6）。**B/G/H 组每条 ≥2 来源或 note 声明单来源**。优先补：品种对比必需（I 组 8 条品种耐贮性）、病害处置（E 组）、禁忌（B 组）。
 
 ## 5. 校验器 `scripts/validate_data.py` 必查（退出码非 0 即失败）
-1. 列完整性；2. 枚举合法（label/predicate/status/type/access/direction）；3. 数值区间 `value_min<=value<=value_max`；4. 类型-谓词组合合法；5. `source_ids` 外键存在于 sources.csv；6. B/G/H 双来源或 note 声明；7. 阳光玫瑰行数 ≥20；8. `locator` 非空率 100%；9. entities 中引用的 id 与 triples 中 subject/object 名称可对应（按 name 匹配）。
+1. 列完整性；2. 枚举合法（label/predicate/status/type/access/direction）；3. 数值区间 `value_min<=value<=value_max`；4. 类型-谓词组合合法；5. `source_ids` 外键存在于 sources.csv；6. B/G/H 双来源或 note 声明；7. 阳光玫瑰行数 ≥20；8. `locator` 非空率 100%；9. entities 中引用的 id 与 triples 中 subject/object 名称可对应（按 name 匹配）；10. S2a 快照 `triples_shine_muscat.csv` 必须是主数据的严格子集（逐字段一致）。
 
 ## 6. Cypher 生成与导入
 - `scripts/gen_cypher.py`：读 entities.csv/triples.csv → 生成 `graph/init_nodes.cypher`、`graph/init_rels.cypher`（MERGE 幂等，节点中文 name，关系属性含 source_ids/locator/quote/status/confidence）；`--check` 模式比对已生成文件是否有漂移。

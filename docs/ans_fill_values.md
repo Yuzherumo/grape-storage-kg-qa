@@ -9,10 +9,10 @@
 |---|---|
 | 作品名称 | `鲜食葡萄储藏知识图谱问答` |
 | 作品介绍 / 简介 | 见下方「简介正文」（193 字，含数字与标点；纯汉字约 165 字） |
-| 版本 | `v1.0` |
+| 版本 | `v1.1` |
 | 在线体验地址 | `https://yuzherumo-grape-storage-kg-qa.ms.show` |
 | 源码 / Git 仓库 | `https://github.com/Yuzherumo/grape-storage-kg-qa`（默认分支 `main`） |
-| 源码压缩包（若要求上传） | `dist/grape-storage-kg-qa-v1.0.zip`（241.5 KB，已排除 .env 与 PDF） |
+| 源码压缩包（若要求上传） | `dist/grape-storage-kg-qa-v1.1.zip`（约 937 KB / 94 文件，已排除 .env/密钥/PDF；SHA256 见 `dist/grape-storage-kg-qa-v1.1.zip.sha256`） |
 
 ## 简介正文（直接粘）
 
@@ -22,7 +22,7 @@
 
 | 字段 | 建议 |
 |---|---|
-| pitch_deck（选交） | 上传 `docs/pitch_deck.pptx`（10 页）；若只收链接，传到网盘/腾讯文档后贴分享链接并设「任何人可看」 |
+| pitch_deck（选交） | 上传 `docs/pitch_deck.pptx`（12 页）；若只收链接，传到网盘/腾讯文档后贴分享链接并设「任何人可看」 |
 | demo_video（选交） | 录制后上传 B 站（仅链接可见）或网盘，贴链接 |
 | technical_notes（选交） | 粘贴 `docs/technical_notes.md` 全文，或贴文档链接 |
 
@@ -36,4 +36,4 @@
 1. 页面显示「正式提交」成功/历史记录出现本条；
 2. 公网地址能打开、示例问题能答（提交前自己点一遍）；
 3. GitHub 仓库 README 顶部有公网地址、无 `.env`/PDF；
-4. 记录 commit：`git rev-parse --short HEAD`（当前 `4f897c5`，若再提交会变）。
+4. 记录 commit：`git rev-parse --short HEAD`（本次 v1.1 包基于 2026-11-22 第三轮工作树；正式提交前建议先 commit 再重打包，使包与 commit 一一对应）。

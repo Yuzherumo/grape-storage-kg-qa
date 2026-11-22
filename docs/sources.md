@@ -28,11 +28,14 @@
 
 - **B 组**（`CONTRA_INDICATED_FOR`）、**G 组**（`ALTERNATIVE_TO`）、**H 组**（`INDICATES`）每条 **≥2 个来源**，否则 `note` 必须写「单来源，建议后续实验验证」，UI 显示「单来源」徽标。
 - 当前 108 条中 B/G/H 组全部 ≥2 来源（SO₂×阳光玫瑰为 3 来源）。
-- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **61 条 `verified`**（国标条文 51 条 + 用户提供的 5 篇综述原文 10 条）、**47 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
+- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **61 条 `verified`**（其中 `source_ids` 含国标 `gbt16862_2026` 的 53 条、仅综述/论文来源的 8 条；§2.2 的 10 条综述原文 verified 中有 2 条同时含国标来源）、**47 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
 - `confidence`：0.50~0.82，按来源等级（国标 > 综述 > 论文 > 行业资料）与一致性人工设定。
 
-## 2.1 国标条文引用（51 条 verified）
+## 2.1 国标条文引用（53 条 verified，按 `source_ids` 计）
 > 来源：GB/T 16862-2026《鲜食葡萄冷藏技术》全文 PDF（用户提供）。**仅引用条级摘录，未转载标准全文。**
+>
+> **口径**：`status=verified` 且 `source_ids` 含 `gbt16862_2026` 的三元组共 **53** 条（第三轮补齐前为 46 条）。
+> 第三轮来源核对：quote/locator 明确引用国标条款或附录 A/B、且 `status=verified` 的 7 条（`e_gray_so2pad`、`f_black_hot`、`f_blue_wound`、`f_gray_wound`、`f_rhizopus_mech`、`sm_ind_ssc`、`sm_ind_ta`）已逐条回查 GB/T 16862-2026 PDF 提取文本（`.tmp/std_text.txt`），quote 与原文一致后在该行 `source_ids` 末尾补挂 `gbt16862_2026`，故 46→53。
 
 | 条款 | 条文摘录（入图 quote） | 升级/新增的三元组（sid 或组） |
 |---|---|---|
@@ -51,7 +54,7 @@
 
 **未升级（仍 anchor）的关键项**：阳光玫瑰 0±0.5℃（工程/文献口径，国标通用区间为 -1~0℃）、各品种耐贮性月数、SO₂ 熏蒸×阳光玫瑰禁忌（国标仅规范缓释保鲜剂，熏蒸风险依据 §3.1「二氧化硫伤害」定义+文献+综述）、AFFECTS 因果强度。
 
-## 2.2 综述原文引用（10 条 verified）
+## 2.2 综述原文引用（10 条 verified，其中 `c_cold0_decay`、`c_precool_decay` 同时含国标来源）
 
 > 来源：用户提供的 5 篇综述 PDF（见 §1 后 5 行）。**仅引用条级摘录，未转载全文。**
 

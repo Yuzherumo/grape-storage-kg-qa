@@ -1,5 +1,8 @@
 # 接口契约（docs/api.md）
 
+> **说明（2026-11-22）**：本文件是开发期冻结的接口契约，保留用于追溯模块边界与函数签名；
+> 文中「写区」「Lead」等表述属于开发期分工，不代表当前仓库协作方式。当前实现以 `app/` 代码与 [architecture.md](architecture.md) 为准。
+
 > 冻结时间：T+1。**所有成员按本文件并行开发；改契约先改 `app/contracts.py` + 本文件，并通知 Lead。**
 > 写区划分见 §9。任何一方不得修改他人写区的文件。
 
@@ -90,10 +93,13 @@ answer_question(question, *, store, llm=None, k=6, allow_llm=True, steps=True) -
 build_prompt(question, evidence) -> list[dict]      # OpenAI messages
 compose_steps(evidence, intent) -> list[str]        # ≤3 步，无证据返回 []
 verify_citations(answer, evidence) -> tuple[list[str], list[str]]
-check_numbers(answer, evidence) -> list[str]        # 返回告警码/文本
+check_numbers(answer, evidence, question="") -> list[str]   # 返回告警码/文本
+validate_llm_answer(answer, evidence, question="") -> tuple[list[str], bool]  # 规则校验；True=需回退模板
 ```
-流程：normalize → link（词表按 mtime 缓存）→ route → build_query → store.execute → eid 分配 → **覆盖校验**（typed 意图下证据必须触达命中实体，否则返回「图谱未收录」而不是回退全库）→ 排序（优先与命中实体相连的证据，再按 store 分数）→ 去重截断 →（allow_llm 且 key 可用 → LLM；否则模板）→ 引用校验（无有效引用重试 1 次，再失败转模板并加 `no_citation`）→ 最终答案确定后**重算 `cited_ids`**（覆盖分步动作里的引用）→ 数值校验 → 组装 AnswerResult。
+流程：normalize → link（词表按 mtime 缓存）→ route → build_query → store.execute → eid 分配 → **覆盖校验**（typed 意图下证据必须触达命中的品种/病害等主实体，否则返回「图谱未收录」而不是回退全库）→ 排序（优先与命中实体相连的证据，再按 store 分数）→ 去重截断 →（allow_llm 且 key 可用 → LLM；否则模板）→ 引用校验（无有效引用重试 1 次，再失败转模板并加 `no_citation`）→ **LLM 答案规则校验**（引用有效但与事实句不匹配 → 只纠正引用 1 次，仍不匹配则回退模板；关键数值错误/仅凭 anchor 给高风险参数 → 直接回退模板并加 `llm_answer_rejected`）→ 最终答案确定后**重算 `cited_ids`**（覆盖分步动作里的引用）→ 数值校验 → 证据分级告警 → 组装 AnswerResult。
 `mode="template"` 时答案必须仍带 `[E#]`、`steps` 与来源；`steps` 为空时不输出空的「现在该做什么」段（`general` 意图不硬编动作）。
+引用编号规范：校验/渲染前把全角 `【E1】`、小写 `[e1]` 规范为 `[E1]`（编号体系不变）。
+LLM 答案校验是**规则启发式**（引用触达、字面词/数值重叠），不是自然语言事实蕴含（NLI）判断：只能拦「无引用 / 明显不相关 / 关键数值错误」，不能证明结论在语义上被证据蕴含。
 
 告警码（`AnswerResult.warnings`）：
 
@@ -102,16 +108,22 @@ check_numbers(answer, evidence) -> list[str]        # 返回告警码/文本
 | `no_evidence` | 无证据 / 命中实体无对应数据（覆盖校验拦截） |
 | `no_citation` | 答案没有任何有效 `[E#]` 引用 |
 | `invalid_citation:E#` | 答案引用了不存在的证据编号 |
-| `unsourced_number:<num>` | 答案里的数字在证据中找不到来源 |
-| `out_of_range:<num><unit>` / `out_of_range` | 数值超出证据区间（含问题级越界检测） |
+| `unsupported_fact` | 事实句缺少 `[E#]` 引用（规则启发式，不阻塞模板回退） |
+| `citation_mismatch:E#` | 引用编号有效但与该句字面内容不相关（规则启发式） |
+| `unsourced_number:<num>` | 答案里的数字在证据中找不到来源（问题里的数字不豁免） |
+| `out_of_range:<num><unit>` / `out_of_range` | 数值超出证据区间（含问题级越界检测与「冷冻」口语） |
+| `anchor_unverified` | LLM 答案引用了待核验（anchor）证据 |
+| `anchor_high_risk` | 仅凭 anchor 证据给出药剂/浓度/剂量/处理时间等高风险参数 |
+| `llm_answer_rejected` | LLM 答案未过规则校验，已回退证据约束的模板答案 |
 | `single_source` | B/G/H 组证据仅 1 个来源 |
 | `low_confidence_intent` | 意图置信度 < 0.35 |
 | `llm_timeout` / `llm_unavailable` | 模型超时/不可用，已降级模板 |
 | `backend_fallback` | Neo4j 不可用，已回落 local |
 
+
 ### 6.1 多轮追问与缓存（M8）
 
-- `answer_question(..., context=None)`：`context = {"intent": str, "entities": [{"node_id","label","surface"}]}`；**仅当当前问句未命中任何实体时**继承上一轮实体，并在 `AnswerResult.context_note` 返回「承接上一轮：…」供 UI 显示（如「那湿度呢？」→ 承接阳光玫瑰）。
+- `answer_question(..., context=None)`：`context = {"intent": str, "entities": [{"node_id","label","surface"}]}`；**仅当本轮未命中任何实体、且问句是明确的指代式追问**（那/这/它/还有/再…）时才继承上一轮实体，并在 `AnswerResult.context_note` 返回「承接上一轮：…」供 UI 显示（如「那湿度呢？」→ 承接阳光玫瑰）；「那巨峰呢」走实体链接不继承，「苹果呢」无法识别时不强行套用旧实体。
 - LLM 结果按 `(问题, 证据指纹)` 做进程内 LRU（上限 64）：彩排/评委重复问同一句秒回；证据变化自动失效。
 - `variety_compare` 会取更多指标证据（内部 `k≥12`）并**逐品种核对耐贮性基线**：图里没有的品种明确输出「图谱未收录X的耐贮性数值」，不把「没取到」误报成「未收录」。
 
@@ -125,24 +137,26 @@ check_numbers(answer, evidence) -> list[str]        # 返回告警码/文本
 class LLMClient:
     available: bool
     def complete(messages, *, timeout=20, retries=2) -> str
-    last_usage: dict            # {"model","prompt_tokens","completion_tokens"}
+    last_usage: dict            # {"model","prompt_tokens","completion_tokens","attempts","latency_ms","error"}
 ```
 DeepSeek 走 OpenAI 兼容接口：`base_url=https://api.deepseek.com`，`model=deepseek-chat`。
-`DEEPSEEK_API_KEY` 为空 → `available=False`，qa 自动走模板。超时/401/网络错误 → 抛 `LLMUnavailable`（qa 捕获后降级，加 `llm_timeout`/`llm_unavailable`）。
+`DEEPSEEK_API_KEY` 为空 → `available=False`，qa 自动走模板。
+错误分类：401/403 → `auth`（不重试）；429 → `rate_limit`（指数退避重试）；5xx → `server`（重试）；超时 → `timeout`（重试）；连接/网络 → `network`（重试）；其它 4xx → `bad_request`（不重试）。可重试错误按 `min(4s, 0.5*2^n)` 退避；最终抛 `LLMUnavailable`（qa 捕获后降级，加 `llm_timeout`/`llm_unavailable`）。`last_usage` 记录 `attempts/latency_ms/error(kind)`，**不记录 API Key**。
 
 ## 8. UI 消费点（`app/ui.py`，ui-builder 写区）
 | UI 元素 | 取自 |
 |---|---|
-| 顶部徽标（后端/模型/离线） | `store.name`、`llm.available`、`AnswerResult.mode` |
-| 答案三段 | `answer`（Markdown）+ `steps`（编号列表）+ `cited_ids`（高亮 `[E#]`） |
+| 顶部徽标（后端/模型/离线） | `store.name`、`llm.available`、`AnswerResult.mode`（`llm/template/unavailable/demo`） |
+| 答案三段 | `answer`（Markdown）+ `steps`（编号列表）+ `cited_ids`（高亮 `[E#]`）；动态文本一律 HTML 转义，仅 `[E#]` 角标由程序生成 |
 | 证据表 | `evidence[]`：eid/subject/predicate/object/value+unit/source_titles/status/confidence/**locator（定位/条款列）** |
 | 依据角标 | `cited_ids` ∩ 证据 `eid`；未引用证据灰显 |
-| 告警条 | `warnings[]`（`out_of_range` 黄、`unsourced_number:*` 黄、`no_evidence` 红） |
+| 告警条 | `warnings[]`（`out_of_range`/`unsourced_number:*`/`anchor_unverified` 黄、`no_evidence`/`system_unavailable`/`anchor_high_risk` 红） |
 | 查询详情（折叠） | `query_cypher[]`、`elapsed_ms`、`llm_meta` |
 | 大字模式 | 侧栏开关 → 注入 CSS 放大字号/对比度 |
-| 图谱统计 | `store.stats()` |
+| 图谱统计 | `store.stats()`；演示桩数据不参与统计 |
 
 UI **不得**自行调用 DeepSeek、不得改 `answer` 文本；只渲染 `AnswerResult`。
+系统未就绪时 UI 返回 `mode="unavailable"` 的明确不可用结果，**不得**回退到固定葡萄贮藏答案；`APP_DEMO_MODE=1` 才启用演示桩（`mode="demo"`，标注模拟数据），演示桩不进入评测与图谱统计。
 
 ## 9. 写区与任务归属
 | 写区 | 归属 | 内容 |
@@ -156,6 +170,6 @@ UI **不得**自行调用 DeepSeek、不得改 `answer` 文本；只渲染 `Answ
 
 ## 10. 稳定性承诺（测试可依赖）
 - `Evidence` 与 `AnswerResult` 的字段名本期不变。
-- `mode` 恒为 `llm`/`template`；`warnings` 恒为 `list[str]`。
+- `answer_question` 返回的 `mode` 恒为 `llm`/`template`（UI 层在系统未就绪/演示模式下另有 `unavailable`/`demo`）；`warnings` 恒为 `list[str]`。
 - `template` 模式**确定性**：同输入两次结果完全一致（`elapsed_ms` 除外）。
 - `answer_question(..., allow_llm=False)` 不触网。
