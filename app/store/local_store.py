@@ -781,6 +781,13 @@ class LocalStore(GraphStore):
             # 条件既可能是禁忌的“施加对象”（subject），也可能作为对照词出现（object）
             edges.extend(self._collect(predicates=("CONTRA_INDICATED_FOR",), subject_ids=condition_ids))
             edges.extend(self._collect(predicates=("CONTRA_INDICATED_FOR",), object_ids=condition_ids))
+            # 同时点名品种时，禁忌边也按品种过滤；否则「SO₂熏阳光玫瑰」会把红地球/玫瑰香的
+            # 禁忌边一起返回，与 Cypher 模板（按 variety_ids 过滤）不一致。
+            if variety_ids:
+                edges = [
+                    edge for edge in edges
+                    if edge["predicate"] != "CONTRA_INDICATED_FOR" or edge["object_id"] in variety_ids
+                ]
             bad_conditions = condition_ids
             for direction in ("object_ids", "subject_ids"):
                 edges.extend(
