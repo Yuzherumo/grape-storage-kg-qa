@@ -82,11 +82,11 @@ def test_entity_ids_only_for_general_and_condition_ids_only_for_contraindication
     """api.md §5（本轮更新）：entity_ids 仅 general 兜底；condition_ids 仅 contraindication 精确过滤。"""
     from app.planner import build_query
 
-    # 命中「阳光玫瑰 + 冷库(cold_0)」两个实体，验证 condition_ids 不被误用于其它意图
-    hits = link("阳光玫瑰放冷库冷藏温度")
+    # 命中「阳光玫瑰 + 0℃冷藏(cold_0)」两个实体，验证 condition_ids 不被误用于其它意图
+    hits = link("阳光玫瑰 0℃冷藏 温度")
     assert any(hit.node_id == "shine_muscat" for hit in hits)
     assert any(hit.node_id == "cold_0" for hit in hits), (
-        f"「冷库」应链接 cold_0：{[hit.node_id for hit in hits]}"
+        f"「0℃冷藏」应链接 cold_0：{[hit.node_id for hit in hits]}"
     )
 
     for intent in INTENTS:

@@ -39,7 +39,7 @@ from app.contracts import (
     QuerySpec,
 )
 from app.llm import LLMClient, LLMUnavailable
-from app.planner import build_query, normalize_question, route
+from app.planner import build_query, contains_term, detect_topics, normalize_question, route
 
 PRED_LABEL = {
     "REQUIRES": "需要条件",
@@ -259,6 +259,127 @@ def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> 
         if len(out) >= limit:
             break
     return out
+
+
+_FOCUS_TERMS: dict[str, tuple[str, ...]] = {
+    "humidity": ("湿度", "相对湿度", "rh"),
+    "atmosphere": ("气调", "氧气", "二氧化碳", "o2", "co2"),
+    "packaging": ("包装", "保鲜袋", "保鲜膜", "纸箱", "装箱", "袋", "膜"),
+    "precool": ("预冷", "打冷", "快速降温"),
+    "transport": ("运输", "冷链", "物流", "发货"),
+    "shelf": ("耐贮性", "货架期"),
+    "room_temp": ("常温", "室温"),
+}
+
+_TOPIC_CN = {
+    "humidity": "湿度",
+    "atmosphere": "气调",
+    "packaging": "包装",
+    "precool": "预冷",
+    "transport": "运输/冷链",
+    "shelf": "货架期/耐贮性",
+    "room_temp": "常温",
+}
+
+
+def _evidence_blob(e: Evidence) -> str:
+    """主题匹配只看主体/客体；quote 里的偶然词（如档案记录提到运输）不能把边带进来。"""
+    return normalize_question(" ".join([str(e.subject or ""), str(e.object or "")]))
+
+
+def _focus_evidence_for_question(
+    question: str, evidence: Sequence[Evidence], intent: str = ""
+) -> tuple[list[Evidence], str | None]:
+    """按问句主题过滤证据；返回 (聚焦后证据, 缺失主题)。
+
+    只保留与问句主题（预冷/运输/包装/湿度/气调/货架）直接相关的边。
+    若聚焦后为空，说明图谱写的是其他类别的知识，不能拿来回答。
+    """
+    topics = detect_topics(question)
+    order = [t for t in ("humidity", "atmosphere", "packaging", "precool", "transport", "shelf", "room_temp") if t in topics]
+    if intent == "variety_compare":
+        order = [t for t in order if t != "shelf"]
+    if not order:
+        return list(evidence), None
+    picked: list[Evidence] = []
+    for item in evidence:
+        blob = _evidence_blob(item)
+        if any(contains_term(blob, term) for topic in order for term in _FOCUS_TERMS[topic]):
+            picked.append(item)
+    if picked:
+        return picked, None
+    return [], order[0]
+
+
+def _asks_temperature(question: str) -> bool:
+    q = normalize_question(question)
+    return bool(re.search(r"温度|几度|多少度|℃|°C|-?\d+\s*度", q))
+
+
+def _transport_temperature_supported(question: str, evidence: Sequence[Evidence]) -> bool:
+    """运输温度问题必须有「运输/冷链」主体或客体 + 温度值，不能用一般冷藏温度冒充。"""
+    if not _asks_temperature(question):
+        return True
+    for item in evidence:
+        subject = normalize_question(str(item.subject or ""))
+        obj = normalize_question(str(item.object or ""))
+        if not any(term in subject + obj for term in ("运输", "冷链", "物流", "发货")):
+            continue
+        if item.unit == "℃":
+            return True
+        if re.search(r"-?\d+(?:\.\d+)?\s*(?:℃|°C|度)", subject + " " + obj):
+            return True
+    return False
+
+
+def _restrict_to_hit_varieties(evidence: Sequence[Evidence], hits: Sequence[EntityHit]) -> list[Evidence]:
+    """问题点名品种时，去掉其他品种的证据；通用/病害/条件边保留。"""
+    hit_ids = {h.node_id for h in hits if h.label == "Variety"}
+    if not hit_ids:
+        return list(evidence)
+    kept: list[Evidence] = []
+    for item in evidence:
+        subject_id = str(item.properties.get("subject_id") or "")
+        object_id = str(item.properties.get("object_id") or "")
+        subject_label = str(item.properties.get("subject_label") or item.properties.get("subject_category") or "")
+        object_label = str(item.properties.get("object_label") or item.properties.get("object_category") or "")
+        variety_ids = set()
+        if subject_label == "Variety" and subject_id:
+            variety_ids.add(subject_id)
+        if object_label == "Variety" and object_id:
+            variety_ids.add(object_id)
+        if variety_ids and not (variety_ids & hit_ids):
+            continue
+        kept.append(item)
+    return kept
+
+
+def _missing_evidence_answer(question: str, hits: Sequence[EntityHit], topics: set[str]) -> str:
+    names = "、".join(dict.fromkeys(h.surface or h.node_id for h in hits)) if hits else ""
+    topic_cn = "、".join(_TOPIC_CN[t] for t in sorted(topics) if t in _TOPIC_CN)
+    if "transport" in topics and _asks_temperature(question):
+        return (
+            "结论：图谱暂未收录「运输温度」的可引用证据，不能拿普通冷藏温度代替。\n\n"
+            "依据：现有运输相关数据只有冷链运输/防腐条件，没有运输温度数值。\n\n"
+            "可以改问：「冷库温度多少？」「运输时要注意什么？」"
+        )
+    if names and topic_cn:
+        return (
+            f"结论：图谱暂未收录「{names}」的{topic_cn}相关证据，不拿其他品种或条件凑答案。\n\n"
+            "依据：该问题命中了实体，但对应类别的知识库证据为空。\n\n"
+            "可以改问已收录的品种或条件，例如「阳光玫瑰湿度多少？」"
+        )
+    if topic_cn:
+        return (
+            f"结论：图谱暂未收录与「{topic_cn}」相关的可引用证据。\n\n"
+            "依据：当前没有对应主题的三元组，不能拿其他类别知识代替。\n\n"
+            "可以换一种问法，或改问已收录的主题。"
+        )
+    return (
+        "结论：图谱里没有检索到与该问题直接相关的证据，不编造数据。\n\n"
+        "依据：当前证据为空。\n\n"
+        "可以换成已收录的品种/条疾病/指标再问。"
+    )
 
 
 def _anchor_note(evidence: Sequence[Evidence]) -> str:
@@ -893,6 +1014,14 @@ def answer_question(
     warnings: list[str] = []
     result.warnings = warnings
 
+    def _refuse(message: str) -> AnswerResult:
+        if WARN_NO_EVIDENCE not in warnings:
+            warnings.append(WARN_NO_EVIDENCE)
+        result.answer = message
+        result.evidence = []
+        result.cited_ids = []
+        result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return result
     if not q:
         result.answer = "请输入一个问题，例如「阳光玫瑰放冷库该调到多少度？」"
         result.warnings.append(WARN_NO_EVIDENCE)
@@ -928,6 +1057,9 @@ def answer_question(
                 dict.fromkeys(h.surface or h.node_id for h in hits)
             )
     result.entities = hits
+    topics = detect_topics(q)
+    # 「那湿度呢」这类指代追问若上一轮也没有实体：先澄清，不能拿通用湿度/其他品种凑答案。
+    followup_without_context = _is_referential_followup(q) and not hits and not prev_ctx.get("entities")
 
     # 2) 意图路由
     intent, confidence, candidates = route(q, hits)
@@ -943,25 +1075,26 @@ def answer_question(
 
     # 2.5) general 且无实体：不查图谱（否则会返回任意证据，等于瞎答）
     if intent == "general" and not hits:
-        warnings.append(WARN_NO_EVIDENCE)
-        result.answer = (
-            "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
-            "依据：无可用证据。\n\n"
-            "可以这样说：「阳光玫瑰放冷库该调到多少度？」「冷库里葡萄长白毛了怎么办？」「阳光玫瑰和巨峰哪个更能放？」"
-        )
-        result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
-        return result
+        # 主题型问题（包装/运输/货架期/湿度等）允许走 general 关键词检索；
+        # 完全无主题、无实体时才走原有拒绝路径。
+        if not topics:
+            return _refuse(
+                "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
+                "依据：无可用证据。\n\n"
+                "可以这样说：「阳光玫瑰放冷库该调到多少度？」「冷库里葡萄长白毛了怎么办？」"
+                "「阳光玫瑰和巨峰哪个更能放？」"
+            )
     # 2.6) 非 temperature 的 typed 意图且无任何实体：不查全库凑答案（如「那湿度呢」但上一轮已无实体）
     #      temperature 例外：越界探测（-18℃/冷冻）需要全库温度证据来判区间。
     if intent != "general" and intent != "temperature" and not hits:
-        warnings.append(WARN_NO_EVIDENCE)
-        result.answer = (
-            "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
-            "依据：无可用证据（当前问题没有可关联的实体）。\n\n"
-            "请带上品种或病害再问一次，例如「阳光玫瑰的湿度要调到多少？」"
-        )
-        result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
-        return result
+        # 湿度/气调/货架期允许“无实体”的通用主题查询（只查对应类别，不跨类别凑答案）；
+        # 其他 typed 意图仍要求实体，避免查全库。
+        if followup_without_context or not (topics & {"humidity", "atmosphere", "shelf"}):
+            return _refuse(
+                "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
+                "依据：无可用证据（当前问题没有可关联的实体）。\n\n"
+                "请带上品种或病害再问一次，例如「阳光玫瑰的湿度要调到多少？」"
+            )
 
     # 3) 查询图谱
     evidence: list[Evidence] = []
@@ -970,7 +1103,7 @@ def answer_question(
         store_obj = _get_store(store, settings)
         # 品种对比/实体中心检索要多取一些边，否则「第二个命中实体」的边会被 k 截掉
         eff_k = max(int(k or 6), 12) if intent in ("variety_compare", "general") else int(k or 6)
-        spec: QuerySpec = build_query(intent, hits, k=eff_k)
+        spec: QuerySpec = build_query(intent, hits, k=eff_k, question=q)
         evidence = list(store_obj.execute(spec) or [])
         if getattr(store_obj, "backend_fallback", False):
             warnings.append(WARN_BACKEND_FALLBACK)
@@ -1005,6 +1138,15 @@ def answer_question(
     evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
     cap = max(int(k or 6), 12) if intent in ("variety_compare", "general") else max(1, int(k or 6))
     evidence = _dedupe(evidence)[:cap]
+    focused, missing_topic = _focus_evidence_for_question(q, evidence, intent)
+    if missing_topic:
+        return _refuse(_missing_evidence_answer(q, hits, {missing_topic}))
+    evidence = _restrict_to_hit_varieties(focused, hits)
+    if not evidence:
+        if hits or topics:
+            return _refuse(_missing_evidence_answer(q, hits, topics))
+    if "transport" in topics and not _transport_temperature_supported(q, evidence):
+        return _refuse(_missing_evidence_answer(q, hits, {"transport"}))
     _assign_eids(evidence)
     result.evidence = evidence
     for e in evidence:
@@ -1218,6 +1360,11 @@ def answer_question(
         e.status != "verified" and _is_high_risk(e) and e.eid in cited_set_h for e in evidence
     ):
         warnings.append(WARN_ANCHOR_HIGH_RISK)
+
+    # 8.8) 常温“放几天”类问题：数据只有方向/区间时，明确未收录具体天数，避免过度回答。
+    if "room_temp" in topics and re.search(r"(几天|多久|多长时间|几天会坏)", q):
+        if "未收录具体天数" not in result.answer:
+            result.answer += "\n\n说明：图谱数据未给出具体天数；以上为常温下品质指标的变化方向。"
 
     # 9) 元信息（告警去重保序）
     result.warnings = list(dict.fromkeys(warnings))

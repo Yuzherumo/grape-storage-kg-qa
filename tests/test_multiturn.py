@@ -118,5 +118,7 @@ def test_consecutive_variety_switches_use_latest_variety(store) -> None:
     fourth = _ask(store, "那湿度呢？", _context(third))
     assert fourth.intent == "humidity"
     assert "承接上一轮" in fourth.context_note and "红地球" in fourth.context_note
-    assert "红地球" in _subjects(fourth), _subjects(fourth)
-    assert "阳光玫瑰" not in _subjects(fourth) and "巨峰" not in _subjects(fourth), _subjects(fourth)
+    # 红地球没有湿度数据：应明确“暂未收录”，不能拿其他品种凑答案
+    assert fourth.evidence == [], _subjects(fourth)
+    assert WARN_NO_EVIDENCE in fourth.warnings
+    assert "未收录" in fourth.answer or "没有" in fourth.answer

@@ -34,6 +34,7 @@ __all__ = [
     "load_catalog",
     "link_entities",
     "normalize_text",
+    "FACILITY_TERMS",
 ]
 
 # 只有这四类节点参与问答实体链接（Source 不参与）
@@ -51,6 +52,26 @@ WEIGHT_ALIAS = 0.92
 WEIGHT_RUN = 0.82
 WEIGHT_SEGMENT = 0.85
 WEIGHT_SYMPTOM = 0.80
+
+# 设施/场景词：只作为问句上下文，不绑定到某个具体温度条件（避免「冷库湿度」被 cold_0 劫持）。
+FACILITY_TERMS = frozenset({"冷库", "冷藏库", "冷藏", "库房", "保鲜库", "气调库"})
+
+# 代码层补充的同义词（不修改 data/entities.csv；只补明确、低歧义的词）。
+# 模糊词（保鲜剂/防腐剂/出库/运输/分级/采后等）不绑定实体，由 planner 的 topic 识别处理。
+EXTRA_ALIASES: dict[str, str] = {
+    "SO2": "so2_fumigation",
+    "SO₂": "so2_fumigation",
+    "1MCP": "mcp_1",
+    "潮气": "rh_90_95",
+    "发软": "firmness",
+    "软化": "firmness",
+    "包装": "package_weight",
+    "保鲜袋": "package_weight",
+}
+
+# 类别词默认不作为实体别名；仅允许明确指向包装条件的「包装」保留，
+# 否则「采后包装」会因类别过滤丢失唯一可用的包装条件。
+CATEGORY_ALIAS_ALLOW = frozenset({("包装", "package_weight")})
 
 FULLWIDTH_START = 0xFF01
 FULLWIDTH_END = 0xFF5E
@@ -240,6 +261,7 @@ def load_catalog(entities_csv_path: str | Path) -> Catalog:
         if str(row.get("category") or "").strip()
     }
 
+    rows_by_id = {str(row.get("id") or "").strip(): row for row in rows}
     for row in rows:
         node_id = str(row.get("id") or "").strip()
         label = str(row.get("label") or "").strip()
@@ -263,6 +285,16 @@ def load_catalog(entities_csv_path: str | Path) -> Catalog:
             for symptom_term in _split_aliases(symptom):
                 if len(symptom_term) >= 2:
                     _add_term(catalog, node_id, label, name, symptom_term, "symptom", WEIGHT_SYMPTOM, category_terms)
+
+    # 代码层同义词（明确、低歧义；ambiguous terms 交给 planner TOPIC_TERMS）
+    for raw_term, node_id in EXTRA_ALIASES.items():
+        row = rows_by_id.get(node_id)
+        if not row:
+            continue
+        _add_term(
+            catalog, node_id, str(row.get("label") or ""), str(row.get("name") or ""),
+            raw_term, "alias", WEIGHT_ALIAS, category_terms,
+        )
     return catalog
 
 
@@ -279,7 +311,13 @@ def _add_term(
     normalized, _ = normalize_text(raw_term)
     if len(normalized) < 2:  # 单字词极易误命中，直接丢弃（中文实体名最短 2 字）
         return
-    if category_terms and normalized in category_terms:
+    if normalized in FACILITY_TERMS:
+        return  # 设施/场景词不作为实体别名（见 FACILITY_TERMS 注释）
+    if (
+        category_terms
+        and normalized in category_terms
+        and (normalized, node_id) not in CATEGORY_ALIAS_ALLOW
+    ):
         return  # 通用类别词不作为实体别名（见 load_catalog 注释）
     catalog.add(
         CatalogEntry(

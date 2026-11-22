@@ -98,6 +98,44 @@ def score_intents(question: str, hits: Sequence[EntityHit]) -> dict[str, float]:
     return scores
 
 
+def contains_term(text: str, term: str) -> bool:
+    """主题词匹配：英文/数字词按边界匹配，避免 O2 命中 SO2；中文按子串。"""
+    if not text or not term:
+        return False
+    if term.isascii():
+        pattern = r"(?<![A-Za-z0-9])" + re.escape(term) + r"(?![A-Za-z0-9])"
+        return re.search(pattern, text, flags=re.IGNORECASE) is not None
+    return term in text
+
+
+def detect_topics(question: str) -> set[str]:
+    """识别问句中的主题词（预冷/运输/包装/湿度/气调/货架/常温）。"""
+    q = normalize_question(question)
+    topics: set[str] = set()
+    for topic, terms in R.TOPIC_TERMS.items():
+        if any(contains_term(q, term) for term in terms):
+            topics.add(topic)
+    return topics
+
+
+def topic_keywords(question: str) -> list[str]:
+    """返回问句中命中的主题词，供 general 关键词兜底使用。"""
+    q = normalize_question(question)
+    words: list[str] = []
+    for terms in R.TOPIC_TERMS.values():
+        for term in terms:
+            if contains_term(q, term) and term not in words:
+                words.append(term)
+    return words
+
+
+def _is_room_temp_quality(question: str) -> bool:
+    q = normalize_question(question)
+    if not any(term in q for term in R.TOPIC_TERMS["room_temp"]):
+        return False
+    return any(word in q for word in ("坏", "放", "存", "多久", "品质", "变", "新鲜"))
+
+
 def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tuple[str, float]]]:
     """返回 (intent, confidence, top3候选)。
 
@@ -106,6 +144,14 @@ def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tu
     """
     scores = score_intents(question, hits)
     q = normalize_question(question)
+    topics = detect_topics(question)
+    # 预冷/运输/包装是条件型问题，不能被 shelf_life/atmosphere 抢走；走实体中心检索，
+    # 由 store 取相邻条件边、由 qa 按主题聚焦，避免拿耐贮性/冷藏温度冒充。
+    if topics & {"precool", "transport", "packaging"}:
+        return "general", 0.62, [("general", 0.62)]
+    # 「常温放几天会坏」问的是常温下的品质变化，不是禁忌；先归到 general 取常温相邻边。
+    if _is_room_temp_quality(question):
+        return "general", 0.60, [("general", 0.60)]
     # 「怎么做/怎么用」+ 命中条件实体 → 实体中心检索（general），避免套错处置清单
     if hits and any(k in q for k in R.HOWTO_KEYWORDS) and any(h.label == "Condition" for h in hits):
         return R.DEFAULT_INTENT, 0.5, []
@@ -142,7 +188,7 @@ def _ids(hits: Iterable[EntityHit], label: str) -> list[str]:
     return out
 
 
-def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6) -> QuerySpec:
+def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6, *, question: str = "") -> QuerySpec:
     """意图 → 参数化查询。只产参数，不拼 Cypher。"""
     hits = list(hits or [])
     variety_ids = _ids(hits, "Variety")
@@ -158,6 +204,10 @@ def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6) -> QuerySpec
         entity_ids = []
 
     keywords = [h.surface for h in hits if h.surface][:5]
+    if (intent if intent in INTENTS else R.DEFAULT_INTENT) == "general" and question:
+        for word in topic_keywords(question):
+            if word not in keywords:
+                keywords.append(word)
 
     params: dict[str, Any] = {
         "intent": intent if intent in INTENTS else R.DEFAULT_INTENT,
@@ -168,6 +218,7 @@ def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6) -> QuerySpec
         "disease_ids": disease_ids,
         "entity_ids": entity_ids,
         "keywords": keywords,
+        "question": question,
         "k": int(k or 6),
     }
     return QuerySpec(

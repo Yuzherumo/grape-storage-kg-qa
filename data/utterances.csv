@@ -1,6 +1,6 @@
 id,utterance,expected_intent,expected_entity_ids,note
 u01,这葡萄放库里得几度啊,temperature,,泛指无品种；只靠触发词「几度」「库里」路由；不硬断言实体
-u02,搁冷库能存到过年不,shelf_life,cold_0,冷库→低温冷藏 cold_0（需 entities.csv 别名）；「存到过年」问耐贮期
+u02,搁冷库能存到过年不,shelf_life,,冷库→低温冷藏 cold_0（需 entities.csv 别名）；「存到过年」问耐贮期；冷库为设施词，不再绑定 cold_0
 u03,白毛是不是没救了,disease_control,gray_mold,白毛→灰霉病农户口述症状（需别名）；「没救了」问还能不能防
 u04,放两个月还行不行,shelf_life,,无品种无实体；只考 shelf_life 意图与耐贮期证据
 u05,阳光玫瑰搁多少度合适啊,temperature,shine_muscat,规范名命中

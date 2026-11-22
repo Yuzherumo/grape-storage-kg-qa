@@ -637,9 +637,8 @@ class LocalStore(GraphStore):
                     object_category=category,
                 )
             )
-            if not edges:
-                # 数据未标注 category 时的最后兜底：全部 REQUIRES（与 cypher 模板的放宽条件一致）
-                edges.extend(self._collect(predicates=("REQUIRES",), subject_ids=variety_ids or None))
+            # 低风险修复：本类别没有证据时返回空，不再用其他类别的 REQUIRES 兜底。
+            # 否则「巨峰湿度」会被回答成「预冷/低温冷藏」，属于答非所问。
         return self._finish(_dedupe_edges(edges), spec)
 
     def _load_temperature(self, spec: QuerySpec) -> list[Evidence]:

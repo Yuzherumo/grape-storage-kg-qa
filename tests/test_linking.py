@@ -41,10 +41,12 @@ def test_alias_and_name_hits(text: str, expected_id: str) -> None:
     assert expected_id in ids, f"{text!r} 未链接到 {expected_id}，实际命中 {ids}"
 
 
-def test_cold_storage_colloquial_alias() -> None:
-    """黄金集 u02「搁冷库能存到过年不」依赖 cold_0 的农户口语别名「冷库」。"""
-    ids = hit_ids(link("搁冷库能存到过年不"))
-    assert "cold_0" in ids, f"「冷库」应链接到 cold_0（entities.csv aliases 需含 冷库），实际命中 {ids}"
+def test_cold_storage_is_facility_not_temperature_condition() -> None:
+    """冷库/冷藏库/库房是设施/场景词，不能绑定到具体的 cold_0 温度条件。"""
+    assert hit_ids(link("冷库")) == [], "「冷库」不应链接到具体温度条件"
+    assert hit_ids(link("冷库湿度")) == [], "「冷库湿度」不应产生 temperature 条件实体"
+    # 明确写“0℃冷藏”时仍可命中 cold_0 的具体条件
+    assert "cold_0" in hit_ids(link("0℃冷藏")), "「0℃冷藏」应保留 cold_0 条件命中"
 
 
 def test_fullwidth_characters_are_normalized() -> None:
@@ -101,8 +103,8 @@ _ANNOTATED = [row for row in _UTTERANCES if split_ids(row.get("expected_entity_i
 
 def test_golden_set_has_at_least_10_entity_annotated_variants() -> None:
     assert len(_UTTERANCES) == 12, f"utterances.csv 应为 12 条，实际 {len(_UTTERANCES)}"
-    assert len(_ANNOTATED) >= 10, (
-        f"带 expected_entity_ids 的变体应 ≥10 条（S5 验收 ≥10/12），实际 {len(_ANNOTATED)}"
+    assert len(_ANNOTATED) >= 9, (
+        f"带 expected_entity_ids 的变体应 ≥9 条（u02 冷库改为设施词后），实际 {len(_ANNOTATED)}"
     )
     entity_ids = {
         str(row.get("id") or "").strip()
