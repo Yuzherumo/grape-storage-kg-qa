@@ -121,7 +121,7 @@ $lines = @(
     "- 数据：``data/``（entities/triples/sources/schema/黄金集）",
     "- 图谱：``graph/``（schema + 生成物 + 10 个查询模板）",
     "- 脚本：``scripts/``（校验/生成/评测/导入/打包）",
-    "- 测试：``tests/``（118 passed / 2 skipped 离线可跑）",
+    "- 测试：``tests/``（pytest 全绿，离线可跑，无 API Key 依赖；具体数量以本次运行输出为准）",
     "- 文档：``docs/``（api/spec/sources/eval/neo4j_verify/demo/submission/ai_usage 等）",
     "- 入口：``README.md``、``install.ps1``、``run.ps1``、``app.py``、``requirements.txt``、``.env.example``、``pyproject.toml``、``pytest.ini``、``LICENSE``",
     "- 部署：``.streamlit/config.toml``（主题）、``.streamlit/secrets.toml.example``（Secrets 模板）、``docs/deploy.md``（云端部署步骤）",

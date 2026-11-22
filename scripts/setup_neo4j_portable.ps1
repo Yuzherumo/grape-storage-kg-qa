@@ -1,4 +1,4 @@
-# 便携版 Neo4j 实跑环境（无需管理员、无需 Docker、无需 Aura 账号）
+﻿# 便携版 Neo4j 实跑环境（无需管理员、无需 Docker、无需 Aura 账号）
 #
 # 做三件事：
 #   1) 下载便携 JDK 21（Temurin）+ Neo4j 5 社区版 zip 到 .tools/（已 gitignore）

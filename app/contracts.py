@@ -31,6 +31,13 @@ WARN_BACKEND_FALLBACK = "backend_fallback"
 WARN_OUT_OF_RANGE = "out_of_range"
 WARN_LOW_CONFIDENCE_INTENT = "low_confidence_intent"
 WARN_SINGLE_SOURCE = "single_source"
+# 第二轮可靠性加固新增（均为附加告警码，不改变既有字段/返回值契约）
+WARN_SYSTEM_UNAVAILABLE = "system_unavailable"      # 核心模块未就绪：明确不可用，不返回固定答案
+WARN_ANCHOR_UNVERIFIED = "anchor_unverified"        # 答案使用了待核验（anchor）证据
+WARN_ANCHOR_HIGH_RISK = "anchor_high_risk"          # 仅凭 anchor 证据给出药剂/浓度/剂量/时间等高风险参数
+WARN_UNSUPPORTED_FACT = "unsupported_fact"          # 事实句缺少对应证据引用（规则启发式，非语义蕴含）
+WARN_CITATION_MISMATCH = "citation_mismatch"        # 引用编号有效但与句子的字面内容不相关（规则启发式）
+WARN_LLM_ANSWER_REJECTED = "llm_answer_rejected"    # LLM 答案未通过校验，已回退到证据约束模板
 
 
 @dataclass
@@ -97,7 +104,7 @@ class AnswerResult:
     answer: str = ""
     steps: list[str] = field(default_factory=list)
     cited_ids: list[str] = field(default_factory=list)
-    mode: str = "template"         # llm | template
+    mode: str = "template"         # llm | template；UI 层另有 unavailable | demo（不可用/演示桩）
     elapsed_ms: int = 0
     query_cypher: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)

@@ -197,12 +197,12 @@ function select(id){
       const extra = [e.level ? `等级 ${e.level}` : '', e.severity ? `严重度 ${e.severity}` : '',
                      e.effect ? e.effect : '', e.reason ? e.reason : ''].filter(Boolean).join('；');
       const st = e.status === 'verified' ? '已核验' : '待核验';
-      return `<li data-id="${other}"><span class="p">${PRED_CN[e.p] || e.p}</span> ${dir} ${esc(o.name)}` +
+      return `<li data-id="${esc(other)}"><span class="p">${esc(PRED_CN[e.p] || e.p)}</span> ${dir} ${esc(o.name)}` +
              (val ? ` <span class="v">${esc(val)}</span>` : '') +
              (extra ? `<div style="color:#6b7280;margin-top:2px">${esc(extra)}</div>` : '') +
              `<span class="st">${st}</span></li>`;
     }).join('');
-    facts += `<div class="sec">${PRED_CN[p] || p} · ${groups[p].length}</div><ul>${items}</ul>`;
+    facts += `<div class="sec">${esc(PRED_CN[p] || p)} · ${groups[p].length}</div><ul>${items}</ul>`;
   });
 
   const srcTitles = Array.from(srcIds).map(x => SRC[x]).filter(Boolean);
@@ -213,10 +213,11 @@ function select(id){
         : n.label === 'Disease' ? n.name + '怎么防？'
         : n.label === 'Condition' ? '葡萄冷藏用 ' + n.name + ' 有什么要求？'
         : n.name + ' 受什么影响？';
+  const col = /^#[0-9a-fA-F]{3,8}$/.test(String(COL[n.label] || '')) ? COL[n.label] : '#64748b';
   document.getElementById('detail').innerHTML =
     `<h4>${esc(n.name)}</h4>` +
-    `<div><span class="tag" style="background:${COL[n.label]}22;color:${COL[n.label]}">${CN[n.label]}</span>` +
-    `<span style="color:#6b7280;font-size:11px">连接度 ${n.degree}</span></div>` +
+    `<div><span class="tag" style="background:${col}22;color:${col}">${esc(CN[n.label] || n.label)}</span>` +
+    `<span style="color:#6b7280;font-size:11px">连接度 ${esc(n.degree)}</span></div>` +
     `<div class="sec">具体描述</div>` +
     (d.summary || d.detail
       ? `<div class="desc">${d.summary ? `<b>${esc(d.summary)}</b>` : ''}${d.detail ? esc(d.detail) : ''}` +

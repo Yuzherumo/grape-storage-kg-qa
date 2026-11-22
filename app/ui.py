@@ -7,8 +7,12 @@
 - 空态欢迎页 + 建议问题卡片
 - 浅色/深色跟随系统；可选大字模式
 
-功能不变：只渲染 `app.contracts.AnswerResult`；不自行调用 DeepSeek、不改写 answer 文本；
-qa / config / store 未就绪时用演示桩兜底。
+功能不变：只渲染 `app.contracts.AnswerResult`；不自行调用 DeepSeek、不改写 answer 文本。
+安全约定：
+- 所有来自 answer / steps / evidence / warnings / CSV 词表 / 设置 / 模型名的动态文本，
+  进入 ``unsafe_allow_html`` 前一律 ``_esc()``；只有本文件生成的 ds-* 标签是 HTML。
+- qa / config / store 未就绪时明确返回「不可用」结果（不返回固定答案）；
+  演示桩仅在显式设置环境变量 ``APP_DEMO_MODE=1`` 时启用，并标记为模拟数据。
 """
 from __future__ import annotations
 
@@ -31,7 +35,16 @@ if str(ROOT) not in sys.path:
 import streamlit as st
 import streamlit.components.v1 as components
 
-from app.contracts import AnswerResult, Evidence
+from app.contracts import (
+    WARN_ANCHOR_HIGH_RISK,
+    WARN_ANCHOR_UNVERIFIED,
+    WARN_CITATION_MISMATCH,
+    WARN_LLM_ANSWER_REJECTED,
+    WARN_SYSTEM_UNAVAILABLE,
+    WARN_UNSUPPORTED_FACT,
+    AnswerResult,
+    Evidence,
+)
 from app.graph_interactive import interactive_html
 from app.graph_view import ego_graph, graph_summary, load_graph
 
@@ -66,6 +79,18 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+# 演示桩开关：启动时快照 + 运行时环境变量双读取（测试可 monkeypatch 本模块属性或 env）。
+APP_DEMO_MODE: bool = _env_bool("APP_DEMO_MODE", False)
+
+
+def _demo_enabled() -> bool:
+    """演示桩开关：只有显式 ``APP_DEMO_MODE=1`` 时启用。
+
+    默认关闭：未就绪时返回「不可用」，绝不静默返回固定答案。
+    """
+    return bool(APP_DEMO_MODE) or _env_bool("APP_DEMO_MODE", False)
+
+
 def _num(value: Any) -> str:
     try:
         return f"{float(value):g}"
@@ -86,9 +111,28 @@ def _fmt_value(ev: Evidence) -> str:
     return ""
 
 
-def _cite_html(text: str) -> str:
-    """把 [E1] 渲染成小角标（仅用于正文 markdown）。"""
-    return re.sub(r"\[(E\d+)\]", r'<span class="ds-cite">\1</span>', text or "")
+def _cite_html(text: Any) -> str:
+    """把 ``[E#]`` 渲染成引用角标；**先转义全文**，再只替换 ``[E数字]``。
+
+    任何 answer / 步骤文本里的 HTML 都会被当作普通文本输出，
+    只有 ``<span class="ds-cite">E#</span>`` 是本文件生成的合法标记。
+    """
+    escaped = _esc(text)
+    return re.sub(r"\[(E\d+)\]", r'<span class="ds-cite">\1</span>', escaped)
+
+
+def _md_html(text: Any, *, style: str = "") -> str:
+    attr = f' style="{style}"' if style else ""
+    return f'<div class="ds-md"{attr}>{_cite_html(text)}</div>'
+
+
+def _steps_html(steps: Sequence[str]) -> str:
+    lis = "".join(f"<li>{_cite_html(step)}</li>" for step in steps or [])
+    return f'<ul class="ds-steps">{lis}</ul>'
+
+
+def _user_bubble_html(question: Any) -> str:
+    return f'<div class="ds-user"><div class="bubble">{_esc(question)}</div></div>'
 
 
 def _split_answer(answer: str) -> tuple[str, str, str]:
@@ -126,6 +170,10 @@ class Runtime:
 
 
 def _stub_result(question: str) -> AnswerResult:
+    """演示桩：**仅在显式 APP_DEMO_MODE=1 时**使用，明确标记模拟数据。
+
+    数据不得进入正式评测/图谱统计（graph_stats 不读取本函数结果）。
+    """
     ev = Evidence(
         eid="E1", subject="阳光玫瑰", predicate="REQUIRES", object="低温冷藏 0±0.5℃",
         value=0.0, unit="℃", value_min=-0.5, value_max=0.5,
@@ -135,11 +183,25 @@ def _stub_result(question: str) -> AnswerResult:
     return AnswerResult(
         question=question, entities=[], intent="temperature", intent_confidence=0.8,
         evidence=[ev],
-        answer=("结论：阳光玫瑰适宜冷藏温度为 0±0.5℃（[E1]）。\n\n"
+        answer=("【演示桩数据 · 模拟内容，非正式问答】\n\n"
+                "结论：阳光玫瑰适宜冷藏温度为 0±0.5℃（[E1]）。\n\n"
                 "依据：\n- [E1] 阳光玫瑰 —需要条件→ 低温冷藏 0±0.5℃；已核验\n\n"
                 "现在该做什么：\n1. 把冷库温控设到 0±0.5℃，每天记录两次库温（[E1]）"),
         steps=["把冷库温控设到 0±0.5℃，每天记录两次库温（[E1]）"],
-        cited_ids=["E1"], mode="template", warnings=["stub"],
+        cited_ids=["E1"], mode="demo", warnings=["stub", "simulated_data"],
+    )
+
+
+def _unavailable_result(question: str) -> AnswerResult:
+    """问答模块未就绪时的明确「不可用」结果：不返回任何固定答案。"""
+    return AnswerResult(
+        question=question, entities=[], intent="general", intent_confidence=0.0,
+        evidence=[], answer=(
+            "系统问答模块未就绪（app/qa.py 或数据/图谱后端不可用），本次不会返回固定答案。"
+            "请检查配置与数据文件后刷新页面重试。"
+        ),
+        steps=[], cited_ids=[], mode="unavailable",
+        warnings=[WARN_SYSTEM_UNAVAILABLE],
     )
 
 
@@ -214,7 +276,10 @@ def _call_supported(func: Any, *args: Any, **kwargs: Any) -> Any:
 def _ask(rt: Runtime, question: str, *, topk: int, allow_llm: bool,
          context: dict | None) -> tuple[AnswerResult | None, str | None]:
     if not rt.ready or rt.answer_question is None:
-        return _stub_result(question), None
+        # 默认明确不可用；演示桩必须显式开启 APP_DEMO_MODE=1，绝不静默兜底固定答案。
+        if _demo_enabled():
+            return _stub_result(question), None
+        return _unavailable_result(question), None
     try:
         return _call_supported(
             rt.answer_question, question,
@@ -423,15 +488,17 @@ def render_sidebar(rt: Runtime) -> dict[str, Any]:
         stats = graph_stats(rt)
         with st.expander("图谱规模", expanded=False):
             st.markdown(
-                f'<div class="ds-vocab">实体 {stats.get("entities", 0)} + 来源 {stats.get("sources", 0)} = '
-                f'<b>{stats.get("nodes", 0)}</b> 节点<br/>关系 <b>{stats.get("triples", 0)}</b> 条<br/>'
-                f'品种 {stats.get("varieties", 0)} · 病害 {stats.get("diseases", 0)} · 条件 {stats.get("conditions", 0)}</div>',
+                f'<div class="ds-vocab">实体 {_esc(stats.get("entities", 0))} + 来源 {_esc(stats.get("sources", 0))} = '
+                f'<b>{_esc(stats.get("nodes", 0))}</b> 节点<br/>关系 <b>{_esc(stats.get("triples", 0))}</b> 条<br/>'
+                f'品种 {_esc(stats.get("varieties", 0))} · 病害 {_esc(stats.get("diseases", 0))} · '
+                f'条件 {_esc(stats.get("conditions", 0))}</div>',
                 unsafe_allow_html=True,
             )
         varieties, diseases = load_vocab()
         with st.expander("已收录词表", expanded=False):
             st.markdown(
-                f'<div class="ds-vocab">品种：{"、".join(varieties) or "—"}<br/>病害：{"、".join(diseases) or "—"}</div>',
+                f'<div class="ds-vocab">品种：{_esc("、".join(varieties) or "—")}'
+                f'<br/>病害：{_esc("、".join(diseases) or "—")}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -452,61 +519,126 @@ def render_sidebar(rt: Runtime) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------- 渲染
-def _warn_cls(raw: str) -> tuple[str, str]:
-    if raw.startswith("unsourced_number") or raw.startswith("out_of_range") or raw == "out_of_range":
+# 新告警码（app/contracts.py 定义）→ (颜色, 短标签)
+_WARN_LABELS: dict[str, tuple[str, str]] = {
+    WARN_SYSTEM_UNAVAILABLE: ("red", "系统不可用"),
+    WARN_ANCHOR_UNVERIFIED: ("amber", "待核验"),
+    WARN_ANCHOR_HIGH_RISK: ("red", "高风险参数待核验"),
+    WARN_UNSUPPORTED_FACT: ("amber", "事实缺引用"),
+    WARN_CITATION_MISMATCH: ("amber", "引用与内容不匹配"),
+    WARN_LLM_ANSWER_REJECTED: ("amber", "已回退证据模板"),
+}
+
+_WARN_TEXT: dict[str, str] = {
+    "no_evidence": "图谱未收录该问题",
+    "no_citation": "答案未给出有效证据引用",
+    "llm_timeout": "模型超时，已降级离线模板",
+    "llm_unavailable": "模型不可用，已降级离线模板",
+    "single_source": "仅单个来源",
+    "out_of_range": "数值超出证据区间",
+    "stub": "演示桩数据（模拟内容）",
+    "simulated_data": "模拟数据，非正式问答",
+    WARN_SYSTEM_UNAVAILABLE: "问答系统未就绪，不返回固定答案",
+    WARN_ANCHOR_UNVERIFIED: "使用了待核验证据",
+    WARN_ANCHOR_HIGH_RISK: "仅待核验证据给出高风险参数",
+    WARN_UNSUPPORTED_FACT: "事实句缺少证据引用",
+    WARN_CITATION_MISMATCH: "引用与内容不匹配",
+    WARN_LLM_ANSWER_REJECTED: "大模型答案未通过校验，已回退证据模板",
+}
+
+
+def _warn_base(raw: Any) -> str:
+    return str(raw or "").split(":", 1)[0].strip()
+
+
+def _warn_detail(raw: Any) -> str:
+    text = str(raw or "")
+    return text.split(":", 1)[1].strip() if ":" in text else ""
+
+
+def _warn_cls(raw: Any) -> tuple[str, str]:
+    base = _warn_base(raw)
+    if base in _WARN_LABELS:
+        return _WARN_LABELS[base]
+    if base.startswith("unsourced_number") or base.startswith("out_of_range"):
         return "amber", "越界"
-    if raw in ("no_evidence", "no_citation") or raw.startswith("invalid_citation"):
+    if base in ("no_evidence", "no_citation") or base.startswith("invalid_citation"):
         return "red", "未收录"
-    if raw in ("llm_timeout", "llm_unavailable"):
+    if base in ("llm_timeout", "llm_unavailable"):
         return "amber", "超时"
-    if raw == "single_source":
+    if base == "single_source":
         return "gray", "单来源"
     return "blue", "提示"
 
 
-def _warn_text(raw: str) -> str:
-    table = {
-        "no_evidence": "图谱未收录该问题",
-        "no_citation": "答案未给出有效证据引用",
-        "llm_timeout": "模型超时，已降级离线模板",
-        "llm_unavailable": "模型不可用，已降级离线模板",
-        "single_source": "仅单个来源",
-        "out_of_range": "数值超出证据区间",
-        "stub": "演示桩数据",
-    }
-    if raw.startswith("unsourced_number"):
-        return "含证据外数字：" + raw.split(":", 1)[-1]
-    if raw.startswith("invalid_citation"):
-        return "引用无效：" + raw.split(":", 1)[-1]
-    if raw.startswith("out_of_range:"):
-        return "超出证据区间：" + raw.split(":", 1)[-1]
-    return table.get(raw, raw)
+def _warn_text(raw: Any) -> str:
+    base = _warn_base(raw)
+    detail = _warn_detail(raw)
+    if base.startswith("unsourced_number"):
+        return "含证据外数字" + (f"：{detail}" if detail else "")
+    if base.startswith("invalid_citation"):
+        return "引用无效" + (f"：{detail}" if detail else "")
+    if base == "out_of_range" and detail:
+        return f"数值超出证据区间：{detail}"
+    return _WARN_TEXT.get(base, str(raw or ""))
+
+
+def _warn_pills_html(warnings: Sequence[str]) -> str:
+    """告警胶囊 HTML（纯函数，测试可直接断言）：告警文本全部先转义。"""
+    parts: list[str] = []
+    for raw in warnings or []:
+        cls, label = _warn_cls(raw)
+        parts.append(f'<span class="ds-warn {cls}">{_esc(label)} · {_esc(_warn_text(raw))}</span>')
+    return "".join(parts)
 
 
 def _render_warnings(warnings: Sequence[str]) -> None:
-    if not warnings:
-        return
-    pills = "".join(
-        f'<span class="ds-warn {_warn_cls(w)[0]}">{_esc(_warn_cls(w)[1])} · {_esc(_warn_text(w))}</span>'
-        for w in warnings
-    )
-    st.markdown(pills, unsafe_allow_html=True)
+    pills = _warn_pills_html(warnings)
+    if pills:
+        st.markdown(pills, unsafe_allow_html=True)
 
 
-def _render_evidence(ev: Evidence, *, cited: bool) -> None:
+def _evidence_card_html(ev: Evidence, cited: bool) -> str:
+    """证据卡片 HTML（纯函数）：图谱字段一律转义，只有 ds-* 标签是 HTML。"""
     status = ('<span class="ds-tag ok">已核验</span>' if ev.status == "verified"
               else '<span class="ds-tag wait">待核验</span>')
     sources = "；".join(ev.source_titles[:2]) if ev.source_titles else ("；".join(ev.source_ids[:2]) or "来源未标注")
     value = _fmt_value(ev)
     locator = f'<br/>条款：{_esc(ev.locator)}' if (ev.locator or "").strip() else ""
-    st.markdown(
+    return (
         f'<div class="ds-ev{" cited" if cited else ""}">'
         f'<div class="hd"><span class="eid">{_esc(ev.eid)}</span>'
         f'<span class="trip">{_esc(ev.subject)} —{_esc(ev.predicate)}→ {_esc(ev.object)}</span>{status}</div>'
         f'<div class="meta">{("值：" + _esc(value) + "　") if value else ""}来源：{_esc(sources)}　'
-        f'置信 {float(ev.confidence or 0):.2f}{locator}</div></div>',
-        unsafe_allow_html=True,
+        f'置信 {float(ev.confidence or 0):.2f}{locator}</div></div>'
     )
+
+
+def _render_evidence(ev: Evidence, *, cited: bool) -> None:
+    st.markdown(_evidence_card_html(ev, cited=cited), unsafe_allow_html=True)
+
+
+_MODE_LABELS = {"llm": "在线", "template": "离线模板", "unavailable": "不可用", "demo": "演示桩"}
+
+
+def _mode_label(mode: Any) -> str:
+    key = str(mode or "")
+    return _MODE_LABELS.get(key, _esc(key))
+
+
+def _assistant_meta_html(result: AnswerResult) -> str:
+    """回答下方 meta 行（纯函数）：仅程序标签是 HTML，动态值全部转义。"""
+    meta = [
+        f"意图 {_esc(result.intent)}",
+        f"模式 {_mode_label(result.mode)}",
+        f"耗时 {_esc(result.elapsed_ms)} ms",
+        f"证据 {_esc(len(result.evidence or []))} 条",
+    ]
+    if result.llm_meta:
+        p, c = result.llm_meta.get("prompt_tokens"), result.llm_meta.get("completion_tokens")
+        if p is not None and c is not None:
+            meta.append(f"tokens {_esc(p)}/{_esc(c)}")
+    return f'<div class="ds-meta">{" · ".join(meta)}</div>'
 
 
 def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) -> None:
@@ -515,12 +647,11 @@ def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) ->
 
     concl, basis, action = _split_answer(result.answer)
     if concl:
-        st.markdown(f'<div class="ds-md">{_cite_html(concl)}</div>', unsafe_allow_html=True)
+        st.markdown(_md_html(concl), unsafe_allow_html=True)
     if result.steps:
-        lis = "".join(f"<li>{_cite_html(s)}</li>" for s in result.steps)
-        st.markdown(f'<ul class="ds-steps">{lis}</ul>', unsafe_allow_html=True)
+        st.markdown(_steps_html(result.steps), unsafe_allow_html=True)
     elif action:
-        st.markdown(f'<div class="ds-md">{_cite_html(action)}</div>', unsafe_allow_html=True)
+        st.markdown(_md_html(action), unsafe_allow_html=True)
 
     cited = set(result.cited_ids or [])
     ordered = _order_evidence(result.evidence, result.cited_ids)
@@ -529,21 +660,12 @@ def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) ->
             for ev in ordered:
                 _render_evidence(ev, cited=ev.eid in cited)
             if basis:
-                st.markdown(
-                    f'<div class="ds-md" style="font-size:.85rem;opacity:.85">{_cite_html(basis)}</div>',
-                    unsafe_allow_html=True,
-                )
+                st.markdown(_md_html(basis, style="font-size:.85rem;opacity:.85"), unsafe_allow_html=True)
 
     if result.context_note:
         st.caption(f"承接上一轮 · {result.context_note}")
 
-    meta = [f"意图 {result.intent}", f"模式 {'在线' if result.mode == 'llm' else '离线模板'}",
-            f"耗时 {result.elapsed_ms} ms", f"证据 {len(result.evidence)} 条"]
-    if result.llm_meta:
-        p, c = result.llm_meta.get("prompt_tokens"), result.llm_meta.get("completion_tokens")
-        if p is not None and c is not None:
-            meta.append(f"tokens {p}/{c}")
-    st.markdown(f'<div class="ds-meta">{" · ".join(meta)}</div>', unsafe_allow_html=True)
+    st.markdown(_assistant_meta_html(result), unsafe_allow_html=True)
 
     if show_cypher and result.query_cypher:
         with st.expander("查询详情（Cypher / 参数）", expanded=False):
@@ -554,7 +676,7 @@ def render_assistant(result: AnswerResult, *, show_cypher: bool, large: bool) ->
 
 
 def render_user(question: str) -> None:
-    st.markdown(f'<div class="ds-user"><div class="bubble">{_esc(question)}</div></div>', unsafe_allow_html=True)
+    st.markdown(_user_bubble_html(question), unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------- 主流程
@@ -591,7 +713,12 @@ def main() -> None:
         st.divider()
 
     if not rt.ready:
-        st.warning("问答模块未就绪，当前展示演示桩结果（检查 app/qa.py 是否可导入）。")
+        st.error(
+            "问答模块不可用：系统问答模块未就绪（app/qa.py 或数据/图谱后端加载失败），"
+            "任意问题都不会返回固定答案。请检查配置与数据文件后刷新页面。"
+        )
+        if _demo_enabled():
+            st.info("已显式启用演示桩（APP_DEMO_MODE=1）：以下结果为模拟数据，非正式问答。")
 
     if not turns:
         st.markdown(

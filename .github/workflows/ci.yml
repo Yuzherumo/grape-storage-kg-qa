@@ -20,10 +20,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff coverage pytest-cov
+          # 开发工具版本固定（与本机实测一致，避免上游新规则/新版本让 CI 漂移）
+          pip install "ruff==0.17.6" "coverage==7.17.4" "pytest-cov==7.1.0"
 
       - name: Lint (ruff)
-        run: ruff check app scripts tests
+        # 覆盖面：根目录 app.py + app/ scripts/ tests/，与本地 `ruff check .` 口径一致
+        # （pyproject.toml 的 exclude 已排除 docs/data/graph/.tmp 等）。
+        # 注意：`ruff format --check` 未纳入门禁 —— 全仓一次性重排风险大，避免刷屏式 diff；
+        #       格式化留待后续专项处理，当前只做 lint 门禁。
+        run: ruff check app.py app scripts tests
 
       - name: Validate graph data (10 checks)
         run: python scripts/validate_data.py
@@ -57,3 +62,64 @@ jobs:
 
       - name: Generate eval report (offline mode)
         run: python scripts/eval_qa.py
+
+  # Windows 脚本门禁：Windows PowerShell 5.1 对「无 BOM 的中文 UTF-8 脚本」会按 ANSI/GBK
+  # 解析并报语法错误，而最终用户常在默认 powershell.exe 下执行 install.ps1 / run.ps1。
+  # 这里用 5.1 的 parser 静态检查全部 .ps1（不安装 Python 依赖，成本低）；
+  # run.ps1 -Check 需要先装依赖，成本较高，故不在本 job 跑（由本地/文档验收覆盖）。
+  windows-scripts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PowerShell syntax (Windows PowerShell 5.1 parser)
+        shell: powershell
+        run: |
+          $files = @(
+            "install.ps1",
+            "run.ps1",
+            "scripts/make_release.ps1",
+            "scripts/setup_neo4j_portable.ps1",
+            "scripts/run_public_tunnel.ps1"
+          )
+          $failed = $false
+          foreach ($f in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $f), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors -and $errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "::error file=$f::$($errors.Count) 处 PowerShell 语法错误"
+              foreach ($e in $errors) {
+                Write-Host ("  L{0}: {1}" -f $e.Extent.StartLineNumber, $e.Message)
+              }
+            } else {
+              Write-Host "[通过] $f（0 errors）"
+            }
+          }
+          if ($failed) { exit 1 }
+          Write-Host "全部 5 个 .ps1 语法检查通过"
+
+      - name: Check UTF-8 BOM (Chinese text compatibility)
+        shell: powershell
+        run: |
+          $files = @(
+            "install.ps1",
+            "run.ps1",
+            "scripts/make_release.ps1",
+            "scripts/setup_neo4j_portable.ps1",
+            "scripts/run_public_tunnel.ps1"
+          )
+          $failed = $false
+          foreach ($f in $files) {
+            $bytes = [System.IO.File]::ReadAllBytes((Join-Path $PWD $f))
+            $hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+            if (-not $hasBom) {
+              $failed = $true
+              Write-Host "::error file=$f::$f 缺少 UTF-8 BOM：Windows PowerShell 5.1 会按 ANSI/GBK 解析，中文注释可能触发语法错误"
+            } else {
+              Write-Host "[BOM 正常] $f"
+            }
+          }
+          if ($failed) { exit 1 }
+          Write-Host "全部 5 个 .ps1 均为 UTF-8 BOM"

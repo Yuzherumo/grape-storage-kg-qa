@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """云端部署入口（Streamlit Cloud / 魔搭创空间等默认入口文件）。
 
 本地仍用 `streamlit run app/ui.py`；平台若要求根目录入口，用本文件即可：

@@ -20,7 +20,11 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.contracts import (
+    WARN_ANCHOR_HIGH_RISK,
+    WARN_ANCHOR_UNVERIFIED,
     WARN_BACKEND_FALLBACK,
+    WARN_CITATION_MISMATCH,
+    WARN_LLM_ANSWER_REJECTED,
     WARN_LLM_TIMEOUT,
     WARN_LLM_UNAVAILABLE,
     WARN_LOW_CONFIDENCE_INTENT,
@@ -28,6 +32,7 @@ from app.contracts import (
     WARN_NO_EVIDENCE,
     WARN_OUT_OF_RANGE,
     WARN_SINGLE_SOURCE,
+    WARN_UNSUPPORTED_FACT,
     AnswerResult,
     EntityHit,
     Evidence,
@@ -49,6 +54,33 @@ PRED_LABEL = {
 }
 
 SINGLE_SOURCE_PREDS = {"CONTRA_INDICATED_FOR", "ALTERNATIVE_TO", "INDICATES"}
+
+# ------------------------------------------------------------------ 证据分级（verified / anchor）
+# 高风险操作：药剂、浓度、剂量、处理时间等。仅凭「待核验」（anchor）证据不得生成具体执行参数。
+HIGH_RISK_TERMS = (
+    "SO₂", "SO2", "二氧化硫", "1-MCP", "1-mcp", "焦亚硫酸", "臭氧", "保鲜剂",
+    "熏蒸", "熏蒸时间", "浓度", "剂量", "用量", "处理时间", "喷施", "浸泡",
+)
+_HIGH_RISK_UNIT_RE = re.compile(
+    r"-?\d+(?:\.\d+)?\s*(?:%|℃|°C|h|小时|分钟|min|μL/L|uL/L|ppm|mg/L|g/L|mL/L|倍)"
+)
+_FREEZE_TERMS = ("冷冻", "冻起来", "冻住", "冻结", "冰点以下")
+
+
+def _is_high_risk(e: Evidence) -> bool:
+    """该证据是否涉及高风险操作参数（只看主体/客体/类别，调用方自行区分 verified/anchor）。"""
+    blob = " ".join([e.subject, e.object, str(e.properties.get("category") or "")])
+    if not any(term in blob for term in HIGH_RISK_TERMS):
+        return False
+    return bool(_HIGH_RISK_UNIT_RE.search(blob) or e.value is not None or e.value_min is not None)
+
+
+def _has_high_risk_param(text: str) -> bool:
+    """文本里是否出现「药剂 + 数值 + 剂量/时间/浓度单位」这类可执行参数。"""
+    if not _HIGH_RISK_UNIT_RE.search(text or ""):
+        return False
+    return any(term in text for term in HIGH_RISK_TERMS)
+
 
 
 # ------------------------------------------------------------------ 工具
@@ -206,7 +238,14 @@ def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> 
         if e.predicate in ("PREVENTED_BY", "REQUIRES", "HAS_INDICATOR_VALUE", "AFFECTS"):
             for keyword, tpl in _STEP_RULES:
                 if keyword in e.object or keyword in cat:
-                    steps.append(tpl.format(obj=e.object) + f"（[{e.eid}]）")
+                    if e.status != "verified" and _is_high_risk(e):
+                        # anchor + 高风险：不得把待核验证据里的药剂/浓度/剂量/时间当执行参数
+                        steps.append(
+                            f"{keyword}处理的具体浓度/剂量/处理时间请按产品标签与当地技术员确认"
+                            f"（[{e.eid}]）"
+                        )
+                    else:
+                        steps.append(tpl.format(obj=e.object) + f"（[{e.eid}]）")
                     break
     # 去重保序
     out: list[str] = []
@@ -220,6 +259,20 @@ def compose_steps(evidence: Sequence[Evidence], intent: str, limit: int = 3) -> 
         if len(out) >= limit:
             break
     return out
+
+
+def _anchor_note(evidence: Sequence[Evidence]) -> str:
+    """anchor（待核验）证据的显式说明：不得被描述成已证实事实；高风险参数需人工确认。"""
+    anchors = [e for e in evidence if e.status != "verified"]
+    if not anchors:
+        return ""
+    note = (
+        "\n\n说明：以上依据含标为「待核验」（anchor）的条目，"
+        "未逐字核对来源原文；关键操作前请以来源原文或当地技术员确认为准。"
+    )
+    if any(_is_high_risk(e) for e in anchors):
+        note += "涉及药剂、浓度、剂量或处理时间的参数不得直接照搬，需按产品标签与技术人员意见执行。"
+    return note
 
 
 # ------------------------------------------------------------------ 模板答案
@@ -333,7 +386,7 @@ def template_answer(
                 "0±0.5℃ 是文献/工程口径（anchor）。实际设定建议按国标 -1~0℃ 控温，"
                 "并保证温度波动不超过 ±0.5℃，两者并不冲突。"
             )
-    return head + "\n\n" + basis
+    return head + "\n\n" + basis + _anchor_note(evidence)
 
 
 # ------------------------------------------------------------------ 数值校验
@@ -410,7 +463,8 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
         _add_bare(" ".join(e.source_ids))
         _add_bare(str(e.confidence))  # 依据行里的「置信 0.78」属证据元数据，不算编造
         _add_bare(f"{e.value} {e.value_min} {e.value_max}")  # 结构化数值（如 -0.5~0.5）也是证据数字
-    _add_bare(normalize_question(question))
+    # 注意：问题里的数字**不加入白名单**。否则 LLM 只要复述用户问句里的 -18℃/45%
+    # 就能绕过数值校验（历史审计发现）。问题中的越界值由 detect_out_of_range 单独判。
 
     clean = re.sub(r"\[E\d+\]", "", answer or "")          # [E5] 不是数字 5
     clean = re.sub(r"(?m)^\s*\d+[.、)）]\s*", "", clean)     # 行首步骤序号
@@ -444,9 +498,17 @@ def check_numbers(answer: str, evidence: Sequence[Evidence], question: str = "")
 
 
 
+_CITE_SCAN_RE = re.compile(r"[\[【]\s*([Ee])\s*(\d+)\s*[\]】]")
+
+
+def _canonicalize_citations(text: str) -> str:
+    """把全角【E1】、小写 [e1] 统一为半角 [E1]（编号体系不变，仅规范化）。"""
+    return _CITE_SCAN_RE.sub(lambda m: f"[{m.group(1).upper()}{m.group(2)}]", str(text or ""))
+
+
 def verify_citations(answer: str, evidence: Sequence[Evidence]) -> tuple[list[str], list[str]]:
     valid_ids = {e.eid for e in evidence}
-    cited = re.findall(r"\[(E\d+)\]", answer or "")
+    cited = re.findall(r"\[(E\d+)\]", _canonicalize_citations(answer))
     uniq = [c for c in dict.fromkeys(cited) if c in valid_ids]
     invalid = [c for c in dict.fromkeys(cited) if c not in valid_ids]
     warnings: list[str] = [] if uniq else [WARN_NO_CITATION]
@@ -457,9 +519,185 @@ def verify_citations(answer: str, evidence: Sequence[Evidence]) -> tuple[list[st
     return uniq, warnings
 
 
+# ------------------------------------------------------------------ 证据相关性 / 事实句校验
+# 说明：这里是**规则启发式**（字面词/数值重叠 + 引用触达），不是自然语言事实蕴含（NLI）判断。
+# 它只能拦「明显无引用」「引用与句子字面完全不相关」的情况，不能证明结论在语义上被证据蕴含。
+_SENTENCE_SPLIT_RE = re.compile(r"(?:[。！？!?；;]+\s*|\n+)")
+_HEADING_WORDS = (
+    "结论", "依据", "现在该做什么", "现在要做什么", "该做什么", "操作建议",
+    "下一步建议", "口径说明", "说明",
+)
+
+
+def _sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE_SPLIT_RE.split(str(text or "")) if s.strip()]
+
+
+def _is_heading(sentence: str) -> bool:
+    text = sentence.strip()
+    for word in _HEADING_WORDS:
+        if text.startswith(word):
+            rest = text[len(word):].lstrip("：:，,。 ")
+            return len(rest) <= 3
+    return False
+
+
+def _evidence_terms(e: Evidence) -> set[str]:
+    terms: set[str] = set()
+    for raw in (e.subject, e.object, e.quote, _fmt_value(e), str(e.properties.get("effect") or "")):
+        for token in re.split(r"[\s，。；、,;:：/（）()~—–-]+", str(raw or "")):
+            token = token.strip()
+            if len(token) >= 2:
+                terms.add(token)
+    return terms
+
+
+def _sentence_relevant(sentence: str, e: Evidence) -> bool:
+    """句子是否与这条证据「字面相关」：出现证据主题/客体词或同值数字。"""
+    text = re.sub(r"\[E\d+\]", "", _canonicalize_citations(sentence))
+    for term in _evidence_terms(e):
+        if term in text:
+            return True
+    numbers = {round(float(x), 6) for x in re.findall(_NUM_BODY, text)}
+    for value in (e.value, e.value_min, e.value_max):
+        if value is not None and round(float(value), 6) in numbers:
+            return True
+    return False
+
+
+def _uncited_fact_warnings(answer: str, evidence: Sequence[Evidence]) -> list[str]:
+    """事实句（含证据词/数值）没有 [E#] 引用 → unsupported_fact（启发式）。"""
+    terms: set[str] = set()
+    for e in evidence:
+        terms |= _evidence_terms(e)
+    found = False
+    for sentence in _sentences(answer):
+        if _is_heading(sentence) or len(sentence) < 8:
+            continue
+        if _CITE_SCAN_RE.search(sentence):
+            continue
+        if _HIGH_RISK_UNIT_RE.search(sentence) or re.search(r"\d", sentence):
+            found = True
+            break
+        if any(term in sentence for term in terms):
+            found = True
+            break
+    return [WARN_UNSUPPORTED_FACT] if found else []
+
+
+def _citation_mismatch_warnings(answer: str, evidence: Sequence[Evidence]) -> list[str]:
+    """某句的引用编号有效、但与该句字面内容完全无关 → citation_mismatch:E#（启发式）。"""
+    by_id = {e.eid: e for e in evidence}
+    subject_names = {e.subject for e in evidence if e.subject}
+    warnings: list[str] = []
+    for sentence in _sentences(answer):
+        cited = [c for c in re.findall(r"\[(E\d+)\]", _canonicalize_citations(sentence)) if c in by_id]
+        if not cited:
+            continue
+        mentioned = {name for name in subject_names if name and name in sentence}
+        relevant = False
+        for cid in cited:
+            item = by_id[cid]
+            # 句子明确提到某个主体（如「阳光玫瑰」）时，引用证据的主体必须就是它；
+            # 否则跨品种/跨病害引用仅靠数值重叠也会被误判为相关。
+            if mentioned:
+                if item.subject in mentioned and _sentence_relevant(sentence, item):
+                    relevant = True
+                    break
+            elif _sentence_relevant(sentence, item):
+                relevant = True
+                break
+        if relevant:
+            continue
+        for cid in cited:
+            code = f"{WARN_CITATION_MISMATCH}:{cid}"
+            if code not in warnings:
+                warnings.append(code)
+    return warnings
+
+
+def _numbers_in(text: str) -> set[float]:
+    # 「1-MCP」里的 1 不是参数数值，先剔除，避免把药剂名当剂量
+    cleaned = re.sub(r"1-MCP", "MCP", str(text or ""), flags=re.IGNORECASE)
+    numbers: set[float] = set()
+    for match in re.finditer(_NUM_BODY, cleaned):
+        try:
+            numbers.add(round(float(match.group(0)), 6))
+        except ValueError:
+            continue
+    return numbers
+
+
+def _verified_backs_param(sentence: str, e: Evidence) -> bool:
+    """同句**被引用**的 verified 证据是否直接支撑该句参数。
+
+    必须同时满足：该证据被本句引用（调用方已筛）、status=verified、属高风险参数证据、
+    与句子字面相关，且句子里的参数数字确实出现在该证据（object/quote/value）中。
+    只出现在 evidence 列表里但未被本句引用的 verified 证据不能放行（历史 bug）。
+    """
+    if e.status != "verified" or not _is_high_risk(e) or not _sentence_relevant(sentence, e):
+        return False
+    sentence_numbers = _numbers_in(re.sub(r"\[E\d+\]", "", _canonicalize_citations(sentence)))
+    evidence_numbers = _numbers_in(
+        " ".join(
+            [
+                e.object,
+                e.quote,
+                str(e.value or ""),
+                str(e.value_min or ""),
+                str(e.value_max or ""),
+            ]
+        )
+    )
+    return bool(sentence_numbers & evidence_numbers)
+
+
+def _anchor_high_risk_warnings(answer: str, evidence: Sequence[Evidence]) -> list[str]:
+    """仅凭 anchor 证据给出药剂/浓度/剂量/时间参数 → anchor_high_risk。"""
+    by_id = {e.eid: e for e in evidence}
+    for sentence in _sentences(answer):
+        cited = [by_id[c] for c in re.findall(r"\[(E\d+)\]", _canonicalize_citations(sentence)) if c in by_id]
+        if not cited or not _has_high_risk_param(sentence):
+            continue
+        if not any(e.status != "verified" and _is_high_risk(e) for e in cited):
+            continue
+        # 只有「本句实际引用 + 已核验 + 高风险 + 数字与参数一致」的证据才能放行
+        if any(_verified_backs_param(sentence, e) for e in cited):
+            continue
+        return [WARN_ANCHOR_HIGH_RISK]
+    return []
+
+
+def validate_llm_answer(
+    answer: str, evidence: Sequence[Evidence], question: str = ""
+) -> tuple[list[str], bool]:
+    """LLM 答案的规则校验（非语义蕴含）。
+
+    返回 ``(warnings, critical)``；``critical=True`` 表示必须回退到证据约束的模板答案
+    （关键数值越界/无来源，或仅凭 anchor 证据给出高风险执行参数）。
+    """
+    issues: list[str] = []
+    issues.extend(check_numbers(answer, evidence, question))
+    issues.extend(_uncited_fact_warnings(answer, evidence))
+    issues.extend(_citation_mismatch_warnings(answer, evidence))
+    issues.extend(_anchor_high_risk_warnings(answer, evidence))
+    critical_prefixes = ("out_of_range", "unsourced_number", WARN_ANCHOR_HIGH_RISK)
+    critical = any(w.startswith(prefix) for w in issues for prefix in critical_prefixes)
+    return list(dict.fromkeys(issues)), critical
+
+
+
 # ------------------------------------------------------------------ 越界检测
+def _question_requests_temperature(question: str) -> bool:
+    """问句是否显式在问温度/冷冻（用于避免「零下18度能放吗」被路由到 shelf_life 漏掉越界）。"""
+    q = normalize_question(question)
+    if re.search(r"-?\d+(?:\.\d+)?\s*(?:℃|°C|度)", q):
+        return True
+    return any(term in q for term in _FREEZE_TERMS)
+
+
 def detect_out_of_range(question: str, evidence: Sequence[Evidence]) -> bool:
-    """只在问题里出现「带温度单位的数字」时判越界（避免把 1-MCP 的 1 误当温度）。"""
+    """问题请求的温度超出证据覆盖区间，或明确提出「冷冻」类不可行条件。"""
     q = normalize_question(question)
     temps = [e for e in evidence if e.unit == "℃"]
     if not temps:
@@ -472,25 +710,42 @@ def detect_out_of_range(question: str, evidence: Sequence[Evidence]) -> bool:
             v = float(m)
         except ValueError:
             continue
-        if v < lo - 0.6 or v > hi + 0.6:
+        if v < lo - 1e-6 or v > hi + 1e-6:
             return True
+    # 没有数字但明确要求冷冻（葡萄贮藏是 0℃ 附近的冷藏，不是冷冻）
+    if any(term in q for term in _FREEZE_TERMS):
+        return True
     return False
+
 
 
 # ------------------------------------------------------------------ Prompt
 def build_prompt(question: str, evidence: Sequence[Evidence]) -> list[dict[str, str]]:
-    ev_lines = "\n".join(f"[{e.eid}] {e.subject} | {PRED_LABEL.get(e.predicate, e.predicate)} | {e.object}"
-                         + (f" | 值={_fmt_value(e)}" if _fmt_value(e) else "")
-                         + f" | 来源={_sources_cn(e)} | {_status_cn(e)}" for e in evidence)
+    def _line(e: Evidence) -> str:
+        flag = ""
+        if e.status != "verified" and _is_high_risk(e):
+            flag = "（高风险待核验：不得给出具体浓度/剂量/时间参数）"
+        elif e.status != "verified":
+            flag = "（待核验）"
+        return (
+            f"[{e.eid}] {e.subject} | {PRED_LABEL.get(e.predicate, e.predicate)} | {e.object}"
+            + (f" | 值={_fmt_value(e)}" if _fmt_value(e) else "")
+            + f" | 来源={_sources_cn(e)} | {_status_cn(e)}{flag}"
+        )
+
+    ev_lines = "\n".join(_line(e) for e in evidence)
     system = (
         "你是鲜食葡萄采后贮藏技术助手，服务对象是种植户和冷库管理员。\n"
         "硬性规则：\n"
         "1) 只能依据下面给出的证据回答，不得引入证据之外的事实。\n"
-        "2) 每个结论后面必须标注证据编号，格式 [E1][E2]。\n"
+        "2) 每个结论后面必须标注证据编号，格式 [E1][E2]；每个事实句都要有对应引用。\n"
         "3) 温度、湿度、浓度、时间、剂量等数字必须原样来自证据，禁止补充或换算成证据里没有的数。\n"
-        "4) 证据标注「待核验」时可附一句「以来源原文或当地技术员为准」，但不要反复强调，更不要因此不给建议。\n"
-        "5) 证据没覆盖的内容，明确写「图谱未收录」，不要猜。\n"
-        "6) 面向种植户和冷库管理员：建议必须当天能执行、用动词开头，不要建议他们去查文献或核对原文。\n"
+        "4) 证据标注「已核验」才可作为确定结论；标注「待核验」的只能作为参考，"
+        "必须写「待核验/需人工确认」，不得描述成已证实的事实。\n"
+        "5) 涉及药剂、浓度、剂量、处理时间等高风险操作时，若依据只有「待核验」证据，"
+        "不得给出具体执行参数（数字），只能给方向并提示按产品标签、来源原文或当地技术人员确认。\n"
+        "6) 证据没覆盖的内容，明确写「图谱未收录」，不要猜。\n"
+        "7) 面向种植户和冷库管理员：建议必须当天能执行、用动词开头；非高风险参数可按已核验证据给数字。\n"
         "输出结构（三段，不要额外客套）：\n"
         "结论：（1-2 句）\n"
         "依据：（逐条列证据编号与要点）\n"
@@ -502,6 +757,24 @@ def build_prompt(question: str, evidence: Sequence[Evidence]) -> list[dict[str, 
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
+    ]
+
+
+def _citation_fix_messages(
+    messages: list[dict[str, str]], answer: str, detail: str
+) -> list[dict[str, str]]:
+    """构造「只纠正引用编号」的一次纠正消息（规则校验发现 citation_mismatch 时使用）。"""
+    return messages + [
+        {"role": "assistant", "content": answer},
+        {
+            "role": "user",
+            "content": (
+                f"你的引用编号与对应事实句不匹配（涉及 {detail or '相关证据'}）。"
+                "请只修改引用编号：每个事实句必须引用真正支撑它的证据 [E#]，"
+                "不要改变事实、不要新增证据；如果证据里找不到能支撑该事实的条目，"
+                "就明确写「图谱未收录」。"
+            ),
+        },
     ]
 
 
@@ -560,6 +833,48 @@ def _load_catalog_cached(path: str):
     return cached
 
 
+# ------------------------------------------------------------------ 多轮追问
+# 只允许「明确的指代式追问」继承上一轮实体（那/这/它/还有/再…）。
+# 出现无法识别的新名词（如「苹果呢」）时不得强行套用旧实体。
+_FOLLOWUP_CUES = ("那", "那么", "这", "这个", "那个", "它", "它们", "还有", "再", "换成", "继续")
+_FOLLOWUP_PRONOUNS = ("它", "它们", "这个", "那个", "上述", "前面")
+_FOLLOWUP_ATTR_WORDS = (
+    "温度", "湿度", "气调", "贮藏", "储存", "冷藏", "预冷", "耐贮", "货架", "糖度",
+    "酸度", "指标", "病害", "虫害", "腐烂", "霉", "保鲜", "参数", "要求", "标准",
+    "多少", "几度", "多久", "怎么", "办", "处理", "防治", "预防", "注意", "影响",
+)
+# 追问里可安全忽略的虚词/问句填充词（用于判断 remainder 是不是新名词）
+_QUESTION_FILLERS = (
+    "怎么样", "怎么", "如何", "多少", "几度", "多久", "什么", "为什么", "能不能",
+    "可以吗", "行不行", "呢", "吗", "啊", "吧", "的", "了", "请问", "问一下",
+    "一下", "还有", "那么", "那", "这个", "那个", "它", "它们", "再", "换成",
+    "继续", "么", "呗", "吗", "呀", "嘛",
+)
+
+
+def _is_referential_followup(question: str) -> bool:
+    """问句是否是可继承上一轮实体的指代式追问（规则启发式，非语义理解）。
+
+    「那湿度呢」→ True；「那巨峰呢」虽也以「那」开头，但 remainder 是新实体，
+    应交给实体链接（命中则用新实体），不会走到继承；「苹果呢」→ False（新名词，不继承）。
+    """
+    q = normalize_question(question).strip(" ？?。.!！,，")
+    if not q:
+        return False
+    has_cue = any(q.startswith(cue) for cue in _FOLLOWUP_CUES) or any(
+        pronoun in q for pronoun in _FOLLOWUP_PRONOUNS
+    )
+    if not has_cue:
+        return False
+    rest = q
+    for word in sorted(set(_QUESTION_FILLERS), key=len, reverse=True):
+        rest = rest.replace(word, "")
+    rest = re.sub(r"[\s，。？！?、,.：:；;]", "", rest)
+    if not rest:
+        return True
+    return any(word in rest for word in _FOLLOWUP_ATTR_WORDS)
+
+
 # ------------------------------------------------------------------ 主流程
 def answer_question(
     question: str,
@@ -594,9 +909,10 @@ def answer_question(
         hits = link_entities(q, _load_catalog_cached(str(st.data_path / "entities.csv")))
     except Exception:
         hits = []
-    # 1.5) 多轮追问：当前问句没命中实体时，承接上一轮实体（如「那湿度呢？」）
+    # 1.5) 多轮追问：仅「指代式追问」且本轮未命中任何实体时，才承接上一轮实体
+    #      （如「那湿度呢？」→ 承接阳光玫瑰；「苹果呢」→ 不继承，避免张冠李戴）
     prev_ctx = context or {}
-    if not hits:
+    if not hits and _is_referential_followup(q):
         for item in (prev_ctx.get("entities") or [])[:4]:
             if isinstance(item, EntityHit):
                 hits.append(item)
@@ -617,6 +933,10 @@ def answer_question(
     intent, confidence, candidates = route(q, hits)
     if result.context_note and intent == "general" and prev_ctx.get("intent"):
         intent, confidence = str(prev_ctx["intent"]), max(confidence, 0.4)
+    # 显式问温度/冷冻（「零下18度能放吗」「冻起来能存一年吗」）优先按 temperature 处理，
+    # 否则会被 shelf_life 等触发词抢占，导致越界数值漏检（历史审计 S2）。
+    if intent in ("shelf_life", "quality_indicator") and _question_requests_temperature(q):
+        intent, confidence = "temperature", max(confidence, 0.4)
     result.intent, result.intent_confidence = intent, confidence
     if confidence < 0.35 and intent != "general":
         warnings.append(WARN_LOW_CONFIDENCE_INTENT)
@@ -628,6 +948,17 @@ def answer_question(
             "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
             "依据：无可用证据。\n\n"
             "可以这样说：「阳光玫瑰放冷库该调到多少度？」「冷库里葡萄长白毛了怎么办？」「阳光玫瑰和巨峰哪个更能放？」"
+        )
+        result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return result
+    # 2.6) 非 temperature 的 typed 意图且无任何实体：不查全库凑答案（如「那湿度呢」但上一轮已无实体）
+    #      temperature 例外：越界探测（-18℃/冷冻）需要全库温度证据来判区间。
+    if intent != "general" and intent != "temperature" and not hits:
+        warnings.append(WARN_NO_EVIDENCE)
+        result.answer = (
+            "结论：没识别出具体的品种、病害或指标，我不凭空回答。\n\n"
+            "依据：无可用证据（当前问题没有可关联的实体）。\n\n"
+            "请带上品种或病害再问一次，例如「阳光玫瑰的湿度要调到多少？」"
         )
         result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
         return result
@@ -688,10 +1019,15 @@ def answer_question(
     #      （例：问「维多利亚怎么存」却拿到阳光玫瑰/红地球的耐贮性；问「1-MCP 怎么用」却答 SO₂ 禁忌）
     if hits and evidence:
         hit_ids = {h.node_id for h in hits}
+        # 主实体（品种/病害）必须被证据触达。仅命中指标词（如「耐贮性」）时，
+        # 图里通用的 AFFECTS 边会让「任一命中实体」判定通过，从而把别品种/通用机理
+        # 当成该品种结论（历史审计 S1）。因此优先要求证据触达命中的品种/病害。
+        primary_ids = {h.node_id for h in hits if h.label in ("Variety", "Disease")}
+        required_ids = primary_ids or hit_ids
         covered = False
         for e in evidence:
             ids = {e.properties.get("subject_id"), e.properties.get("object_id")}
-            if ids & hit_ids or e.subject in hit_ids or e.object in hit_ids:
+            if ids & required_ids or e.subject in required_ids or e.object in required_ids:
                 covered = True
                 break
         if not covered:
@@ -770,24 +1106,69 @@ def answer_question(
                 if len(_LLM_CACHE) >= _LLM_CACHE_MAX:
                     _LLM_CACHE.clear()
                 _LLM_CACHE[cache_key] = text
-            answer = text
+            # 全角【E1】/小写 [e1] 先规范成 [E1]，再走引用校验
+            answer = _canonicalize_citations(text)
             result.mode = "llm"
             cited, w = verify_citations(answer, evidence)
+            corrected_once = False
             if not cited:
                 # 不合格 → 纠正一次
                 messages2 = messages + [
                     {"role": "assistant", "content": text},
                     {"role": "user", "content": "你的回答没有给出 [E#] 证据引用。请只依据证据重写，每个结论后必须带 [E#]。"},
                 ]
-                text2 = llm.complete(messages2)
+                text2 = _canonicalize_citations(llm.complete(messages2))
                 cited2, w2 = verify_citations(text2, evidence)
                 if cited2:
                     answer, cited = text2, cited2
+                    corrected_once = True
                 else:
                     warnings.extend(w2)
                     warnings.append(WARN_NO_CITATION)
                     answer, result.mode = tpl, "template"
-            result.cited_ids = cited
+            if result.mode == "llm":
+                # 规则校验（启发式）：引用不匹配/关键数值错误/仅凭 anchor 给高风险参数
+                issues, critical = validate_llm_answer(answer, evidence, q)
+                mismatch = [code for code in issues if code.startswith(WARN_CITATION_MISMATCH)]
+                if mismatch and not corrected_once:
+                    # 引用编号存在但与事实句不匹配 → 只纠正引用一次；失败则回退模板
+                    detail = "、".join(sorted({code.split(":", 1)[-1] for code in mismatch}))
+                    fix_messages = _citation_fix_messages(messages, answer, detail)
+                    fixed_text = _canonicalize_citations(llm.complete(fix_messages))
+                    fixed_cited, fixed_w = verify_citations(fixed_text, evidence)
+                    fixed_issues, fixed_critical = validate_llm_answer(fixed_text, evidence, q)
+                    fixed_mismatch = [
+                        code for code in fixed_issues if code.startswith(WARN_CITATION_MISMATCH)
+                    ]
+                    if fixed_cited and not fixed_mismatch and not fixed_critical:
+                        answer, cited = fixed_text, fixed_cited
+                        issues, critical = fixed_issues, fixed_critical
+                        corrected_once = True
+                    else:
+                        warnings.extend(mismatch)
+                        for code in fixed_w:
+                            if code not in warnings:
+                                warnings.append(code)
+                        warnings.append(WARN_LLM_ANSWER_REJECTED)
+                        answer, result.mode = tpl, "template"
+                        result.cited_ids = []
+                        issues, critical = [], False
+                elif mismatch and corrected_once:
+                    # 已用掉一次纠正（无引用纠正）后仍不匹配 → 直接回退模板
+                    warnings.extend(mismatch)
+                    warnings.append(WARN_LLM_ANSWER_REJECTED)
+                    answer, result.mode = tpl, "template"
+                    result.cited_ids = []
+                    issues, critical = [], False
+                if result.mode == "llm":
+                    for code in issues:
+                        if code not in warnings:
+                            warnings.append(code)
+                    if critical:
+                        warnings.append(WARN_LLM_ANSWER_REJECTED)
+                        answer, result.mode = tpl, "template"
+                        result.cited_ids = []
+            result.cited_ids = cited if result.mode == "llm" else []
         except LLMUnavailable as exc:
             warnings.append(WARN_LLM_TIMEOUT if "timeout" in str(exc).lower() else WARN_LLM_UNAVAILABLE)
             answer, result.mode = tpl, "template"
@@ -798,6 +1179,7 @@ def answer_question(
     if result.mode == "template":
         cited, _w = verify_citations(answer, evidence)
         result.cited_ids = cited
+
 
     # 7) 分步动作（LLM 文本里已含「现在该做什么」则抽出，否则由证据派生）
     if steps:
@@ -826,7 +1208,19 @@ def answer_question(
         warnings.append(WARN_OUT_OF_RANGE)
     warnings.extend(check_numbers(result.answer, evidence, q))
 
-    # 9) 元信息
+    # 8.5) 证据分级告警：LLM 答案引用了待核验证据 / 证据集中含高风险待核验参数
+    if result.mode == "llm":
+        cited_set = set(result.cited_ids or [])
+        if any(e.status != "verified" and e.eid in cited_set for e in evidence):
+            warnings.append(WARN_ANCHOR_UNVERIFIED)
+    cited_set_h = set(result.cited_ids or [])
+    if any(
+        e.status != "verified" and _is_high_risk(e) and e.eid in cited_set_h for e in evidence
+    ):
+        warnings.append(WARN_ANCHOR_HIGH_RISK)
+
+    # 9) 元信息（告警去重保序）
+    result.warnings = list(dict.fromkeys(warnings))
     if llm is not None and hasattr(llm, "last_usage"):
         result.llm_meta = dict(llm.last_usage or {})
     result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
