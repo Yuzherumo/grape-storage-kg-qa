@@ -3,7 +3,7 @@
 > 由 `scripts/env_check.py` 自动生成（不联网）。
 > 重新生成：`.\.venv\Scripts\python.exe scripts\env_check.py`
 
-- 采集时间：2026-11-21 21:07:34
+- 采集时间：2026-11-22 09:42:52
 - 操作系统：`Windows-11-10.0.26100-SP0`
 - Python：`3.12.14`（`C:\Users\21629\Desktop\农课松\.venv\Scripts\python.exe`）
 - 工作目录：`C:\Users\21629\Desktop\农课松`
@@ -49,13 +49,13 @@ UI_PORT | `8501`
 
 文件 | 状态
 ---|---
-data/entities.csv | 存在（13148 B，59 行）
+data/entities.csv | 存在（13206 B，59 行）
 data/triples.csv | 存在（51027 B，109 行）
 data/sources.csv | 存在（4934 B，17 行）
 data/schema.json | 存在（12212 B，503 行）
 data/triples_shine_muscat.csv | 存在（10752 B，21 行）
 graph/schema.cypher | 存在（3298 B，70 行）
-graph/init_nodes.cypher | 存在（33672 B，648 行）
+graph/init_nodes.cypher | 存在（33742 B，648 行）
 graph/init_rels.cypher | 存在（92303 B，1606 行）
 graph/queries/*.cypher | 10 个查询模板
 
