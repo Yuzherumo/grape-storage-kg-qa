@@ -13,7 +13,7 @@
      → 覆盖守卫/越界检测 → 模板或 LLM 生成 → 引用与数值校验 → AnswerResult → UI
 ```
 
-规则负责「问的是什么、该查什么」，图谱负责「有什么证据」，LLM 只负责把证据写成自然语言。完整模块与函数对应关系见 [architecture.md](architecture.md)。
+规则负责「问的是什么、该查什么」，图谱负责「有什么证据」，LLM 负责把证据写成自然语言；生成内容必须通过引用与数值校验，校验失败回退模板或拒答。完整模块与函数对应关系见 [architecture.md](architecture.md)。
 
 技术栈：Python 3.12、Streamlit 1.67、纯标准库数据层；本地后端无需数据库，Neo4j 5 为可选后端；LLM 使用 OpenAI 兼容接口（默认 DeepSeek），未配置时自动使用离线模板。
 
@@ -38,15 +38,18 @@
 
 | 项 | 结果 |
 |---|---|
-| pytest | 289 收集，287 passed / 2 skipped；覆盖率 82% |
+| pytest | 325 passed / 2 skipped（2026-11-22 当前工作区） |
 | 数据校验 | 十项通过，错误 0，告警 2（anchor quote 为空，符合规则） |
 | Cypher | 静态校验通过、生成物无漂移；Kùzu 实跑 77 节点/115 关系，6 题与本地后端一致 |
 | 黄金集 | 核心题 5/5、越界探针 1/1、口语意图 12/12、实体命中 12/12 |
+| CI | GitHub Actions 2/2 job 通过（run 44987585590，基线 3d0a2d6） |
+| 部署 | ModelScope 运行文件与本地 26/26 一致；`/_stcore/health` 200 |
 
 详细命令、在线 LLM 历史记录与 CI 状态见 [validation.md](validation.md)。
 
 ## 6. 部署与复现
 
+- 当前基线：GitHub `main` / `3d0a2d6`；ModelScope 上传记录 `7ac82cb`；
 - 公网演示：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间）；
 - 本地：`.\install.ps1` → `.\run.ps1` → `http://127.0.0.1:8501`；无 Key/断网可用；
 - 部署与打包细节见 [deploy.md](deploy.md)、[packaging.md](packaging.md)。
