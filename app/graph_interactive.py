@@ -284,12 +284,12 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
                      data_dir: Path | str | None = None) -> str:
     layout(graph)
     W, H = width, height
-    pad = 40
+    pad = 54
     if data_dir is None:
         data_dir = Path(__file__).resolve().parents[1] / "data"
     sources = load_sources(data_dir)
     descs = load_descriptions(data_dir)
-    pos = {n.id: (pad + n.x * (W - 2 * pad), pad + 70 + n.y * (H - 2 * pad - 90)) for n in graph.nodes}
+    pos = {n.id: (pad + n.x * (W - 2 * pad), pad + n.y * (H - 2 * pad)) for n in graph.nodes}
     nodes_data: list[dict] = []
     size: dict[str, int] = {}
     for n in graph.nodes:
@@ -313,8 +313,6 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
         f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet" '
         f'xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei, PingFang SC, sans-serif">',
         f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
-        f'<text x="{pad}" y="34" font-size="20" font-weight="700" fill="#1f2328">{_esc(title)}</text>',
-        f'<text x="{pad}" y="56" font-size="12.5" fill="#6b7280">{_esc(subtitle)}</text>',
         '<g id="vp">',
     ]
     for i, e in enumerate(edges_data):
@@ -333,12 +331,18 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
         color = COLORS.get(n.label, "#64748b")
         tip = f"{n.name}（{LABEL_CN.get(n.label, n.label)}，度 {n.degree}）"
         fs = 11 if n.label == "Variety" else 9.5
+        # 边缘节点标签改为向画布内侧展开，避免左右边界被裁掉。
+        label_x, label_y, anchor = x, y - r - 3, "middle"
+        if x < W * 0.14:
+            label_x, label_y, anchor = x + r + 4, y + 3, "start"
+        elif x > W * 0.86:
+            label_x, label_y, anchor = x - r - 4, y + 3, "end"
         svg_parts.append(
             f'<g class="node" data-id="{_esc(n.id)}"><title>{_esc(tip)}</title>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{color}" fill-opacity="0.92" '
             f'stroke="#ffffff" stroke-width="2"/>'
-            f'<text x="{x:.1f}" y="{y - r - 3:.1f}" font-size="{fs}" fill="#1f2328" '
-            f'text-anchor="middle">{_esc(n.name)}</text></g>'
+            f'<text x="{label_x:.1f}" y="{label_y:.1f}" font-size="{fs}" fill="#1f2328" '
+            f'text-anchor="{anchor}">{_esc(n.name)}</text></g>'
         )
     svg_parts.append("</g></svg>")
 
