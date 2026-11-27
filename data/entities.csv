@@ -57,3 +57,8 @@ package_weight,Condition,包装容重 ≤ 8 kg,包装;包装要求;装箱;纸箱
 pre_harvest_rain,Condition,采前降雨,采前降雨;采前雨;采收前降雨,环境风险,,,,,,,,,,,,,,gbt16862_2026,国标附录B：田间下雨/采前降雨是黑斑病诱因；条文口径，已 verified
 warehouse_disinfection,Condition,库房消杀,库房消杀;库房消毒;消毒,化学,,,,,,,,,,,,,,gbt16862_2026,国标附录B：库房消杀为病害防治措施；条文口径，已 verified
 green_mold,Disease,绿霉病,绿霉,,,,,,,,,,,,,Cladosporium herbarum,果梗黑褐色腐烂斑、出库后长绿色霉层,gbt16862_2026,国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语
+chitosan_coating,Condition,壳聚糖涂膜,壳聚糖;chitosan;壳聚糖涂层,包装,0.5,1.5,%,贮藏,,涂膜,,,,,,,,web_10_5281_zenodo_3348647;web_10_22077_jhpr_2018_1444_1015,外部论文实验浓度约 0.5–1.5% 壳聚糖；品种/处理时间以论文为准，anchor。
+thyme_oil_coating,Condition,百里香精油涂膜,百里香精油;TEO;精油涂膜,包装,0.5,1.0,%,贮藏,,涂膜,,,,,,,,web_10_22077_jhpr_2018_1444_1015,外部论文中 Thymus essential oil 与壳聚糖联合涂膜；具体配比以论文为准，anchor。
+putrescine_ultrasound,Condition,腐胺+超声处理,腐胺;Put;超声处理;putrescine,化学,1,2,mM,贮藏,,"腐胺浸渍 + 超声（32 kHz, 10 min）",,,,,,,,web_10_5513_jcea01_18_3_1934,外部论文中 putrescine 1–2 mM 与超声联合处理；anchor。
+grape_seed_oil,Condition,葡萄籽油处理,葡萄籽油;GSO;grape seed oil,化学,0.5,2,g/L,贮藏,,浸渍/涂膜,,,,,,,,web_10_5281_zenodo_3607846,外部论文中 GSO 0.5–2 g/L 处理；anchor。
+map_transport,Condition,气调集装箱运输,气调运输;CA container;气调集装箱,气调,,,,贮藏,,气调集装箱（CA）,,,,,,,,web_10_4081_jae_2020_954,外部论文中的 controlled atmosphere shipping container；anchor。

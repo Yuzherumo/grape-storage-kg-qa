@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -38,6 +39,14 @@ WARN_ANCHOR_HIGH_RISK = "anchor_high_risk"          # 仅凭 anchor 证据给出
 WARN_UNSUPPORTED_FACT = "unsupported_fact"          # 事实句缺少对应证据引用（规则启发式，非语义蕴含）
 WARN_CITATION_MISMATCH = "citation_mismatch"        # 引用编号有效但与句子的字面内容不相关（规则启发式）
 WARN_LLM_ANSWER_REJECTED = "llm_answer_rejected"    # LLM 答案未通过校验，已回退到证据约束模板
+# 第四轮交付修复新增（附加告警码，不改变既有字段/返回值契约）
+WARN_ANCHOR_OVERCLAIM = "anchor_overclaim"          # anchor 证据被写成「已核验/已证实」等确定性结论
+WARN_STORE_ERROR = "store_error"                    # 补充查询/后端异常，不得伪装成「图谱未收录」
+WARN_OUT_OF_DOMAIN = "out_of_domain"                # 问句指向非葡萄果品（苹果/梨/桃…），离域拒答
+WARN_OUT_OF_SCOPE = "out_of_scope"                  # 问句超出图谱范围（农残/安全限量等），不编造数据
+# 第五轮安全加固新增（附加告警码，不改变既有字段/返回值契约）
+WARN_PROMPT_INJECTION = "prompt_injection"          # 检测到绕过证据约束/系统指令的提示注入
+WARN_HIGH_RISK_TOPIC = "high_risk_topic"            # 问题涉及药剂/熏蒸/剂量等高风险操作
 
 
 @dataclass
@@ -114,3 +123,7 @@ class AnswerResult:
     def as_dict(self) -> dict[str, Any]:
         d = asdict(self)
         return d
+
+    def to_json(self) -> str:
+        """稳定的结构化输出，供 CLI/前端/日志使用。"""
+        return json.dumps(self.as_dict(), ensure_ascii=False, default=str)

@@ -725,7 +725,20 @@ class LocalStore(GraphStore):
     def _load_quality_indicator(self, spec: QuerySpec) -> list[Evidence]:
         variety_ids = self._ids_for_label(spec, "Variety", ("variety_ids",))
         indicator_ids = self._ids_for_label(spec, "QualityIndicator", ("indicator_ids",))
+        condition_ids = self._ids_for_label(spec, "Condition", ("condition_ids",))
         edges: list[dict[str, Any]] = []
+        if condition_ids:
+            # 问的是某个处理/条件对指标的影响时，先精确取 condition→AFFECTS→indicator；
+            # 没有命中再回退到指标的全部 AFFECTS，避免把其它处理带进答案。
+            edges.extend(
+                self._collect(
+                    predicates=("AFFECTS",),
+                    subject_ids=condition_ids,
+                    object_ids=indicator_ids or None,
+                )
+            )
+            if edges:
+                return self._finish(_dedupe_edges(edges), spec)
         if indicator_ids:
             edges.extend(self._collect(predicates=("AFFECTS",), object_ids=indicator_ids))
             edges.extend(

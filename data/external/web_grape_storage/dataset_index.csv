@@ -1,0 +1,6 @@
+dataset_id,title,doi,source_url,covers_condition,covers_indicator,notes
+ds_rachis_browning,"采后激素处理抑制鲜食葡萄穗轴褐变（冷藏 30 天）",10.17632/4x57fvm6tm,https://data.mendeley.com/datasets/4x57fvm6tm,低温冷藏 0±0.5℃;果梗褐变,"数据集为冷藏试验；品种与处理以原数据为准，未直接升级为三元组"
+ds_chitosan_aloe,"壳聚糖 + 芦荟涂膜对采后葡萄品质的影响",10.17632/tdbw9r9jtx,https://data.mendeley.com/datasets/tdbw9r9jtx,壳聚糖涂膜;腐烂率;失重率,"含感官问卷；具体浓度/品种需回原文"
+ds_biocontrol,"葡萄采后病害生物防治原始实验数据",10.5281/zenodo.20407304,https://doi.org/10.5281/zenodo.20407304,,腐烂率,"生防实验数据；病原/菌株/品种需回原文"
+ds_ethylene,"整果乙烯释放测定原始数据",10.17632/k87vpskjkn,https://data.mendeley.com/datasets/k87vpskjkn,,乙烯释放率,"用于乙烯—贮藏寿命关联分析；非处理结论"
+ds_toyfi,"不同处理对冷藏鲜食葡萄理化性状的影响",10.5281/zenodo.14552426,https://doi.org/10.5281/zenodo.14552426,低温冷藏 0±0.5℃;可溶性固形物SSC;可滴定酸TA,"论文附带数据；处理组与品种以论文为准"

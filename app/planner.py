@@ -20,6 +20,17 @@ _FULLWIDTH = {ord(c): ord(c) - 0xFEE0 for c in "０１２３４５６７８９�
 _CN_DIGITS = {"零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
               "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 
+#: 「明确禁忌」判定阈值：单个强触发词（SO2/禁忌/慎用/禁用…）权重 ≥2.0 即视为
+#: 用户在问禁忌，不能被 packaging/precool/transport 的条件型兜底吃掉。
+CONTRA_EXPLICIT_SCORE = 2.0
+
+#: 「明确禁忌意图词」：纯用法问法（命中 HOWTO_KEYWORDS）只有带这些词才允许被禁忌快捷分支
+#: 抢走路由；否则「SO2怎么用/熏蒸怎么操作」会被判成禁忌，返回别的品种禁忌证据（Lead 复核回归）。
+CONTRA_EXPLICIT_TERMS = (
+    "禁忌", "禁用", "慎用", "行不行", "行吗", "能不能", "能不能用", "可以吗",
+    "可以用吗", "能用", "风险", "危害", "超标", "安全吗", "冲突", "矛盾", "影响吗",
+)
+
 
 def _cn_to_int(text: str) -> int | None:
     """把 0~99 的中文数字（含「十八」「二十」）转成整数，无法解析返回 None。"""
@@ -136,6 +147,20 @@ def _is_room_temp_quality(question: str) -> bool:
     return any(word in q for word in ("坏", "放", "存", "多久", "品质", "变", "新鲜"))
 
 
+def _ranked_result(
+    scores: dict[str, float], forced_intent: str | None = None
+) -> tuple[str, float, list[tuple[str, float]]]:
+    """按原始分归一化出 (intent, confidence, top3)；forced_intent 用于「明确信号」直落。"""
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    total = sum(v for _, v in ranked) or 1.0
+    if forced_intent is None:
+        top_intent, top_score = ranked[0]
+    else:
+        top_intent = forced_intent
+        top_score = scores.get(forced_intent, 0.0)
+    return top_intent, round(top_score / total, 3), [(k, round(v, 2)) for k, v in ranked[:3]]
+
+
 def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tuple[str, float]]]:
     """返回 (intent, confidence, top3候选)。
 
@@ -145,6 +170,19 @@ def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tu
     scores = score_intents(question, hits)
     q = normalize_question(question)
     topics = detect_topics(question)
+    contra_score = scores.get("contraindication", 0.0)
+    # 纯用法问法（如「SO2怎么用」「SO2熏蒸怎么操作」）不应被禁忌快捷分支抢走：
+    # 只有带明确禁忌意图词时才强制 contraindication；其余先走 HOWTO/实体中心检索。
+    howto_question = bool(
+        hits
+        and any(k in q for k in R.HOWTO_KEYWORDS)
+        and any(h.label == "Condition" for h in hits)
+    )
+    explicit_contra = any(term in q for term in CONTRA_EXPLICIT_TERMS)
+    # 明确禁忌信号优先于一切主题型/条件型兜底（修复：原 `"CONTRA_INDICATED_FOR" not in scores`
+    # 恒真，因为 scores 的键是意图名而不是谓词名）。
+    if contra_score >= CONTRA_EXPLICIT_SCORE and (explicit_contra or not howto_question):
+        return _ranked_result(scores, forced_intent="contraindication")
     # 预冷/运输/包装是条件型问题，不能被 shelf_life/atmosphere 抢走；走实体中心检索，
     # 由 store 取相邻条件边、由 qa 按主题聚焦，避免拿耐贮性/冷藏温度冒充。
     if topics & {"precool", "transport", "packaging"}:
@@ -156,7 +194,10 @@ def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tu
     if hits and any(k in q for k in R.HOWTO_KEYWORDS) and any(h.label == "Condition" for h in hits):
         return R.DEFAULT_INTENT, 0.5, []
     # 命中「条文型操作条件」（包装/入库量/堆码/温度波动/销售/档案…）→ 实体中心检索
-    if any(h.node_id in R.OPERATION_CONDITIONS for h in hits) and "CONTRA_INDICATED_FOR" not in scores:
+    if (
+        any(h.node_id in R.OPERATION_CONDITIONS for h in hits)
+        and scores.get("contraindication", 0.0) < CONTRA_EXPLICIT_SCORE
+    ):
         return R.DEFAULT_INTENT, 0.6, []
     # 全是条件实体 + 比较/区别/影响类问句（如「冰温贮藏和冷藏比怎么样」「高浓度CO2有什么问题」）→ 实体中心检索
     if hits and all(h.label == "Condition" for h in hits) and any(
@@ -172,12 +213,8 @@ def route(question: str, hits: Sequence[EntityHit]) -> tuple[str, float, list[tu
     if not scores:
         return R.DEFAULT_INTENT, 0.0, []
 
-    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
-    total = sum(v for _, v in ranked) or 1.0
-    top_intent, top_score = ranked[0]
-    confidence = top_score / total
     # 分数太低（全是很弱的触发词）→ 视为低置信，由 qa 加 warning
-    return top_intent, round(confidence, 3), [(k, round(v, 2)) for k, v in ranked[:3]]
+    return _ranked_result(scores)
 
 
 def _ids(hits: Iterable[EntityHit], label: str) -> list[str]:
@@ -212,8 +249,11 @@ def build_query(intent: str, hits: Sequence[EntityHit], k: int = 6, *, question:
     params: dict[str, Any] = {
         "intent": intent if intent in INTENTS else R.DEFAULT_INTENT,
         "variety_ids": variety_ids,
-        # 只有禁忌意图才按具体条件过滤（否则「冷库」会把温度结果收窄成 1 条）
-        "condition_ids": condition_ids if intent == "contraindication" else [],
+        # 禁忌和「条件→指标」问题需要按具体条件过滤；其它意图仍用主题/实体中心检索，
+        # 避免「冷库」把温度结果收窄成 1 条。
+        "condition_ids": condition_ids
+        if intent == "contraindication" or (intent == "quality_indicator" and question)
+        else [],
         "indicator_ids": indicator_ids,
         "disease_ids": disease_ids,
         "entity_ids": entity_ids,

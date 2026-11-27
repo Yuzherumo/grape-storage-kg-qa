@@ -2,7 +2,7 @@
 // graph/init_nodes.cypher —— 图谱节点初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/entities.csv + data/sources.csv 生成
 // 幂等：MERGE (n:Label {id: ...}) —— 可重复执行
-// 统计：共 77 个节点（Variety 8，Condition 30，QualityIndicator 13，Disease 7，Source 19）
+// 统计：共 108 个节点（Variety 8，Condition 35，QualityIndicator 13，Disease 7，Source 45）
 // 生成后校验：python scripts/gen_cypher.py --check
 // =============================================================================
 
@@ -100,7 +100,7 @@ MERGE (n:Variety {id: 'victoria'})
          n.source_ids = ['review_grape_storage'],
          n.note = '早熟黄绿色品种，易褐变';
 
-// ---------------- Condition（30 个） ----------------
+// ---------------- Condition（35 个） ----------------
 MERGE (n:Condition {id: 'cold_0'})
   SET n.label = 'Condition',
          n.name = '低温冷藏 0±0.5℃',
@@ -351,6 +351,63 @@ MERGE (n:Condition {id: 'warehouse_disinfection'})
          n.category = '化学',
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B：库房消杀为病害防治措施；条文口径，已 verified';
+MERGE (n:Condition {id: 'chitosan_coating'})
+  SET n.label = 'Condition',
+         n.name = '壳聚糖涂膜',
+         n.aliases = ['壳聚糖', 'chitosan', '壳聚糖涂层'],
+         n.category = '包装',
+         n.value_min = 0.5,
+         n.value_max = 1.5,
+         n.unit = '%',
+         n.stage = '贮藏',
+         n.method = '涂膜',
+         n.source_ids = ['web_10_5281_zenodo_3348647', 'web_10_22077_jhpr_2018_1444_1015'],
+         n.note = '外部论文实验浓度约 0.5–1.5% 壳聚糖；品种/处理时间以论文为准，anchor。';
+MERGE (n:Condition {id: 'thyme_oil_coating'})
+  SET n.label = 'Condition',
+         n.name = '百里香精油涂膜',
+         n.aliases = ['百里香精油', 'TEO', '精油涂膜'],
+         n.category = '包装',
+         n.value_min = 0.5,
+         n.value_max = 1.0,
+         n.unit = '%',
+         n.stage = '贮藏',
+         n.method = '涂膜',
+         n.source_ids = ['web_10_22077_jhpr_2018_1444_1015'],
+         n.note = '外部论文中 Thymus essential oil 与壳聚糖联合涂膜；具体配比以论文为准，anchor。';
+MERGE (n:Condition {id: 'putrescine_ultrasound'})
+  SET n.label = 'Condition',
+         n.name = '腐胺+超声处理',
+         n.aliases = ['腐胺', 'Put', '超声处理', 'putrescine'],
+         n.category = '化学',
+         n.value_min = 1,
+         n.value_max = 2,
+         n.unit = 'mM',
+         n.stage = '贮藏',
+         n.method = '腐胺浸渍 + 超声（32 kHz, 10 min）',
+         n.source_ids = ['web_10_5513_jcea01_18_3_1934'],
+         n.note = '外部论文中 putrescine 1–2 mM 与超声联合处理；anchor。';
+MERGE (n:Condition {id: 'grape_seed_oil'})
+  SET n.label = 'Condition',
+         n.name = '葡萄籽油处理',
+         n.aliases = ['葡萄籽油', 'GSO', 'grape seed oil'],
+         n.category = '化学',
+         n.value_min = 0.5,
+         n.value_max = 2,
+         n.unit = 'g/L',
+         n.stage = '贮藏',
+         n.method = '浸渍/涂膜',
+         n.source_ids = ['web_10_5281_zenodo_3607846'],
+         n.note = '外部论文中 GSO 0.5–2 g/L 处理；anchor。';
+MERGE (n:Condition {id: 'map_transport'})
+  SET n.label = 'Condition',
+         n.name = '气调集装箱运输',
+         n.aliases = ['气调运输', 'CA container', '气调集装箱'],
+         n.category = '气调',
+         n.stage = '贮藏',
+         n.method = '气调集装箱（CA）',
+         n.source_ids = ['web_10_4081_jae_2020_954'],
+         n.note = '外部论文中的 controlled atmosphere shipping container；anchor。';
 
 // ---------------- QualityIndicator（13 个） ----------------
 MERGE (n:QualityIndicator {id: 'respiration'})
@@ -525,7 +582,7 @@ MERGE (n:Disease {id: 'green_mold'})
          n.source_ids = ['gbt16862_2026'],
          n.note = '国标附录B 表B.1 列入（原图谱缺）；4℃~30℃、伤口/果梗裂纹处发病；绿霉病 Cladosporium herbarum；绿色霉层为农户口语';
 
-// ---------------- Source（19 个，来自 data/sources.csv） ----------------
+// ---------------- Source（45 个，来自 data/sources.csv） ----------------
 MERGE (n:Source {id: 'gbt16862_2026'})
   SET n.title = '鲜食葡萄冷藏技术（GB/T 16862-2026）',
          n.authors = '国家市场监督管理总局;国家标准化管理委员会（发布单位）',
@@ -668,6 +725,230 @@ MERGE (n:Source {id: 'paper_kyoho_temp_2018'})
          n.doi_url = 'https://doi.org/10.3969/j.issn.1005-6521.2018.21.032',
          n.access = 'public',
          n.note = '0/5/10/25℃ 对照试验；0℃ 贮藏效果最好（失重、落粒、腐烂、呼吸强度、硬度）';
+MERGE (n:Source {id: 'agridata_legacy_2005'})
+  SET n.title = '葡萄贮藏保鲜技术（农产品贮藏保鲜技术数据库旧版专题页，2005）',
+         n.year = '2005',
+         n.venue = '国家农业科学数据中心·农产品贮藏保鲜技术数据库',
+         n.type = '行业资料',
+         n.doi_url = 'http://www.agridata.ac.cn/DataList/DataDetails?id=12&tableid=102',
+         n.access = 'public',
+         n.note = '旧版专题页（入库日期 2005-03-02）；文字按原库字段整理，含旧方法/旧药剂描述。仅作 anchor 线索，不当作现行操作规范。同步登记外部目录 datasets_grape_postharvest.csv（111 行数据集/项目元数据，仅作来源索引，不把项目标题当事实）。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_14552426'})
+  SET n.title = 'THE INFLUENCE OF VARIOUS TREATMENTS ON THE PHYSICOCHEMICAL TRAITS OF \'TOYFI PINK\' GRAPES DURING COLD STORAGE.',
+         n.authors = 'Abdusattorov, B.A.; Azizov, A.Sh.',
+         n.year = '2024',
+         n.venue = 'JOURNAL OF AGRICULTURE & HORTICULTURE',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.14552426',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.14552426__JAH 1205.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_22077_jhpr_2018_1444_1015'})
+  SET n.title = 'Postharvest application of chitosan and Thymus essential oil increase quality of the table grape cv. ‘Shahroudi’',
+         n.authors = 'Maryam Dehestani-Ardakani; Younes Mostofi',
+         n.year = '2019',
+         n.venue = 'Journal of Horticulture and Postharvest Research',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.22077/jhpr.2018.1444.1015',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=; 本地文件=data\\external\\web_grape_storage\\papers\\doaj\\10.22077_jhpr.2018.1444.1015__article_937_25122b251df7c0c918f599dcb20af9fe.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5513_jcea01_18_3_1934'})
+  SET n.title = 'Postharvest putrescine and ultrasound treatments to improve quality and postharvest life of table grapes (Vitis vinifera L.) cv. Michele Palieri',
+         n.authors = 'Erdinc BAL; Demir KOK; Ali Izzet TORCUK',
+         n.year = '2017',
+         n.venue = 'Journal of Central European Agriculture',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5513/JCEA01/18.3.1934',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=; 本地文件=data\\external\\web_grape_storage\\papers\\doaj\\10.5513_JCEA01_18.3.1934__773873_Postharvest_putrescine_and_ultrasound_treatments_to_improve_quality_and_p; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_22067_jam_v9i2_69423'})
+  SET n.title = 'Effect of Chitosan Coating on Physical, Mechanical and Chemical Properties of Grapes during Storage',
+         n.authors = 'S Khodamoradi; E Ahmadi',
+         n.year = '2019',
+         n.venue = 'Journal of Agricultural Machinery',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.22067/jam.v9i2.69423',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=; 本地文件=data\\external\\web_grape_storage\\papers\\doaj\\10.22067_jam.v9i2.69423__article_33794_4ca659d3e6db76e56996855d8cd1a3ef.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_4172_2157_7471_1000454'})
+  SET n.title = 'Potential of Grape Epiphytic Antagonists to Biocontrol Aspergillus Transmission and Accumulation of Aflatoxin B1 and Ochratoxin A in PostHarvest Taify Table Grape',
+         n.authors = 'Abd El-Raheem R El-Shanshoury; Yasser H El-Halmouch; Samia F Mohamed; Mervat F Fareed',
+         n.year = '2018',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.4172/2157-7471.1000454',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.4172_2157-7471.1000454__potential-of-grape-epiphytic-antagonists-to-biocontrol-aspergillus-transmission-; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_11341997'})
+  SET n.title = 'Grapes Post-harvest Decaying Process,Associated Fungal Pathogens and their Ecofriendly Control by Plant Extracts and Oils',
+         n.authors = 'Syed, Shamsullah',
+         n.year = '2020',
+         n.venue = 'International Journal of Biosciences (IJB)',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.11341997',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.11341997__IJB-V16-No1-p197-204.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_3609980'})
+  SET n.title = 'Isolation and Identification of Post-Harvest Fungal Pathogens of Spoilt Grape Fruits',
+         n.authors = 'Ahmed R. Al-Najada',
+         n.year = '2019',
+         n.venue = 'International Journal of Trend in Scientific Research and Development',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.3609980',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.3609980__209 Isolation and Identification of Post-Harvest Fungal Pathogens of Spoilt Grap; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_15587_1729_4061_2022_268025'})
+  SET n.title = 'Determining quality indicators of table grape varieties during storage in a refrigerating chamber in different variants',
+         n.authors = 'İlhama Kazimova; Ahad Nabiyev',
+         n.year = '2022',
+         n.venue = 'Eastern-European Journal of Enterprise Technologies',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.15587/1729-4061.2022.268025',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.15587_1729-4061.2022.268025__Determining quality indicators of table grape varieties during storage in a refr; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_14006100'})
+  SET n.title = 'Fructo-oligosaccharides in table grapes and response to storage',
+         n.authors = 'Blanch Rojo, Maria; SÁNCHEZ-Ballesta, M. Teresa; Escribano, M.Isabel; Merodio, Carmen',
+         n.year = '2024',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.14006100',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.14006100__1.Fructo-oligosaccharides in table 2011 def.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_14552408'})
+  SET n.title = 'A COMPREHENSIVE REVIEW OF POSTHARVEST TREATMENTS FOR QUALITY RETENTION IN TABLE GRAPES',
+         n.authors = 'Abdusattorov, B.A.; Azizov, A.Sh.',
+         n.year = '2024',
+         n.venue = 'JOURNAL OF AGRICULTURE & HORTICULTURE',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.14552408',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.14552408__JAH 1204.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_3233_aise230025'})
+  SET n.title = 'Deep Learning for Post-Harvest Grape Diseases Detection',
+         n.authors = 'Mohimont, Lucas',
+         n.year = '2023',
+         n.venue = '{"isbn": "978-1-64368-404-8"}',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.3233/AISE230025',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.3233_AISE230025__EAISA2023_paper_3.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_13954891'})
+  SET n.title = 'TECHNOLOGICAL CHARACTERISTICS OF KHORAKI GRAPES IN TERMS OF TRANSPORTABILITY AND DURABILITY',
+         n.authors = 'Shamshiev Jafar',
+         n.year = '2024',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.13954891',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.13954891__3.13.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_33619_2414_2948_44_16'})
+  SET n.title = 'Some Aspects of Recycling and Storage of Secondary Resources of Grape',
+         n.authors = 'Gvinianidze T.; Kamkamidze N.; Tsutskiridze N.',
+         n.year = '2019',
+         n.venue = 'Bulletin of Science and Practice',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.33619/2414-2948/44/16',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.33619_2414-2948_44_16__Gvinianidze T., Kamkamidze N., Tsutskiridze N. .pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_17291487'})
+  SET n.title = 'Beyond culture, production and post-harvest practices with innovative integration of sea grapes (Caulerpa lentillifera): A review on its potential for mass production and adoption',
+         n.authors = 'Maria Danesa S., Rabia',
+         n.year = '2025',
+         n.venue = 'Journal of Biodiversity and Environmental Sciences (JBES)',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.17291487',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.17291487__JBES-V26-No5-p129-137.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_13369476'})
+  SET n.title = 'Technological Assessment of Grape Varieties during the Storage Period',
+         n.authors = 'Saimnazarov Yuldash Bekmirzayevich; Mirzakhidov Bakhtiyor Djaliddinovich; Abduramanova Salamat Khudaybergenovna',
+         n.year = '2024',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.13369476',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.13369476__53-60+Technological+Assessment+of+Grape+Varieties+during+the+Storage+Period.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_1093_hr_uhad283'})
+  SET n.title = 'Dissecting the complex genetic basis of pre- and post-harvest traits in Vitis vinifera L. using genome-wide association studies',
+         n.authors = 'Garcia Abadillo Velasco, Julian; Paola Barbara; Carvalho, Tiago; Sosa zuñiga, Viviana Andrea; Lozano, Roberto; Fanelli Carvalho, Humberto; García-Rosas, Carlos Miguel; SALAZAR, ERIKA; Isidro y Sanchez, Julio',
+         n.year = '2024',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.1093/hr/uhad283',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.1093_hr_uhad283__36_2024_Garcia-Abadillo et al.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_22077_jhpr_2026_9846_1556'})
+  SET n.title = 'VvPPO1 expression analysis and polyphenol oxidase activity during Vitis vinifera L. berry development: PPO inhibitory effects of catechin and Rosa canina extract',
+         n.authors = 'Mohammad Javad Marefatjoo; Mehdi Ghabooli; Kamahldin Haghbeen; Zahra Movahedi; Behroz Mohammadparast',
+         n.year = '2026',
+         n.venue = 'Journal of Horticulture and Postharvest Research',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.22077/jhpr.2026.9846.1556',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=; 本地文件=data\\external\\web_grape_storage\\papers\\doaj\\10.22077_jhpr.2026.9846.1556__article_4327_ce016f59ecc2366a43e1c96a4774d167.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_3607846'})
+  SET n.title = 'Effects of Grape Seed Oil on Postharvest Life and Quality of Some Grape Cultivars',
+         n.authors = 'Zeki Kara; Kevser Yazar',
+         n.year = '2019',
+         n.venue = 'International Journal of Biological, Life and Agricultural Sciences',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.3607846',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.3607846__10009972.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_3348647'})
+  SET n.title = 'Postharvest Quality of Shattered Grapes Coated with Chitosan and Stored under Refrigeration',
+         n.authors = 'Clemente, Edmar; M. S., TAMURA',
+         n.year = '2014',
+         n.venue = 'International Journal of Sciences',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.3348647',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.3348647__V320140209.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_20175512'})
+  SET n.title = 'Effect of a pectin edible coating obtained from orange peels with lemon essential oil on the shelf life of table grapes (Vitis vinifera L. var. Red Globe)',
+         n.authors = 'BRECEDA-HERNÁNDEZ, TANIA GUADALUPE; MARTÍNEZ-RUIZ, NINA DEL ROCÍO; SERNA-GUERRA, LAURA; HERNANDEZ-CARRILLO, JOCELIN GABRIELA',
+         n.year = '2020',
+         n.venue = 'International Food Research Journal',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.20175512',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.20175512__DONE - 20 - IFRJ19860.R2.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_4081_jae_2020_954'})
+  SET n.title = 'Shipping container equipped with controlled atmosphere: Case study on table grape',
+         n.authors = 'Pace, Bernardo; Cefola, Maria; Logrieco, Antonio Francesco; Sciscio, Berardo; Sacchetti, Antonio; Siliberti, Massimiliano; Laforgia, Paolo; Amodio, Angelo; Calderoni, Giovanni; Garavelli, Claudio Achille; Amodio, Maria Luisa; Colelli, Giancarlo',
+         n.year = '2020',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.4081/jae.2020.954',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-nc-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.4081_jae.2020.954__fulltext.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_20870_oeno_one_2020_54_4_4165'})
+  SET n.title = 'Ultrastructural analysis of berry skin from four grapes varieties at harvest and in relation to postharvest dehydration',
+         n.authors = 'Brizzolara, Stefano; Minnocci, Antonio; Yembaturova, Elena; Tonutti, Pietro',
+         n.year = '2020',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.20870/oeno-one.2020.54.4.4165',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=other-open; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.20870_oeno-one.2020.54.4.4165__fulltext.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_5281_zenodo_6804996'})
+  SET n.title = 'TECHNOLOGY OF DRYING AND QUALITY PRESERVATION OF FRUIT AND GRAPES',
+         n.authors = 'Botirova Nargiza Abdumo\'min qizi Saydullayeva Madina Elyor qizi',
+         n.year = '2022',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.5281/zenodo.6804996',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.5281_zenodo.6804996__D-71.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_1016_j_fpsl_2020_100545'})
+  SET n.title = 'Active packaging for table grapes: Evaluation of antimicrobial performances of packaging for shelf life of the grapes under thermal stress',
+         n.authors = 'Gorrasi, Giuliana; Bugatti, Valeria; Vertuccio, Luigi; Vittoria, Vittoria; Pace, Bernardo; Cefola, Maria; Quintieri, Laura; Bernardo, Paola; Clarizia, Gabriele',
+         n.year = '2020',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.1016/j.fpsl.2020.100545',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.1016_j.fpsl.2020.100545__fulltext.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
+MERGE (n:Source {id: 'web_10_3390_horticulturae10040419'})
+  SET n.title = 'Inclusion of Antifungal and Probiotic Lactiplantibacillus plantarum Strains in Edible Alginate Coating as a Promising Strategy to Produce Probiotic Table Grapes and Exploit Biocontrol Activity',
+         n.authors = 'De Simone, Nicola; Scauro, Angela; Russo, Pasquale; Capozzi, Vittorio; Spano, Giuseppe; Fragasso, Mariagiovanna',
+         n.year = '2024',
+         n.venue = 'Horticulturae',
+         n.type = '论文',
+         n.doi_url = 'https://doi.org/10.3390/horticulturae10040419',
+         n.access = 'public',
+         n.note = '外部开放获取文献；license=cc-by-4.0; 本地文件=data\\external\\web_grape_storage\\papers\\zenodo\\10.3390_horticulturae10040419__horticulturae-10-00419.pdf; 仅作题录与证据溯源，未将全文自动当事实。';
 
 // 节点写入完毕；随后执行 graph/init_rels.cypher
 MATCH (n) RETURN labels(n)[0] AS label, count(*) AS cnt ORDER BY label;

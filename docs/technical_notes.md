@@ -19,8 +19,8 @@
 
 ## 3. 数据口径
 
-- 知识实体 **58**（品种 8、条件 30、指标 13、病害 7）；来源节点 **19**；图谱节点 **77**（58 + 19）。
-- 三元组 **115**：`verified` 69、`anchor` 46；9 种谓词。
+- 知识实体 **63**（品种 8、条件 35、指标 13、病害 7）；来源节点 **45**；图谱节点 **108**（63 + 45）。
+- 三元组 **125**：`verified` 69、`anchor` 56；9 种谓词。
 - 科普描述 28 个节点；阳光玫瑰 S2a 快照 20 条。
 - 数据唯一真相是 `data/*.csv`，Cypher 由脚本生成；统计口径、来源清单与核验规则见 [data.md](data.md)、[sources.md](sources.md)。
 
@@ -32,29 +32,34 @@
 4. 证据分级：`verified` 可作确定结论；`anchor` 必须标「待核验」，高风险参数只给方向；
 5. 失败降级：无 Key/超时/401/429/5xx/图谱不可用等均有明确告警与模板兜底。
 
+- 安全护栏：明显提示注入（忽略证据/系统指令/编造数据）直接拒答；药剂、熏蒸、剂量等高风险主题附加 `high_risk_topic` 告警；`AnswerResult` 支持 `to_json()` 结构化输出。
+
 以上校验是规则启发式，不能替代语义级事实核查，边界见 [limitations.md](limitations.md)。
 
-## 5. 验证结果（2026-11-22，当前工作区）
+## 5. 验证结果（2026-11-27，v1.4.1 交付修复后本地复测）
 
 | 项 | 结果 |
 |---|---|
-| pytest | 325 passed / 2 skipped（2026-11-22 当前工作区） |
-| 数据校验 | 十项通过，错误 0，告警 2（anchor quote 为空，符合规则） |
-| Cypher | 静态校验通过、生成物无漂移；Kùzu 实跑 77 节点/115 关系，6 题与本地后端一致 |
-| 黄金集 | 核心题 5/5、越界探针 1/1、口语意图 12/12、实体命中 12/12 |
-| CI | GitHub Actions 2/2 job 通过（run 44987585590，基线 3d0a2d6） |
-| 部署 | ModelScope 运行文件与本地 26/26 一致；`/_stcore/health` 200 |
+| pytest | **426 passed / 2 skipped**（2 skipped：Neo4j 驱动、默认跳过的 LLM 联网用例） |
+| 覆盖率 | **83%**（`--cov=app`；`app/ui.py` 不计入，`neo4j_store.py` 0%） |
+| 数据校验 | 十项通过，错误 0，告警 2（46 条 anchor quote 为空，符合规则）；总数据行 233 |
+| Cypher | 静态校验与生成漂移通过；Kùzu 实跑 108 节点/125 关系，6 题与本地后端一致 |
+| 黄金集 | **28/28 通过**（answer 19 + refuse 9）：意图、主实体覆盖、引用有效、数值一致均 100%，拒答准确率 9/9，口语变体 12/12，Q6 命中 `out_of_range` |
+| Lint / 文档 | ruff All checks passed；`check_docs_consistency.py` 0 漂移 |
+| CI | **本地全绿；推送后由 GitHub Actions 复核**（最近一次历史 run `44987585590` 为 `3d0a2d6` 基线） |
+
+| 部署 | 公网 Demo 仍为 2026-11-22 旧版，v1.4 尚未上传（以 [deploy.md](deploy.md) 为准） |
 
 详细命令、在线 LLM 历史记录与 CI 状态见 [validation.md](validation.md)。
 
 ## 6. 部署与复现
 
-- 当前基线：GitHub `main` / `3d0a2d6`；ModelScope 上传记录 `7ac82cb`；
-- 公网演示：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间）；
+- 当前基线：v1.4 数据 + v1.4.1 交付修复的本地交付版本（提交后回填 commit）；
+- 公网演示：<https://yuzherumo-grape-storage-kg-qa.ms.show>（魔搭创空间，**仍是旧版，待上传**；上传记录 `7ac82cb` 为 2026-11-22）；
 - 本地：`.\install.ps1` → `.\run.ps1` → `http://127.0.0.1:8501`；无 Key/断网可用；
 - 部署与打包细节见 [deploy.md](deploy.md)、[packaging.md](packaging.md)。
 
 ## 7. 限制与 AI 使用
 
-- 限制摘要：演示级数据规模、46 条 anchor 待核验、Neo4j 服务端未实跑、校验为启发式、在线 LLM 有随机性；完整列表见 [limitations.md](limitations.md)。
+- 限制摘要：演示级数据规模、56 条 anchor 待核验、Neo4j 服务端未实跑、校验为启发式、在线 LLM 有随机性；完整列表见 [limitations.md](limitations.md)。
 - AI 参与编码、文档与多智能体协作，数值/来源由人工把关；详见 [ai_usage.md](ai_usage.md)。

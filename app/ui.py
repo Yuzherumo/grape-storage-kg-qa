@@ -37,9 +37,17 @@ import streamlit.components.v1 as components
 
 from app.contracts import (
     WARN_ANCHOR_HIGH_RISK,
+    WARN_ANCHOR_OVERCLAIM,
     WARN_ANCHOR_UNVERIFIED,
+    WARN_BACKEND_FALLBACK,
     WARN_CITATION_MISMATCH,
+    WARN_HIGH_RISK_TOPIC,
     WARN_LLM_ANSWER_REJECTED,
+    WARN_LOW_CONFIDENCE_INTENT,
+    WARN_OUT_OF_DOMAIN,
+    WARN_OUT_OF_SCOPE,
+    WARN_PROMPT_INJECTION,
+    WARN_STORE_ERROR,
     WARN_SYSTEM_UNAVAILABLE,
     WARN_UNSUPPORTED_FACT,
     AnswerResult,
@@ -322,10 +330,22 @@ def build_graph_html(view: str) -> tuple[str, dict[str, int]]:
         return "<p>图谱渲染失败：" + _esc(exc) + "</p>", {}
 
 
-def graph_stats(rt: Runtime) -> dict[str, int]:
-    out = {"entities": _rows(DATA / "entities.csv"), "sources": _rows(DATA / "sources.csv"),
-           "triples": _rows(DATA / "triples.csv")}
+@st.cache_data(show_spinner=False, ttl=600)
+def _file_counts() -> dict[str, int]:
+    """CSV 行数统计（每 rerun 都读 3 个文件太浪费，缓存 10 分钟；数据更新后最迟 10 分钟刷新）。"""
+    out = {
+        "entities": _rows(DATA / "entities.csv"),
+        "sources": _rows(DATA / "sources.csv"),
+        "triples": _rows(DATA / "triples.csv"),
+    }
     out["nodes"] = out["entities"] + out["sources"]
+    return out
+
+
+def graph_stats(rt: Runtime) -> dict[str, int]:
+    # 文件行数走缓存；store 统计不缓存（不把 store/hash 放进 st.cache_data，
+    # 避免把连接对象或数据快照长期持有），本地后端开销很小。
+    out = dict(_file_counts())
     try:
         s = rt.store.stats() if rt.store is not None else {}
         out["varieties"] = int(s.get("varieties", 0))
@@ -336,6 +356,7 @@ def graph_stats(rt: Runtime) -> dict[str, int]:
     return out
 
 
+@st.cache_data(show_spinner=False, ttl=600)
 def load_vocab() -> tuple[list[str], list[str]]:
     varieties: list[str] = []
     diseases: list[str] = []
@@ -520,13 +541,23 @@ def render_sidebar(rt: Runtime) -> dict[str, Any]:
 
 # ---------------------------------------------------------------- 渲染
 # 新告警码（app/contracts.py 定义）→ (颜色, 短标签)
+# 约束：contracts 里的每个 WARN_* 都必须在这里或 _WARN_TEXT 有映射（tests 会穷尽断言），
+# 否则用户会直接看到英文告警码。
 _WARN_LABELS: dict[str, tuple[str, str]] = {
     WARN_SYSTEM_UNAVAILABLE: ("red", "系统不可用"),
     WARN_ANCHOR_UNVERIFIED: ("amber", "待核验"),
     WARN_ANCHOR_HIGH_RISK: ("red", "高风险参数待核验"),
+    WARN_ANCHOR_OVERCLAIM: ("amber", "待核验措辞过强"),
     WARN_UNSUPPORTED_FACT: ("amber", "事实缺引用"),
     WARN_CITATION_MISMATCH: ("amber", "引用与内容不匹配"),
     WARN_LLM_ANSWER_REJECTED: ("amber", "已回退证据模板"),
+    WARN_STORE_ERROR: ("amber", "补充查询失败"),
+    WARN_OUT_OF_DOMAIN: ("gray", "非葡萄果品"),
+    WARN_OUT_OF_SCOPE: ("gray", "超出图谱范围"),
+    WARN_PROMPT_INJECTION: ("red", "指令注入已拦截"),
+    WARN_HIGH_RISK_TOPIC: ("amber", "高风险操作"),
+    WARN_BACKEND_FALLBACK: ("gray", "后端回落"),
+    WARN_LOW_CONFIDENCE_INTENT: ("blue", "意图不确定"),
 }
 
 _WARN_TEXT: dict[str, str] = {
@@ -541,9 +572,17 @@ _WARN_TEXT: dict[str, str] = {
     WARN_SYSTEM_UNAVAILABLE: "问答系统未就绪，不返回固定答案",
     WARN_ANCHOR_UNVERIFIED: "使用了待核验证据",
     WARN_ANCHOR_HIGH_RISK: "仅待核验证据给出高风险参数",
+    WARN_ANCHOR_OVERCLAIM: "待核验证据被描述成已证实",
     WARN_UNSUPPORTED_FACT: "事实句缺少证据引用",
     WARN_CITATION_MISMATCH: "引用与内容不匹配",
     WARN_LLM_ANSWER_REJECTED: "大模型答案未通过校验，已回退证据模板",
+    WARN_STORE_ERROR: "补充查询失败，未确认的部分不等于图谱未收录",
+    WARN_OUT_OF_DOMAIN: "问句指向非葡萄果品，已离域拒答",
+    WARN_OUT_OF_SCOPE: "问句超出图谱范围（农残/安全限量等），不编造数据",
+    WARN_PROMPT_INJECTION: "检测到绕过证据约束的指令，已拒绝执行",
+    WARN_HIGH_RISK_TOPIC: "涉及药剂/熏蒸/剂量等高风险操作，请以标签和当地技术员为准",
+    WARN_BACKEND_FALLBACK: "Neo4j 不可用，已回落本地后端",
+    WARN_LOW_CONFIDENCE_INTENT: "意图识别置信度低，答案仅供参考",
 }
 
 

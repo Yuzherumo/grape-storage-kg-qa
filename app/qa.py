@@ -21,17 +21,23 @@ from typing import Any
 
 from app.contracts import (
     WARN_ANCHOR_HIGH_RISK,
+    WARN_ANCHOR_OVERCLAIM,
     WARN_ANCHOR_UNVERIFIED,
     WARN_BACKEND_FALLBACK,
     WARN_CITATION_MISMATCH,
+    WARN_HIGH_RISK_TOPIC,
     WARN_LLM_ANSWER_REJECTED,
     WARN_LLM_TIMEOUT,
     WARN_LLM_UNAVAILABLE,
     WARN_LOW_CONFIDENCE_INTENT,
     WARN_NO_CITATION,
     WARN_NO_EVIDENCE,
+    WARN_OUT_OF_DOMAIN,
     WARN_OUT_OF_RANGE,
+    WARN_OUT_OF_SCOPE,
+    WARN_PROMPT_INJECTION,
     WARN_SINGLE_SOURCE,
+    WARN_STORE_ERROR,
     WARN_UNSUPPORTED_FACT,
     AnswerResult,
     EntityHit,
@@ -40,6 +46,12 @@ from app.contracts import (
 )
 from app.llm import LLMClient, LLMUnavailable
 from app.planner import build_query, contains_term, detect_topics, normalize_question, route
+from app.planner_rules import (
+    NON_GRAPE_FRUIT_TERMS,
+    OPERATION_CONDITIONS,
+    RESIDUE_TERMS,
+    UNLISTED_VARIETY_TERMS,
+)
 
 PRED_LABEL = {
     "REQUIRES": "需要条件",
@@ -52,8 +64,6 @@ PRED_LABEL = {
     "INDICATES": "预警信号",
     "HAS_INDICATOR_VALUE": "指标基线",
 }
-
-WARN_ANCHOR_OVERCLAIM = "anchor_overclaim"
 
 SINGLE_SOURCE_PREDS = {"CONTRA_INDICATED_FOR", "ALTERNATIVE_TO", "INDICATES"}
 
@@ -84,17 +94,69 @@ def _has_high_risk_param(text: str) -> bool:
     return any(term in text for term in HIGH_RISK_TERMS)
 
 
+# ------------------------------------------------------------------ 安全护栏
+_PROMPT_INJECTION_PATTERNS = (
+    re.compile(r"(忽略|无视|绕过|跳过).{0,12}(之前|以上|前面|所有|系统).{0,8}(指令|提示|规则|限制|证据|要求)", re.I),
+    re.compile(r"(不要|别).{0,8}(引用|依据|看|使用).{0,6}(证据|来源|图谱)", re.I),
+    re.compile(r"(编造|伪造|虚构|随便生成).{0,12}(数据|答案|来源|引用)", re.I),
+    re.compile(r"(系统提示|system prompt|developer mode|越狱|jailbreak|ignore (all |previous )?(instructions|rules|prompts))", re.I),
+)
+_HIGH_RISK_TOPIC_TERMS = (
+    "农药", "药剂", "熏蒸", "SO₂", "SO2", "二氧化硫", "1-MCP", "1-mcp",
+    "浓度", "剂量", "用量", "处理时间", "浸泡", "喷施", "保鲜剂",
+)
+
+
+def _detect_prompt_injection(question: str) -> bool:
+    """轻量规则：检测明显的“绕过证据/系统提示”指令；不追求语义完备。"""
+    q = normalize_question(question)
+    return any(p.search(q) for p in _PROMPT_INJECTION_PATTERNS)
+
+
+def _detect_high_risk_topic(question: str) -> bool:
+    """识别涉及药剂/熏蒸/剂量等高风险操作的问题，用于附加安全提示。"""
+    q = normalize_question(question)
+    return any(term in q for term in _HIGH_RISK_TOPIC_TERMS)
+
+
 
 # ------------------------------------------------------------------ 工具
+# 本地后端缓存：默认路径下每次 answer_question 都 new LocalStore 会重复读 3 个 CSV 并重建索引
+# （实测 ~8ms/次）。按 (data_dir, 各数据文件 mtime_ns/size) 复用；文件改动后自动失效。
+# 显式传入 store 时始终优先，不受本缓存影响。
+_STORE_CACHE: dict[tuple, Any] = {}
+_STORE_FILES = ("entities.csv", "sources.csv", "triples_shine_muscat.csv", "triples.csv")
+
+
+def _store_cache_key(data_path: Any) -> tuple:
+    stamps: list[tuple[str, int | None, int | None]] = []
+    for name in _STORE_FILES:
+        try:
+            stat = (data_path / name).stat()
+            stamps.append((name, stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            stamps.append((name, None, None))
+    return (str(data_path), tuple(stamps))
+
+
 def _get_store(store: Any = None, settings: Any = None):
+    """显式传入的 store 优先；否则按数据文件 mtime 复用 LocalStore（避免每问重建）。"""
     if store is not None:
         return store
     from app.config import load_settings
 
     settings = settings or load_settings()
+    data_path = settings.data_path
+    key = _store_cache_key(data_path)
+    cached = _STORE_CACHE.get(key)
+    if cached is not None:
+        return cached
     from app.store import get_store  # 延迟导入，允许 store 未就绪时仍可 import 本模块
 
-    return get_store(settings)
+    built = get_store(settings)
+    _STORE_CACHE.clear()
+    _STORE_CACHE[key] = built
+    return built
 
 
 def _fmt_value(e: Evidence) -> str:
@@ -356,6 +418,24 @@ def _restrict_to_hit_varieties(evidence: Sequence[Evidence], hits: Sequence[Enti
     return kept
 
 
+def _restrict_to_hit_treatment(evidence: Sequence[Evidence], hits: Sequence[EntityHit]) -> list[Evidence]:
+    """处理/指标类问题优先保留直接触达命中条件的边，避免把同主题的其它处理带出来。"""
+    if any(h.label == "Variety" for h in hits):
+        return list(evidence)
+    condition_ids = {h.node_id for h in hits if h.label == "Condition"}
+    indicator_ids = {h.node_id for h in hits if h.label == "QualityIndicator"}
+    primary = condition_ids or indicator_ids
+    if not primary:
+        return list(evidence)
+    touched: list[Evidence] = []
+    for item in evidence:
+        ids = {str(item.properties.get("subject_id") or ""), str(item.properties.get("object_id") or "")}
+        if ids & primary or item.subject in primary or item.object in primary:
+            touched.append(item)
+    # 条件命中时优先只保留触达条件的边；没有条件边时才回退到指标相关边/原结果。
+    return touched or list(evidence)
+
+
 def _missing_evidence_answer(question: str, hits: Sequence[EntityHit], topics: set[str]) -> str:
     names = "、".join(dict.fromkeys(h.surface or h.node_id for h in hits)) if hits else ""
     topic_cn = "、".join(_TOPIC_CN[t] for t in sorted(topics) if t in _TOPIC_CN)
@@ -406,6 +486,7 @@ def template_answer(
     entities: Sequence[EntityHit],
     out_of_range: bool,
     missing_shelf_ids: set | None = None,
+    failed_shelf_ids: set | None = None,
 ) -> str:
     """模板答案：结论 + 依据。每句带 [E#]。"""
     if not evidence:
@@ -478,6 +559,13 @@ def template_answer(
         missing = [m for m in missing if f"图谱未收录{m}的" not in head]
         if missing:
             head += "；图谱未收录" + "、".join(missing) + "的耐贮性数值"
+        # 补查后端异常 ≠ 未收录：单独说明「本轮没取到」，避免把抖动写成数据缺失
+        failed: list[str] = []
+        for h in [x for x in entities if x.label == "Variety"]:
+            if failed_shelf_ids and h.node_id in failed_shelf_ids and h.surface not in failed:
+                failed.append(h.surface)
+        if failed:
+            head += "；本轮查询" + "、".join(failed) + "的耐贮性失败（后端异常），未能确认"
         head += "。"
     elif intent == "contraindication":
         c = next((e for e in evidence if e.predicate == "CONTRA_INDICATED_FOR"), None)
@@ -1058,9 +1146,11 @@ def _load_catalog_cached(path: str):
 _FOLLOWUP_CUES = ("那", "那么", "这", "这个", "那个", "它", "它们", "还有", "再", "换成", "继续")
 _FOLLOWUP_PRONOUNS = ("它", "它们", "这个", "那个", "上述", "前面")
 _FOLLOWUP_ATTR_WORDS = (
-    "温度", "湿度", "气调", "贮藏", "储存", "冷藏", "预冷", "耐贮", "货架", "糖度",
+    "温度", "湿度", "气调", "贮藏", "储存", "冷藏", "冷库", "预冷", "耐贮", "货架", "糖度",
     "酸度", "指标", "病害", "虫害", "腐烂", "霉", "保鲜", "参数", "要求", "标准",
     "多少", "几度", "多久", "怎么", "办", "处理", "防治", "预防", "注意", "影响",
+    # 量词/单位：让「那多少度」「那几天呢」这类省略式追问也能继承上一轮实体
+    "度", "天", "小时", "次", "斤", "克", "箱", "袋", "份", "量",
 )
 # 追问里可安全忽略的虚词/问句填充词（用于判断 remainder 是不是新名词）
 _QUESTION_FILLERS = (
@@ -1092,6 +1182,17 @@ def _is_referential_followup(question: str) -> bool:
     if not rest:
         return True
     return any(word in rest for word in _FOLLOWUP_ATTR_WORDS)
+
+
+def _matched_terms(question: str, terms: Sequence[str]) -> list[str]:
+    """问句命中了词表里的哪些词（归一化后子串匹配，去重保序）。"""
+    normalized = normalize_question(question)
+    return [term for term in terms if term in normalized]
+
+
+def _is_non_grape_question(question: str) -> bool:
+    """问句是否指向非葡萄果品（苹果/梨/桃/柑橘…）；命中即离域，交给调用方拒答。"""
+    return bool(_matched_terms(question, NON_GRAPE_FRUIT_TERMS))
 
 
 # ------------------------------------------------------------------ 主流程
@@ -1126,6 +1227,19 @@ def answer_question(
         result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
         return result
 
+    # 0) 安全护栏：提示注入直接拒绝，不进入实体链接/查询/LLM
+    if _detect_prompt_injection(q):
+        warnings.append(WARN_PROMPT_INJECTION)
+        result.answer = (
+            "结论：检测到试图绕过证据约束的指令，系统不会执行。\n\n"
+            "依据：本系统只依据图谱证据回答，不能忽略来源、编造数据或关闭约束。\n\n"
+            "可以改问一个具体的葡萄采后贮藏问题，例如「阳光玫瑰放冷库该调到多少度？」"
+        )
+        result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
+        return result
+    if _detect_high_risk_topic(q):
+        warnings.append(WARN_HIGH_RISK_TOPIC)
+
     # 1) 实体链接（词表按 mtime 缓存，避免每问重建）
     try:
         from app.config import load_settings as _ls
@@ -1156,17 +1270,64 @@ def answer_question(
             )
     result.entities = hits
     topics = detect_topics(q)
+    # 1.6) 离域拒答：问的不是葡萄（苹果/梨/桃/柑橘…），且没有命中任何葡萄品种/病害实体。
+    #      不能拿全库葡萄证据回答其他果品（历史审计：苹果冷藏温度会返回 6 条葡萄温度边）。
+    if _is_non_grape_question(q) and not any(h.label in ("Variety", "Disease") for h in hits):
+        warnings.append(WARN_OUT_OF_DOMAIN)
+        return _refuse(
+            "结论：本系统只覆盖鲜食葡萄的采后贮藏，不拿葡萄数据回答其他果品。\n\n"
+            "依据：问句指向非葡萄果品，图谱中没有对应证据。\n\n"
+            "可以改问葡萄相关问题，例如「阳光玫瑰放冷库该调到多少度？」"
+        )
+    # 1.7) 域外话题：农残/安全限量/重金属不在本图谱范围，直接拒答（不编造限量值，
+    #      也不能被路由成品种对比后拿耐贮性数据顶替）。
+    residue_terms = _matched_terms(q, RESIDUE_TERMS)
+    if residue_terms:
+        warnings.append(WARN_OUT_OF_SCOPE)
+        return _refuse(
+            "结论：本图谱只覆盖鲜食葡萄采后贮藏技术，不含农药残留/最大残留限量/重金属等安全限量数据，"
+            "不编造限量值。\n\n"
+            "依据：问句涉及图谱范围外的食品安全限量指标。\n\n"
+            "可以改问贮藏相关问题，例如「阳光玫瑰放冷库该调到多少度？」"
+        )
+    # 1.8) 未收录品种（通用守卫）：只要问句提到「图谱暂未收录的品种词」就拒答——
+    #      无论意图是温度/湿度/耐贮性/对比，也无论是否同时命中已收录品种；
+    #      否则「妮娜皇后冷藏温度」会拿户太八号/维多利亚的温度顶替（Lead 复核）。
+    unlisted_terms = _matched_terms(q, UNLISTED_VARIETY_TERMS)
+    if unlisted_terms:
+        names = "、".join(dict.fromkeys(unlisted_terms))
+        warnings.append(WARN_OUT_OF_SCOPE)
+        return _refuse(
+            f"结论：图谱暂未收录「{names}」这个品种，不拿其他品种的数据代替。\n\n"
+            "依据：该品种不在当前词表中，图谱没有对应证据。\n\n"
+            "可以改问已收录品种（阳光玫瑰、巨峰、红地球、夏黑、玫瑰香、克瑞森无核），"
+            "例如「阳光玫瑰放冷库几度？」"
+        )
     # 「那湿度呢」这类指代追问若上一轮也没有实体：先澄清，不能拿通用湿度/其他品种凑答案。
     followup_without_context = _is_referential_followup(q) and not hits and not prev_ctx.get("entities")
 
     # 2) 意图路由
     intent, confidence, candidates = route(q, hits)
-    if result.context_note and intent == "general" and prev_ctx.get("intent"):
-        intent, confidence = str(prev_ctx["intent"]), max(confidence, 0.4)
+    prev_intent = str(prev_ctx.get("intent") or "")
+    inherited_single_variety = len({h.node_id for h in hits if h.label == "Variety"}) == 1
+    if result.context_note and prev_intent:
+        # 继承实体后由「实体先验」单独拉出的 general/variety_compare 不算独立意图信号：
+        # 「还有呢」不应被判成品种对比，应回落上一轮意图（如 temperature）。
+        if intent == "general" or (intent == "variety_compare" and inherited_single_variety):
+            intent, confidence = prev_intent, max(confidence, 0.4)
     # 显式问温度/冷冻（「零下18度能放吗」「冻起来能存一年吗」）优先按 temperature 处理，
     # 否则会被 shelf_life 等触发词抢占，导致越界数值漏检（历史审计 S2）。
     if intent in ("shelf_life", "quality_indicator") and _question_requests_temperature(q):
         intent, confidence = "temperature", max(confidence, 0.4)
+    # 处理条件 + 品质指标的问题（如“百里香精油涂膜能减少腐烂吗”）不应被“腐烂”误路由到
+    # disease_control；没有命中 Disease 时按 quality_indicator 查 AFFECTS 边。
+    if (
+        intent in ("disease_control", "disease_risk")
+        and not any(h.label == "Disease" for h in hits)
+        and any(h.label == "Condition" for h in hits)
+        and any(h.label == "QualityIndicator" for h in hits)
+    ):
+        intent, confidence = "quality_indicator", max(confidence, 0.45)
     result.intent, result.intent_confidence = intent, confidence
     if confidence < 0.35 and intent != "general":
         warnings.append(WARN_LOW_CONFIDENCE_INTENT)
@@ -1236,10 +1397,18 @@ def answer_question(
     evidence = sorted(evidence, key=lambda ev: (_touch_rank(ev), ev.score), reverse=True)
     cap = max(int(k or 6), 12) if intent in ("variety_compare", "general") else max(1, int(k or 6))
     evidence = _dedupe(evidence)[:cap]
+    # 条文型「操作条件」（包装/入库量/堆码/档案记录…）问的是该条文本身，主题词过滤会误伤：
+    # 「葡萄档案记录保存多久」里的「存多久」会被当成货架期主题，把 sm_req_archive 事实滤掉，
+    # 从而误报 no_evidence。仅在「过滤后为空」时回退到实体中心检索结果（不改变能正常过滤的场景）。
     focused, missing_topic = _focus_evidence_for_question(q, evidence, intent)
+    if missing_topic and intent == "general" and any(
+        h.node_id in OPERATION_CONDITIONS for h in hits
+    ):
+        focused, missing_topic = list(evidence), None
     if missing_topic:
         return _refuse(_missing_evidence_answer(q, hits, {missing_topic}))
     evidence = _restrict_to_hit_varieties(focused, hits)
+    evidence = _restrict_to_hit_treatment(evidence, hits)
     if not evidence:
         if hits or topics:
             return _refuse(_missing_evidence_answer(q, hits, topics))
@@ -1284,6 +1453,7 @@ def answer_question(
 
     # 4.6) 品种对比：逐品种核对「耐贮性」基线是否真的在图中（避免把「没取到」误报成「未收录」）
     missing_shelf_ids: set = set()
+    failed_shelf_ids: set = set()
     if intent == "variety_compare" and store_obj is not None:
         variety_hits = [h for h in hits if h.label == "Variety"]
 
@@ -1303,13 +1473,16 @@ def answer_question(
                 extra = list(store_obj.execute(
                     QuerySpec("shelf_life", params={"variety_ids": [h.node_id], "k": 4})
                 ) or [])
-            except Exception:
+            except Exception as exc:
+                # 后端异常 ≠ 图谱未收录：单独告警并保留异常类型/信息，绝不写成「未收录」。
                 extra = []
+                failed_shelf_ids.add(h.node_id)
+                warnings.append(f"{WARN_STORE_ERROR}:{type(exc).__name__}:{str(exc)[:80]}")
             hit = [e2 for e2 in extra if e2.properties.get("subject_id") == h.node_id and _has_value([e2])]
             if hit:
                 evidence = _dedupe(evidence + hit)
                 found.add(h.node_id)
-            else:
+            elif h.node_id not in failed_shelf_ids:
                 missing_shelf_ids.add(h.node_id)
         # 补充证据后重新编号/回填（新增行带空 eid，必须重排）
         if evidence:
@@ -1321,7 +1494,9 @@ def answer_question(
     out_of_range = detect_out_of_range(q, evidence) if evidence else False
 
     # 6) 生成
-    tpl = template_answer(intent, q, evidence, hits, out_of_range, missing_shelf_ids)
+    tpl = template_answer(
+        intent, q, evidence, hits, out_of_range, missing_shelf_ids, failed_shelf_ids
+    )
     answer = tpl
     result.mode = "template"
 
@@ -1339,20 +1514,28 @@ def answer_question(
         cache_key = _llm_cache_key(q, evidence)
         try:
             cached_text = _LLM_CACHE.get(cache_key)
-            if cached_text is not None:
-                text = cached_text
-            else:
-                text = llm.complete(messages)
-                if len(_LLM_CACHE) >= _LLM_CACHE_MAX:
-                    _LLM_CACHE.clear()
-                _LLM_CACHE[cache_key] = text
+            from_cache = cached_text is not None
+            text = cached_text if from_cache else llm.complete(messages)
             # 全角【E1】/小写 [e1] 先规范成 [E1]，再走引用校验
             answer = _canonicalize_citations(text)
             result.mode = "llm"
             cited, w = verify_citations(answer, evidence)
             corrected_once = False
-            if not cited:
-                # 不合格 → 纠正一次
+            if any(code.startswith("invalid_citation:") for code in w):
+                # 先清理「编号无效」的句子（保留有效引用的句子），再判断是否真的缺引用；
+                # 不能把「编号无效」误报成「没有给出引用」再白跑一次纠正。
+                cleaned, invalid_ids, remaining = _sanitize_invalid_citations(answer, evidence)
+                answer, cited = cleaned, remaining
+                for cid in invalid_ids:
+                    code = f"invalid_citation:{cid}"
+                    if code not in warnings:
+                        warnings.append(code)
+                if not cited:
+                    warnings.append(WARN_NO_CITATION)
+                    warnings.append(WARN_LLM_ANSWER_REJECTED)
+                    answer, result.mode = tpl, "template"
+            if result.mode == "llm" and not cited:
+                # 确实没有引用 → 纠正一次
                 messages2 = messages + [
                     {"role": "assistant", "content": text},
                     {"role": "user", "content": "你的回答没有给出 [E#] 证据引用。请只依据证据重写，每个结论后必须带 [E#]。"},
@@ -1410,9 +1593,17 @@ def answer_question(
                         result.cited_ids = []
             result.cited_ids = cited if result.mode == "llm" else []
         except LLMUnavailable as exc:
-            warnings.append(WARN_LLM_TIMEOUT if "timeout" in str(exc).lower() else WARN_LLM_UNAVAILABLE)
+            # 按异常自带的 kind 分类（不再靠消息里是否含 "timeout" 的字符串匹配）：
+            # timeout / network 属「等不到模型」，其余（auth/rate_limit/server/bad_request/unknown）
+            # 属「模型不可用」；error_kind 写入 llm_meta 供 UI/排障使用（不含 key）。
+            error_kind = str(getattr(exc, "kind", "") or "unknown")
+            warnings.append(
+                WARN_LLM_TIMEOUT if error_kind in ("timeout", "network") else WARN_LLM_UNAVAILABLE
+            )
+            result.llm_meta["error_kind"] = error_kind
             answer, result.mode = tpl, "template"
-        except Exception:
+        except Exception as exc:  # 兜底：不把未知异常当成「模型不可用」的具体原因，但必须留痕
+            result.llm_meta["error_kind"] = type(exc).__name__
             warnings.append(WARN_LLM_UNAVAILABLE)
             answer, result.mode = tpl, "template"
 
@@ -1431,6 +1622,12 @@ def answer_question(
                 answer = tpl
                 result.mode = "template"
                 result.cited_ids = []
+        # 只缓存「通过引用清理、仍为 LLM 答案」的文本：无效/被拒文本不进缓存，
+        # 否则同一问题下一轮会命中坏缓存并再次降级（缓存键也不含模型/状态，见测试隔离）。
+        if result.mode == "llm" and not from_cache:
+            if len(_LLM_CACHE) >= _LLM_CACHE_MAX:
+                _LLM_CACHE.clear()
+            _LLM_CACHE[cache_key] = answer
 
     if result.mode == "template":
         cited, _w = verify_citations(answer, evidence)
@@ -1496,7 +1693,9 @@ def answer_question(
     # 9) 元信息（告警去重保序）
     result.warnings = list(dict.fromkeys(warnings))
     if llm is not None and hasattr(llm, "last_usage"):
-        result.llm_meta = dict(llm.last_usage or {})
+        meta = dict(llm.last_usage or {})
+        meta.update(result.llm_meta or {})  # 保留 qa 侧写入的 error_kind
+        result.llm_meta = meta
     result.elapsed_ms = int((time.perf_counter() - t0) * 1000)
     return result
 
