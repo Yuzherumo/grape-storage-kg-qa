@@ -376,16 +376,20 @@ def load_vocab() -> tuple[list[str], list[str]]:
 CSS = """
 <style>
 :root{
+  color-scheme: light;
   --ds-accent:#4d6bfe; --ds-accent-soft:#eef2ff;
   --ds-bg:#ffffff; --ds-sidebar:#f9fafb; --ds-border:#e6e8eb;
   --ds-text:#1f2328; --ds-muted:#6b7280; --ds-bubble:#eef2ff;
   --ds-ok:#15803d; --ds-okbg:#e8f5ec; --ds-warn:#b45309; --ds-warnbg:#fef3c7;
   --ds-err:#b91c1c; --ds-errbg:#fee2e2;
 }
-@media (prefers-color-scheme: dark){
-  :root{ --ds-bg:#17181b; --ds-sidebar:#111214; --ds-border:#2a2c31; --ds-text:#e8eaed;
-         --ds-muted:#9aa0a6; --ds-bubble:#23263a; --ds-accent-soft:#1e2340; }
+/* 固定浅色主题：不跟随系统深色模式，保证与答辩 PPT 的奶油/深绿视觉一致 */
+html, body, .stApp, [data-testid="stAppViewContainer"]{
+  min-height:100vh;
+  background:var(--ds-bg) !important;
+  color:var(--ds-text);
 }
+[data-testid="stAppViewContainer"] > .main{ background:var(--ds-bg); }
 .stApp{ background:var(--ds-bg); color:var(--ds-text); }
 .block-container{ max-width:820px; padding-top:1.2rem; padding-bottom:7rem; }
 #MainMenu, footer{ visibility:hidden; }
