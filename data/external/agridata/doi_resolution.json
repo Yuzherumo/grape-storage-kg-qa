@@ -1,0 +1,116 @@
+{
+ "doi": "10.12205/A0002.20230228.00.ds.3476",
+ "doi_prefix": "10.12205（国家农业科学数据中心 / National Data Center for Agricultural Sciences）",
+ "registered_at_handle": {
+  "handle_api": "https://hdl.handle.net/api/handles/10.12205/A0002.20230228.00.ds.3476",
+  "target_url": "https://www.agridata.cn/data.html#/datadetail?id=291300\r\n",
+  "handle_admin": {
+   "format": "admin",
+   "value": {
+    "handle": "0.NA/10.3321",
+    "index": 300,
+    "permissions": "111111111111",
+    "legacyByteLength": true
+   }
+  }
+ },
+ "resolution_status": {
+  "doi_org": "https://dx.doi.org/10.12205/A0002.20230228.00.ds.3476 返回 HTTP 600 页面：“DOI Cannot Connect to Server”（DOI 注册存在，但目标服务器连接失败）",
+  "handle_api": "可解析，target_url 见上",
+  "target_page": "https://www.agridata.cn/data.html#/datadetail?id=291300 —— 旧版 SPA 路由，现已 404（https://www.agridata.cn/data.html → /error/404）",
+  "datacite": "https://api.datacite.org/dois/10.12205/A0002.20230228.00.ds.3476 → 404（该前缀不在 DataCite）",
+  "crossref": "https://api.crossref.org/works/10.12205/A0002.20230228.00.ds.3476 → 404"
+ },
+ "landing_dataset": {
+  "site_id": 291300,
+  "gid": "ac6ee8c3ba4e41129e941e277da32a01",
+  "detail_url": "http://www.agridata.cn/dataset/detail/dataset_info/ac6ee8c3ba4e41129e941e277da32a01",
+  "dataset_name_zh": "2012—2017 年优势产区落叶果树农家品种资源调查数据集",
+  "dataset_name_en": "",
+  "cstr": "CSTR:17058.11.A0002.20230221.00.ds.3476",
+  "data_set_doi": "10.12205/A0002.20230228.00.ds.3476",
+  "issue_time": "2023-02-21 10:37:45",
+  "open_start_date": "2023-02-20",
+  "time_range": "2012/01/01-2017/12/31",
+  "area": "全国",
+  "keywords": "落叶果树；种质资源；资源调查；植物学信息",
+  "data_size": "15MB",
+  "data_format": "8",
+  "download_way": 5,
+  "download_way_label": "在线下载",
+  "license": "遵守CC BY-NC-ND协议（http://creativecommons.org/licenses/by-nc-nd/4.0/）",
+  "property_right_unit": "中国农业科学院郑州果树研究所",
+  "author": "曹尚银，李好先",
+  "contact": "曹尚银，李好先",
+  "email": "13937192127@163.com",
+  "project_name": "樊景超数据论文",
+  "project_code": "NASDC-AD-20230220-001",
+  "diancang_link": "/ProcessDic/2012 年-2017 年全国落叶果树农家品种资源调查数据638805017693812360.zip",
+  "view_count": 735,
+  "introduction": "果树资源是一种具有较高经济效益和生态效益的种质资源。我国的落叶果树品种资源是国家农业战略性资源，收集和保存落叶果树品种种质资源是开展优良品种选育的基础，可以为果树资源育种工作者选育优良果树品种提供更多优异的原始材料。文章数据集收集了落叶果树农家品种树种的序号、调查编号、品种名、品种拉丁名、样本类型、所属树种、提供人和调查人的姓名、电话及地址、调查地点、海拔、经纬度、生境信息、植株情况、植物学特性、果实性状、生物学习性与品种评价等数据。果树基本性状按照《果树种质资源描述规范和数据标准》制表，所有资源的调查结果和数据均由相关树种专家多次实地调查访问农家品种资源所在地获取，果树农家品种资源鉴定信息参考中国植物物种数据库，获取的数据按照指定汇交格式形成规范的数据集，并命名为《2012—2017年优势产区落叶果树农家品种资源调查数据集》。本数据集包含国内濒临灭绝及具有特异农艺性状的落叶果树农家品种资源，可为我国果树资源保存和育种研究提供数据支撑。",
+  "id_match": true
+ },
+ "file_download": {
+  "attempted": [
+   {
+    "url": "https://www.agridata.cn/file/ProcessDic/2012%20%E5%B9%B4-2017%20%E5%B9%B4%E5%85%A8%E5%9B%BD%E8%90%BD%E5%8F%B6%E6%9E%9C%E6%A0%91%E5%86%9C%E5%AE%B6%E5%93%81%E7%A7%8D%E8%B5%84%E6%BA%90%E8%B0%83%E6%9F%A5%E6%95%B0%E6%8D%AE638805017693812360.zip",
+    "status": 200,
+    "ctype": "text/html;charset=UTF-8",
+    "len": null,
+    "magic": "3c21444f",
+    "head": "CTYPE html>\r\n<html>\r\n\t<head>\r\n<head>\r\n\t<meta charset=\"utf-8\">\r\n\t<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no\" />\r\n\t<title>国家"
+   },
+   {
+    "url": "https://a.agridata.cn/api/File/ProcessDic/2012%20%E5%B9%B4-2017%20%E5%B9%B4%E5%85%A8%E5%9B%BD%E8%90%BD%E5%8F%B6%E6%9E%9C%E6%A0%91%E5%86%9C%E5%AE%B6%E5%93%81%E7%A7%8D%E8%B5%84%E6%BA%90%E8%B0%83%E6%9F%A5%E6%95%B0%E6%8D%AE638805017693812360.zip",
+    "status": 403,
+    "head": "<html>\r\n<head><title>403 Forbidden</title></head>\r\n<body>\r\n<center><h1>403 Forbidden</h1></center>\r\n<hr><center>nginx/1.30.8</center>\r\n</body>\r\n</html>\r\n<!-- a padding to disable MSIE and Chrome frien"
+   },
+   {
+    "url": "https://a.agridata.cn/ProcessDic/2012%20%E5%B9%B4-2017%20%E5%B9%B4%E5%85%A8%E5%9B%BD%E8%90%BD%E5%8F%B6%E6%9E%9C%E6%A0%91%E5%86%9C%E5%AE%B6%E5%93%81%E7%A7%8D%E8%B5%84%E6%BA%90%E8%B0%83%E6%9F%A5%E6%95%B0%E6%8D%AE638805017693812360.zip",
+    "status": 200,
+    "ctype": "text/html",
+    "len": "691",
+    "magic": "3c21444f",
+    "head": "CTYPE html><html><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content=\"IE=edge\"><meta name=viewport content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0\"><link rel"
+   },
+   {
+    "url": "https://p.agridata.cn/ProcessDic/2012%20%E5%B9%B4-2017%20%E5%B9%B4%E5%85%A8%E5%9B%BD%E8%90%BD%E5%8F%B6%E6%9E%9C%E6%A0%91%E5%86%9C%E5%AE%B6%E5%93%81%E7%A7%8D%E8%B5%84%E6%BA%90%E8%B0%83%E6%9F%A5%E6%95%B0%E6%8D%AE638805017693812360.zip",
+    "status": 200,
+    "ctype": "text/html",
+    "len": "1048",
+    "magic": "3c21444f",
+    "head": "CTYPE html><html><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content=\"IE=edge\"><meta name=viewport content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0\"><link rel"
+   },
+   {
+    "url": "https://www.agridata.cn/api/app/file/download/638805017693812360",
+    "status": 200,
+    "ctype": "application/json",
+    "len": null,
+    "magic": "7b22636f",
+    "head": "de\":\"-1\",\"message\":\"文件不存在\",\"data\":null,\"encrypted\":false,\"timestamp\":1795764727325,\"success\":false}"
+   },
+   {
+    "url": "https://a.agridata.cn/api/File/download/638805017693812360",
+    "status": 403,
+    "head": "<html>\r\n<head><title>403 Forbidden</title></head>\r\n<body>\r\n<center><h1>403 Forbidden</h1></center>\r\n<hr><center>nginx/1.30.8</center>\r\n</body>\r\n</html>\r\n<!-- a padding to disable MSIE and Chrome frien"
+   },
+   {
+    "url": "https://www.agridata.cn/file/638805017693812360",
+    "status": 200,
+    "ctype": "text/html;charset=UTF-8",
+    "len": null,
+    "magic": "3c21444f",
+    "head": "CTYPE html>\r\n<html>\r\n\t<head>\r\n<head>\r\n\t<meta charset=\"utf-8\">\r\n\t<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no\" />\r\n\t<title>国家"
+   }
+  ],
+  "result": "未取到文件：/file/ProcessDic/ 与 /api/app/file/download/ 均返回 404 页面或“文件不存在”，a.agridata.cn 对应路径返回 403。站点标注为在线下载（downloadWay=5），但直链需要登录态或已迁移，本次未登录、未申请，故仅保留元数据。"
+ },
+ "relation_to_grape_postharvest": {
+  "conclusion": "该 DOI 对应的数据集是落叶果树（含葡萄）农家品种资源调查，属种质资源/植物学性状，不是鲜食葡萄采后贮藏数据。它在站内还有葡萄子集：「2012-2017年全国落叶果树农家品种（葡萄）资源照片」（CSTR:17058.11.A0002.20201216.22.ds.0029）。",
+  "relevance": "弱 / 非采后方向"
+ },
+ "notes": [
+  "handle 记录里的 target_url 与新站数据集 id 的对应关系由数据集详情字段 id 实测确认（id=291300）。",
+  "该数据集的 CSTR 日期为 20230221，DOI 后缀日期为 20230228（注册批次不同），序列号 .ds.3476 一致。"
+ ]
+}

@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -222,8 +223,11 @@ def main(argv: list[str] | None = None) -> int:
         got = label_count.get(label, 0)
         if isinstance(want, int) and got != want:
             rep.err(1, f"实体规模：{label} 期望 {want} 个，实际 {got} 个（docs/spec.md §1）")
-    if not (10 <= len(sources) <= 20):
-        rep.err(1, f"来源规模：期望 10~20 条，实际 {len(sources)} 条（docs/spec.md §1.5）")
+    source_target = str(target.get("Source", "10~60"))
+    source_range = re.search(r"(\d+)[^0-9]+(\d+)", source_target)
+    source_low, source_high = (int(source_range.group(1)), int(source_range.group(2))) if source_range else (10, 60)
+    if not (source_low <= len(sources) <= source_high):
+        rep.err(1, f"来源规模：期望 {source_low}~{source_high} 条，实际 {len(sources)} 条（docs/spec.md §1.5）")
     # 唯一性
     dup = [i for i, n in Counter((r.get("id") or "").strip() for r in entities).items() if n > 1]
     if dup:

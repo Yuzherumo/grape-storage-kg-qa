@@ -268,6 +268,16 @@ def _js_json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/")
 
 
+# 详情面板里 source_url 会渲染成 <a href>：只允许 http(s)，
+# javascript:/data:/file: 等 scheme 一律不渲染为链接（descriptions.csv 属数据输入面）。
+_ALLOWED_URL_PREFIXES = ("http://", "https://")
+
+
+def _safe_source_url(url: object) -> str:
+    text = str(url or "").strip()
+    return text if text.lower().startswith(_ALLOWED_URL_PREFIXES) else ""
+
+
 def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
                      title: str = "鲜食葡萄储藏知识图谱",
                      subtitle: str = "点击节点看具体描述与关联；滚轮缩放，拖拽平移",
@@ -286,9 +296,12 @@ def interactive_html(graph: Graph, *, width: int = 1500, height: int = 900,
         base = 15 if n.label == "Variety" else 11
         r = int(base + (min(8, n.degree * 0.8) if n.degree else 0))
         size[n.id] = r
+        desc = dict(descs.get(n.id) or {})
+        if desc.get("source_url"):
+            desc["source_url"] = _safe_source_url(desc["source_url"])
         nodes_data.append({"id": n.id, "name": n.name, "label": n.label, "degree": n.degree,
                            "x": round(pos[n.id][0], 1), "y": round(pos[n.id][1], 1),
-                           "attrs": n.attrs, "desc": descs.get(n.id, {})})
+                           "attrs": n.attrs, "desc": desc})
     edges_data = [{
         "s": e.source, "t": e.target, "p": e.predicate, "status": e.status,
         "value": e.value, "unit": e.unit, "value_min": e.value_min, "value_max": e.value_max,

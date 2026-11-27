@@ -1,7 +1,29 @@
-id,question,expected_intent,expected_predicate,must_keywords,forbidden_keywords,kind
-Q1,阳光玫瑰放冷库该调到多少度？,temperature,REQUIRES,阳光玫瑰;℃,,core
-Q2,冷库里葡萄长白毛了怎么办？,disease_control,PREVENTED_BY,灰霉,,core
-Q3,葡萄发软掉粒是咋回事？,quality_indicator,AFFECTS,落粒,,core
-Q4,用 SO₂ 熏阳光玫瑰行不行？,contraindication,CONTRA_INDICATED_FOR,SO₂,,core
-Q5,阳光玫瑰和巨峰哪个更能放？,variety_compare,HAS_INDICATOR_VALUE,阳光玫瑰;巨峰,,core
-Q6,-18℃ 冻起来能存一年吗？,temperature,REQUIRES,,零下18;可存一年,probe
+id,question,expected_intent,expected_predicate,must_keywords,forbidden_keywords,kind,expected_status,note
+Q1,阳光玫瑰放冷库该调到多少度？,temperature,REQUIRES,阳光玫瑰;℃,,core,answer,依据 sm_req_cold_neg1 与 a_kyoho_cold_neg1（REQUIRES）；期望给出温度区间与≤3 步动作
+Q2,冷库里葡萄长白毛了怎么办？,disease_control,PREVENTED_BY,灰霉,,core,answer,依据 e_gray_* 的 PREVENTED_BY；白毛为灰霉病口语症状
+Q3,葡萄发软掉粒是咋回事？,quality_indicator,AFFECTS,落粒,,core,answer,依据 c_cold0_berrydrop 与 c_roomtemp_berrydrop（AFFECTS 落粒率）
+Q4,用 SO₂ 熏阳光玫瑰行不行？,contraindication,CONTRA_INDICATED_FOR,SO₂,,core,answer,依据 b_shine_contra_so2 的 CONTRA_INDICATED_FOR；期望同时给出替代方案
+Q5,阳光玫瑰和巨峰哪个更能放？,variety_compare,HAS_INDICATOR_VALUE,阳光玫瑰;巨峰,,core,answer,依据 i_muscat_hamburg_shelf 与 i_kyoho_shelf（HAS_INDICATOR_VALUE）；证据须覆盖≥2 个品种
+Q6,-18℃ 冻起来能存一年吗？,temperature,REQUIRES,,零下18;可存一年,probe,answer,越界探针：图谱仅覆盖 -1~0℃ 与 0±0.5℃；期望 out_of_range 且不得出现证据外温度或「可存一年」
+Q7,冷库湿度多少合适？,humidity,REQUIRES,湿度;90,,core,answer,依据 a_muscat_rh 与 sm_req_rh（REQUIRES 相对湿度 90~95%）
+Q8,气调贮藏氧气浓度多少？,atmosphere,REQUIRES,气调;O₂,,core,answer,依据 sm_req_ca_o2（REQUIRES 气调 O₂ 3~5%）
+Q9,阳光玫瑰能放多久？,shelf_life,HAS_INDICATOR_VALUE,耐贮性;阳光玫瑰,,core,answer,依据 i_muscat_hamburg_shelf 的耐贮性 2~4 月
+Q10,巨峰能贮藏几个月？,shelf_life,HAS_INDICATOR_VALUE,巨峰;耐贮性,,core,answer,依据 i_kyoho_shelf 的耐贮性 3~4 月
+Q11,葡萄青霉病怎么防治？,disease_control,PREVENTED_BY,青霉,,core,answer,依据 e_blue_* 的 PREVENTED_BY（青霉病）
+Q12,灰霉病是怎么引起的？,disease_risk,INDUCED_BY,伤口;灰霉,,core,answer,依据 f_gray_wound 的 INDUCED_BY；问因不要求处置方案
+Q13,葡萄为什么会长白毛？,disease_risk,INDUCED_BY,灰霉,,core,answer,依据 f_*_wound 的 INDUCED_BY 与口语症状「白毛」；期望归因于伤口/常温等诱因
+Q14,哪些条件会让葡萄掉粒？,quality_indicator,AFFECTS,落粒,,core,answer,依据 c_cold0_berrydrop 与 c_roomtemp_berrydrop（AFFECTS 落粒率）
+Q15,巨峰和红地球哪个耐贮？,variety_compare,HAS_INDICATOR_VALUE,红地球;巨峰,,core,answer,依据 i_kyoho_shelf 与 i_redglobe_shelf；单来源告警可接受但不放宽证据要求
+Q16,玫瑰香能用SO2熏吗？,contraindication,CONTRA_INDICATED_FOR,SO₂,,core,answer,依据 b_muscat_contra_so2；期望给出替代方案（焦亚硫酸盐缓释片/1-MCP）
+Q17,葡萄怎么预冷？,general,REQUIRES,预冷,,core,answer,general 兜底意图；依据 sm_req_precool 的快速预冷（12h 内至 0℃）
+Q18,冷藏温度波动多少合适？,general,REQUIRES,波动;0.5,,core,answer,general 兜底意图；依据 sm_req_temp_fluct 的 ±0.5℃
+Q19,苹果冷藏温度多少合适？,general,,,,refuse,refuse,离域果品（非葡萄）应拒答；T1 修复后已返回 out_of_domain+no_evidence 并归 general（回归位）
+Q20,梨冷藏温度多少？,general,,,,refuse,refuse,离域果品（非葡萄）应拒答；T1 修复后已返回 out_of_domain+no_evidence 并归 general（回归位）
+Q21,香蕉能放多久？,general,,,,refuse,refuse,离域果品（非葡萄）应拒答并归 general；T1 修复后已返回 out_of_domain+no_evidence（Q19~Q21 回归位）
+Q22,龙眼怎么贮藏？,general,,,,refuse,refuse,离域果品（非葡萄）应拒答；当前已正确 no_evidence
+Q23,葡萄农残限量是多少？,general,,,,refuse,refuse,图谱未收录农残限量；期望 no_evidence 而不是拿温度证据凑答案
+Q24,葡萄运输温度多少？,general,,,,refuse,refuse,图谱只有冷链运输/防腐条件、无运输温度数值；期望明确拒答
+Q25,葡萄霜霉病怎么防治？,disease_control,,,,refuse,refuse,图谱只收录 7 种采后病害、不含霜霉病；期望 no_evidence
+Q26,葡萄什么时候采收？,general,,,,refuse,refuse,图谱未收录采收期；期望 no_evidence
+Q27,妮娜皇后冷藏温度多少？,general,,,,refuse,refuse,未收录品种必须拒答，不得用其他品种温度顶替；T1 修复后返回 out_of_scope+no_evidence 并归 general
+Q28,阳光玫瑰放冷库几度,temperature,REQUIRES,阳光玫瑰;℃,,core,answer,已收录品种对照题：验证未收录品种拒答守卫不误伤正常温度题；依据 sm_req_cold_neg1 等 REQUIRES

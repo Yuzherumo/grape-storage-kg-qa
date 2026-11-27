@@ -57,6 +57,11 @@ CONDITION_IDS = {
     "package_weight",
     "pre_harvest_rain",
     "warehouse_disinfection",
+    "chitosan_coating",
+    "thyme_oil_coating",
+    "putrescine_ultrasound",
+    "grape_seed_oil",
+    "map_transport",
 }
 QI_IDS = {
     "respiration",

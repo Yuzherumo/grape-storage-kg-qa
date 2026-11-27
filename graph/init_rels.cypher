@@ -2,7 +2,7 @@
 // graph/init_rels.cypher —— 图谱关系初始化（自动生成，请勿手改）
 // 由 scripts/gen_cypher.py 从 data/triples.csv 生成
 // 幂等：MERGE (a)-[r:PREDICATE {sid: ...}]->(b) —— 可重复执行
-// 统计：共 115 条关系（REQUIRES 27，CONTRA_INDICATED_FOR 4，AFFECTS 24，SUSCEPTIBLE_TO 8，PREVENTED_BY 22，INDUCED_BY 7，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 18）
+// 统计：共 125 条关系（REQUIRES 27，CONTRA_INDICATED_FOR 4，AFFECTS 32，SUSCEPTIBLE_TO 8，PREVENTED_BY 24，INDUCED_BY 7，ALTERNATIVE_TO 3，INDICATES 2，HAS_INDICATOR_VALUE 18）
 // 关系属性含 source_ids/locator/quote/status/confidence（证据溯源必需）
 // =============================================================================
 
@@ -476,7 +476,7 @@ MERGE (a)-[r:CONTRA_INDICATED_FOR]->(b)
          r.confidence = 0.84,
          r.note = '单来源，建议后续实验验证；农业农村部 2023 操作规程（红地球对 SO₂ 敏感）';
 
-// ---------------- AFFECTS（24 条） ----------------
+// ---------------- AFFECTS（32 条） ----------------
 MATCH (a:Condition {id: 'ca_co2'}), (b:QualityIndicator {id: 'decay_rate'})
 MERGE (a)-[r:AFFECTS]->(b)
   SET r.sid = 'c_caco2_decay',
@@ -834,6 +834,120 @@ MERGE (a)-[r:AFFECTS]->(b)
          r.status = 'verified',
          r.confidence = 0.82,
          r.note = '巨峰 2018 试验；25℃ 7d 后失重率明显上升';
+MATCH (a:Condition {id: 'so2_fumigation'}), (b:QualityIndicator {id: 'stem_browning'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_so2_stembrowning',
+         r.subject = 'SO₂ 熏蒸',
+         r.predicate = 'AFFECTS',
+         r.object = '果梗褐变',
+         r.stage = '贮藏',
+         r.effect = 'increase',
+         r.reason = '旧版资料明确提示 SO2 过量会造成果蒂周围变褐',
+         r.source_ids = ['agridata_legacy_2005'],
+         r.locator = '二、贮藏方法 §10 防腐保鲜处理（旧版专题页）',
+         r.quote = '注意SO2用量不能过多。过量会造成果实不同程度的脱色、变白、下陷及果蒂周围变褐、果皮变黑等症状。',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '指过量 SO2 的风险，不是推荐剂量；旧版资料、待核验。';
+MATCH (a:Condition {id: 'so2_fumigation'}), (b:QualityIndicator {id: 'decay_rate'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_so2_decay',
+         r.subject = 'SO₂ 熏蒸',
+         r.predicate = 'AFFECTS',
+         r.object = '腐烂率',
+         r.stage = '贮藏',
+         r.effect = 'decrease',
+         r.reason = '旧版资料称 SO2 可抑制真菌病原，进而减少腐烂',
+         r.source_ids = ['agridata_legacy_2005'],
+         r.locator = '二、贮藏方法 §10 防腐保鲜处理（旧版专题页）',
+         r.quote = 'SO2能抑制微生物及氧化酶的活性……对灰霉病、交链孢菌、青霉菌、多支霉菌等真菌病原有抑制和杀死作用。',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '旧版资料的机制性描述，缺少腐烂率定量数据；按 anchor 处理。';
+MATCH (a:Condition {id: 'chitosan_coating'}), (b:QualityIndicator {id: 'shelf_life'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_chitosan_shelf',
+         r.subject = '壳聚糖涂膜',
+         r.predicate = 'AFFECTS',
+         r.object = '耐贮性',
+         r.stage = '贮藏',
+         r.effect = 'increase',
+         r.source_ids = ['web_10_5281_zenodo_3348647'],
+         r.locator = 'Abstract, p.1',
+         r.quote = 'The coating with chitosan has increased the shelf life by up to 14 days for both cultivars.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文摘要；品种/浓度为 Italy/Rubi、0.5–1.5% 壳聚糖；仅作 anchor。';
+MATCH (a:Condition {id: 'chitosan_coating'}), (b:QualityIndicator {id: 'decay_rate'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_chitosan_decay',
+         r.subject = '壳聚糖涂膜',
+         r.predicate = 'AFFECTS',
+         r.object = '腐烂率',
+         r.stage = '贮藏',
+         r.effect = 'decrease',
+         r.source_ids = ['web_10_22077_jhpr_2018_1444_1015'],
+         r.locator = 'Abstract, p.1',
+         r.quote = 'Differences in weight loss, color change, ripening, sensory quality and decay between grapes treated with chitosan and TEO and control fruit suggested that TEO and chitosan were both suitable coatings.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文摘要； chitosan/TEO 联合处理；anchor。';
+MATCH (a:Condition {id: 'thyme_oil_coating'}), (b:QualityIndicator {id: 'decay_rate'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_thyme_decay',
+         r.subject = '百里香精油涂膜',
+         r.predicate = 'AFFECTS',
+         r.object = '腐烂率',
+         r.stage = '贮藏',
+         r.effect = 'decrease',
+         r.source_ids = ['web_10_22077_jhpr_2018_1444_1015'],
+         r.locator = 'Abstract, p.1',
+         r.quote = 'Findings: Differences in weight loss, color change, ripening, sensory quality and decay between grapes treated with chitosan and TEO and control fruit suggested that TEO and chitosan were both suitable coatings.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文摘要；TEO=Thymus essential oil；anchor。';
+MATCH (a:Condition {id: 'putrescine_ultrasound'}), (b:QualityIndicator {id: 'shelf_life'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_putrescine_shelf',
+         r.subject = '腐胺+超声处理',
+         r.predicate = 'AFFECTS',
+         r.object = '耐贮性',
+         r.stage = '贮藏',
+         r.effect = 'increase',
+         r.source_ids = ['web_10_5513_jcea01_18_3_1934'],
+         r.locator = 'Abstract, p.1',
+         r.quote = 'The data showed that individual Put or ultrasound treatment had a positive response in maintaining grape quality during storage.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文摘要；Put=putrescine；anchor。';
+MATCH (a:Condition {id: 'grape_seed_oil'}), (b:QualityIndicator {id: 'weight_loss'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_gso_weightloss',
+         r.subject = '葡萄籽油处理',
+         r.predicate = 'AFFECTS',
+         r.object = '失重率',
+         r.stage = '贮藏',
+         r.effect = 'decrease',
+         r.source_ids = ['web_10_5281_zenodo_3607846'],
+         r.locator = 'Abstract, p.1',
+         r.quote = 'Grape seed oil applications were determined as a good alternative for grape preservation, improving weight losses and °Brix, TA, the color values and sensory analysis.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文摘要；GSO 替代 SO2 的探索；anchor。';
+MATCH (a:Condition {id: 'map_transport'}), (b:QualityIndicator {id: 'shelf_life'})
+MERGE (a)-[r:AFFECTS]->(b)
+  SET r.sid = 'c_map_shelf',
+         r.subject = '气调集装箱运输',
+         r.predicate = 'AFFECTS',
+         r.object = '耐贮性',
+         r.stage = '贮藏',
+         r.effect = 'increase',
+         r.source_ids = ['web_10_4081_jae_2020_954'],
+         r.locator = 'Introduction, CA mechanism paragraph',
+         r.quote = 'CA can delay ripening and softening, and could minimise the incidence of some physiological disorders and decay, thereby maintaining product freshness and quality longer than might otherwise be possible.',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '外部论文引言中的 CA 机理描述；非该文试验结果，anchor。';
 
 // ---------------- SUSCEPTIBLE_TO（8 条） ----------------
 MATCH (a:Variety {id: 'kyoho'}), (b:Disease {id: 'gray_mold'})
@@ -949,7 +1063,7 @@ MERGE (a)-[r:SUSCEPTIBLE_TO]->(b)
          r.confidence = 0.6,
          r.note = '待核验点：酸腐病在阳光玫瑰上的发生率数据缺失；低 为定性判断，需田间/贮藏调查支持';
 
-// ---------------- PREVENTED_BY（22 条） ----------------
+// ---------------- PREVENTED_BY（24 条） ----------------
 MATCH (a:Disease {id: 'anthracnose'}), (b:Condition {id: 'cold_0'})
 MERGE (a)-[r:PREVENTED_BY]->(b)
   SET r.sid = 'e_anthracnose_cold0',
@@ -1246,6 +1360,32 @@ MERGE (a)-[r:PREVENTED_BY]->(b)
          r.status = 'verified',
          r.confidence = 0.95,
          r.note = '条文防治措施：入库时使用二氧化硫类缓释保鲜剂';
+MATCH (a:Disease {id: 'gray_mold'}), (b:Condition {id: 'so2_fumigation'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_gray_so2_fumigation',
+         r.subject = '灰霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = 'SO₂ 熏蒸',
+         r.reason = '旧版资料称 SO2 对灰霉病等真菌病原具有抑制/杀死作用',
+         r.source_ids = ['agridata_legacy_2005'],
+         r.locator = '二、贮藏方法 §10 防腐保鲜处理（旧版专题页）',
+         r.quote = 'SO2能抑制微生物及氧化酶的活性……对灰霉病、交链孢菌、青霉菌、多支霉菌等真菌病原有抑制和杀死作用。',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '旧版资料（2005）的综述性描述；未按现行国标逐条核对，按 anchor 处理；不直接指导用药剂量。';
+MATCH (a:Disease {id: 'blue_mold'}), (b:Condition {id: 'so2_fumigation'})
+MERGE (a)-[r:PREVENTED_BY]->(b)
+  SET r.sid = 'e_blue_so2_fumigation',
+         r.subject = '青霉病',
+         r.predicate = 'PREVENTED_BY',
+         r.object = 'SO₂ 熏蒸',
+         r.reason = '旧版资料称 SO2 对青霉菌等真菌病原具有抑制/杀死作用',
+         r.source_ids = ['agridata_legacy_2005'],
+         r.locator = '二、贮藏方法 §10 防腐保鲜处理（旧版专题页）',
+         r.quote = 'SO2能抑制微生物及氧化酶的活性……对灰霉病、交链孢菌、青霉菌、多支霉菌等真菌病原有抑制和杀死作用。',
+         r.status = 'anchor',
+         r.confidence = 0.6,
+         r.note = '旧版资料（2005）的综述性描述；按 anchor 处理；不直接指导用药剂量。';
 
 // ---------------- INDUCED_BY（7 条） ----------------
 MATCH (a:Disease {id: 'black_mold'}), (b:Condition {id: 'pre_harvest_rain'})

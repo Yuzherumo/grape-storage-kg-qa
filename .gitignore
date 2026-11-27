@@ -21,3 +21,20 @@ _ms_upload/
 .coverage.*
 htmlcov/
 coverage.xml
+
+# 工具与构建产物（不随仓库分发）
+.ruff_cache/
+.dsh-office-*/
+_ppt_assets/
+# 由 Markdown/PPT 生成的二进制交付件（md/pptx 源文件入库，docx 不重复入库）
+*.docx
+
+# 外部数据采集的原始产物：只入库元数据（README/manifest/记录 CSV/索引），
+# 原始转储、下载文件、论文 PDF 与逐条详情留在本机（体积大且许可不一）。
+data/external/**/files/
+data/external/**/papers/
+data/external/**/details/
+data/external/**/_direct_candidates.json
+data/external/**/_grape_all.json
+data/external/**/datasets_all_hits.csv
+data/external/**/search_hit_pairs.csv

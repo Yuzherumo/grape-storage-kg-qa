@@ -1,10 +1,12 @@
 ﻿# 生成「可交付的干净快照」：dist/<name>-<version>.zip + 校验和 + 清单
 #
 # 打包原则（白名单）：
-#   只收录运行/评审必需的文件：源码、数据、图谱脚本、测试、文档、入口脚本、依赖清单、许可。
+#   只收录运行/评审必需的文件：源码、数据、图谱脚本、测试、工具、文档、入口脚本、依赖清单、许可。
 # 排除（黑名单，且会在打包后强校验）：
-#   .env（含真实 API Key）、*.pdf（第三方论文，版权原因不随包分发）、.venv/.tools/.tmp/.refs、
-#   .git、__pycache__、.pytest_cache、dist、*.log
+#   .env（含真实 API Key）、*.pdf、.venv/.tools/.tmp/.refs、
+#   .git、__pycache__、.pytest_cache、dist、*.log、
+#   data/external 下的原始转储/下载文件/论文（体积大、许可不一；只带元数据 CSV/README）。
+#   打包后还会逐条目扫描 %PDF 魔数，防止「无扩展名的 PDF」绕过 .pdf 过滤。
 #
 # 用法：
 #   .\scripts\make_release.ps1                      # 校验+测试+打包
@@ -60,7 +62,7 @@ $files = @(
     "README.md", "LICENSE", "requirements.txt", "pyproject.toml", "pytest.ini",
     ".env.example", ".gitignore", "run.ps1", "install.ps1", "app.py"
 )
-$dirs = @("app", "data", "graph", "scripts", "tests", "docs", ".github", ".streamlit")
+$dirs = @("app", "data", "graph", "scripts", "tests", "tools", "docs", ".github", ".streamlit")
 
 foreach ($f in $files) {
     if (Test-Path -LiteralPath (Join-Path $ws $f)) { Copy-Item -LiteralPath (Join-Path $ws $f) -Destination $stage -Force }
@@ -71,7 +73,10 @@ foreach ($d in $dirs) {
     $dst = Join-Path $stage $d
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
     Get-ChildItem -LiteralPath $src -Recurse -File | Where-Object {
-        $_.FullName -notmatch "\\__pycache__\\|\\\.pytest_cache\\|\.pyc$|\.pdf$|\\_shots\\|secrets\.toml$"
+        $_.FullName -notmatch "\\__pycache__\\|\\\.pytest_cache\\|\.pyc$|\.pdf$|\\_shots\\|secrets\.toml$" -and
+        $_.FullName -notmatch "\\data\\external\\[^\\]+\\(files|papers|details)\\" -and
+        $_.FullName -notmatch "\\(datasets_all_hits|search_hit_pairs)\.csv$" -and
+        $_.FullName -notmatch "\\(_direct_candidates|_grape_all)\.json$"
     } | ForEach-Object {
         $rel = $_.FullName.Substring($src.Length).TrimStart("\")
         $target = Join-Path $dst $rel
@@ -91,11 +96,35 @@ Write-Host "[5/5] 校验压缩包内容…"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($zip)
 $entries = $archive.Entries | ForEach-Object { $_.FullName }
+$pdfEntries = @()
+foreach ($entry in $archive.Entries) {
+    if ($entry.Length -le 0) { continue }
+    $stream = $entry.Open()
+    try {
+        $buffer = New-Object byte[] 4
+        $read = $stream.Read($buffer, 0, 4)
+    } finally {
+        $stream.Dispose()
+    }
+    if ($read -eq 4 -and [System.Text.Encoding]::ASCII.GetString($buffer) -eq "%PDF") {
+        $pdfEntries += $entry.FullName
+    }
+}
 $archive.Dispose()
+
+if ($pdfEntries.Count -gt 0) {
+    Write-Host "[错误] 压缩包含 PDF 内容（按 %PDF 魔数）：" -ForegroundColor Red
+    $pdfEntries | Select-Object -First 10 | ForEach-Object { Write-Host "  - $_" }
+    exit 1
+}
+
 $forbidden = $entries | Where-Object {
     $_ -match "(^|/)\.env$" -or $_ -match "secrets\.toml$" -or $_ -match "\.pdf$" -or $_ -match "(^|/)\.venv" -or
     $_ -match "(^|/)\.refs" -or $_ -match "(^|/)\.tools" -or $_ -match "(^|/)\.tmp" -or
-    $_ -match "(^|/)\.git/" -or $_ -match "__pycache__" -or $_ -match "pytest-cache"
+    $_ -match "(^|/)\.git/" -or $_ -match "__pycache__" -or $_ -match "pytest-cache" -or
+    $_ -match "data[\\/]external[\\/][^\\/]+[\\/](files|papers|details)[\\/]" -or
+    $_ -match "(datasets_all_hits|search_hit_pairs)\.csv$" -or
+    $_ -match "(_direct_candidates|_grape_all)\.json$"
 }
 if ($forbidden) {
     Write-Host "[错误] 压缩包含禁止文件：" -ForegroundColor Red
@@ -103,10 +132,27 @@ if ($forbidden) {
     exit 1
 }
 
+if ($entries.Count -gt 200) {
+    Write-Host "[错误] 压缩包条目过多（$($entries.Count) > 200），疑似误收数据/缓存。" -ForegroundColor Red
+    exit 1
+}
+
 $zipInfo = Get-Item $zip
+if ($zipInfo.Length -gt 3MB) {
+    Write-Host ("[错误] 压缩包过大（{0:N1} KB > 3 MB），疑似误收原始数据。" -f ($zipInfo.Length / 1KB)) -ForegroundColor Red
+    exit 1
+}
 $sha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
 $shaFile = "$zip.sha256"
 "$sha  $name-$Version.zip" | Out-File -LiteralPath $shaFile -Encoding utf8
+
+# 记录打包所依据的代码版本，避免「包与 commit 对不上」
+$commit = "unknown"
+try { $commit = (git rev-parse --short HEAD 2>$null | Out-String).Trim() } catch { }
+$dirtyText = "干净"
+try {
+    if ((git status --porcelain 2>$null | Out-String).Trim()) { $dirtyText = "有未提交改动" }
+} catch { $dirtyText = "未知" }
 
 $manifest = Join-Path $dist "MANIFEST-$Version.md"
 $lines = @(
@@ -115,12 +161,14 @@ $lines = @(
     "- 生成时间：$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
     "- 压缩包：``$name-$Version.zip``（$([math]::Round($zipInfo.Length/1KB,1)) KB，$($entries.Count) 个文件）",
     "- SHA256：``$sha``（见同名 .sha256 文件）",
+    "- 代码版本：``$commit``（工作区$dirtyText）",
     "",
     "## 包含（白名单）",
     "- 源码：``app/``（问答管线/双后端/UI）",
-    "- 数据：``data/``（entities/triples/sources/schema/黄金集）",
+    "- 数据：``data/``（entities/triples/sources/schema/黄金集；外部批次只带元数据 CSV/README）",
     "- 图谱：``graph/``（schema + 生成物 + 10 个查询模板）",
     "- 脚本：``scripts/``（校验/生成/评测/导入/打包）",
+    "- 工具：``tools/``（外部数据采集与整理，可选）",
     "- 测试：``tests/``（pytest 全绿，离线可跑，无 API Key 依赖；具体数量以本次运行输出为准）",
     "- 文档：``docs/``（api/spec/sources/eval/neo4j_verify/demo/submission/ai_usage 等）",
     "- 入口：``README.md``、``install.ps1``、``run.ps1``、``app.py``、``requirements.txt``、``.env.example``、``pyproject.toml``、``pytest.ini``、``LICENSE``",
@@ -129,7 +177,8 @@ $lines = @(
     "## 排除（及原因）",
     "- ``.env``：含真实 API Key，仅本机使用（模板见 ``.env.example``）",
     "- ``.streamlit/secrets.toml``：云端密钥文件，不随包分发（模板见 ``.streamlit/secrets.toml.example``）",
-    "- ``*.pdf``：第三方论文/标准 PDF，版权原因不随包分发（仅引用题录与条级摘录，见 ``docs/sources.md``）",
+    "- ``*.pdf`` 与任何 ``%PDF`` 内容：第三方论文/标准 PDF，版权原因不随包分发（仅引用题录与条级摘录）",
+    "- ``data/external/**/files|papers|details`` 与原始转储：体积大、许可不一，只保留元数据（``paper_records.csv`` / ``manifest.json`` / ``README.md``）",
     "- ``.venv/.tools/.tmp/.refs``：本机环境/下载物/缓存",
     "- ``.git``：可用 ``git bundle`` 另附开发历史（``-WithGitBundle``）",
     "- ``__pycache__/.pytest_cache/dist``：缓存与产物",

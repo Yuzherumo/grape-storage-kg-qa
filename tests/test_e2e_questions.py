@@ -1,9 +1,10 @@
-"""端到端问答测试（Q1~Q6，docs/api.md §6/§10）。
+"""端到端问答测试（data/eval_questions.csv，docs/api.md §6/§10）。
 
 约束：``allow_llm=False``，无网络、无 API key 也必须可跑；模板模式确定性。
-- 核心题：证据 ≥1、答案含有效 [E#] 且引用落在 evidence/cited_ids 内、意图与谓词正确、
+- 核心题（kind=core）：证据 ≥1、答案含有效 [E#] 且引用落在 evidence/cited_ids 内、意图与谓词正确、
   关键词命中、模板答案数值自洽、Q1/Q3 有分步动作。
-- 越界探针 Q6：答案不得出现证据外温度、不得宣称 -18℃ 适宜。
+- 越界探针（kind=probe）：答案不得出现证据外温度、不得宣称 -18℃ 适宜。
+- 拒答题（kind=refuse）：必须 no_evidence、证据为空、答案无 [E#] 引用。
 - LLM 分支打 ``@pytest.mark.llm``，默认由 conftest 跳过。
 """
 from __future__ import annotations
@@ -19,7 +20,7 @@ from _support import (
     unsupported_temperatures,
 )
 
-from app.contracts import INTENTS, WARN_OUT_OF_RANGE, AnswerResult
+from app.contracts import INTENTS, WARN_NO_EVIDENCE, WARN_OUT_OF_RANGE, AnswerResult
 
 
 @pytest.fixture(scope="module")
@@ -123,7 +124,7 @@ def test_eval_question_pipeline(store, row: dict) -> None:
                 f"{row['id']} 品种对比题证据只覆盖 {sorted(measured)}（<2 个品种），"
                 f"store.variety_compare 应返回双品种证据"
             )
-    else:
+    elif kind == "probe":
         # ---- 越界探针：证据只覆盖 0±0.5℃ 一档，答案不得给出证据外温度
         assert isinstance(result.answer, str) and result.answer.strip()
         outside = unsupported_temperatures(result.answer, evidence)
@@ -143,6 +144,18 @@ def test_eval_question_pipeline(store, row: dict) -> None:
         assert set(refs) <= set(result.cited_ids), (
             f"{row['id']} 越界题答案中的 [E#] 未进入 cited_ids：refs={refs} cited={result.cited_ids}"
         )
+    elif kind == "refuse":
+        # ---- 拒答题：必须 no_evidence、无证据、无引用，不得拿别的品种/条件凑答案
+        assert row.get("expected_status", "") == "refuse", f"{row['id']} kind=refuse 应配 expected_status=refuse"
+        assert not evidence, f"{row['id']} 应拒答却返回 {len(evidence)} 条证据：{[item.subject for item in evidence][:5]}"
+        assert not refs, f"{row['id']} 拒答题不得出现 [E#] 引用：{refs}"
+        assert not result.cited_ids, f"{row['id']} 拒答题 cited_ids 应为空：{result.cited_ids}"
+        assert WARN_NO_EVIDENCE in result.warnings, (
+            f"{row['id']} 拒答题应带 no_evidence 告警，实际 warnings={result.warnings}"
+        )
+        assert result.answer.strip(), f"{row['id']} 拒答题答案为空（应说明未收录/建议改问）"
+    else:
+        raise AssertionError(f"{row['id']} 未知 kind={kind!r}（应为 core/probe/refuse）")
 
 
 def test_template_mode_is_deterministic(store) -> None:

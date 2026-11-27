@@ -23,11 +23,11 @@
 
 `scripts/verify_cypher_engine.py`：
 1. 从 `data/entities.csv + sources.csv + triples.csv` 在 Kùzu 中建表（5 类节点表 + 9 张关系表，关系表按 schema.json 的「主/宾类型」约束）；
-2. 灌入 **77 节点 / 115 条关系**，与 CSV 精确比对；
+2. 灌入 **108 节点 / 125 条关系**，与 CSV 精确比对；
 3. 对 10 类意图写等价 Cypher（REQUIRES/AFFECTS/PREVENTED_BY/INDUCED_BY/CONTRA/ALTERNATIVE/HAS_INDICATOR_VALUE/SUSCEPTIBLE_TO），**与本地后端逐题对照**；
 4. 定点核对 4 条 verified 条文三元组。
 
-实测输出（2026-11-21）：
+历史实测输出（2026-11-21，旧数据；当前按 108 节点 / 125 关系比对，重跑后以新输出为准）：
 
 ```
 Kùzu 实跑：节点 69（期望 69）/ 关系 108（期望 108）
@@ -62,7 +62,7 @@ Q6  | temperature       | 12      | 12             | ✅
 `scripts/validate_cypher.py`（无需任何服务）：
 - 13 个 `.cypher` 文件中的节点标签 ⊆ 5 类枚举、关系类型 ⊆ 9 种谓词枚举；
 - 查询模板的 `$参数` ⊆ {variety_ids, condition_ids, indicator_ids, disease_ids, entity_ids, keywords, limit}，且有 `RETURN`/`LIMIT`；
-- `schema.cypher` 覆盖 5 类唯一约束；`init_nodes.cypher` MERGE 数 = 77、`init_rels.cypher` = 115（与 CSV 一致）；
+- `schema.cypher` 覆盖 5 类唯一约束；`init_nodes.cypher` MERGE 数 = 108、`init_rels.cypher` = 125（与 CSV 一致）；
 - 三元组 subject/object 均能在 `entities.csv` 找到同名节点。
 
 ### 2.3 便携版 Neo4j（拿到 zip 后 3 分钟完成）
@@ -81,7 +81,7 @@ Q6  | temperature       | 12      | 12             | ✅
 .\scripts\setup_neo4j_portable.ps1 -JdkZip D:\jdk21.zip -Neo4jZip D:\neo4j-community-5.26.0-windows.zip
 ```
 
-预期结果：节点 **74**（58 实体 + 16 来源）、关系 **108**；二次导入计数不变；`cypher-shell` 可执行 `graph/queries/*.cypher`。
+预期结果：节点 **108**（63 实体 + 45 来源）、关系 **125**；二次导入计数不变；`cypher-shell` 可执行 `graph/queries/*.cypher`。
 
 > 拿到 Neo4j 后如需跑双后端一致性测试：安装驱动后执行
 > `pip install neo4j` → 设置 `.env` 的 `NEO4J_URI/USER/PASSWORD` → `pytest tests/test_backend_parity.py -q`（当前因无驱动/无服务自动 skip）。

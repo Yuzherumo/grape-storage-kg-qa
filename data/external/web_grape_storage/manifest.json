@@ -1,0 +1,78 @@
+{
+ "title": "全网鲜食葡萄采后贮藏相关开放数据采集（3GB 预算）",
+ "generated_at": "2026-11-27",
+ "policy": {
+  "total_cap_bytes": 3060164198,
+  "per_file_cap_bytes": 419430400,
+  "c_tier_share": 0.15,
+  "login": "未登录、未付费、未申请任何权限",
+  "rate_limit": "请求间隔约 1 秒",
+  "sources": "Zenodo / Dryad / Harvard Dataverse / Mendeley Data / DataCite + 队友侦察候选（ScienceDB、中国科学数据、agridata）",
+  "compliance": "站点标注「申请下载/有条件共享」的资源只保留元数据，不绕过申请流程取直链"
+ },
+ "counts": {
+  "records_a": 16,
+  "records_c": 15,
+  "records_total": 31,
+  "files_downloaded": 21,
+  "files_skipped": 1,
+  "bytes_downloaded": 2669944,
+  "bytes_downloaded_gib": 0.002,
+  "budget_used_pct": 0.1,
+  "screened_records": 1552,
+  "screened_tier_counts": {
+   "A": 49,
+   "B": 260,
+   "C": 91,
+   "D": 1152
+  },
+  "paper_records": 25,
+  "paper_bytes": 29995106,
+  "total_bytes_all": 32665050,
+  "budget_used_pct_all": 1.07
+ },
+ "per_source": {
+  "zenodo": {
+   "records": 12,
+   "tier_a": 6,
+   "files": 10,
+   "bytes": 1805258
+  },
+  "mendeley": {
+   "records": 6,
+   "tier_a": 5,
+   "files": 5,
+   "bytes": 132488
+  },
+  "datacite": {
+   "records": 5,
+   "tier_a": 4,
+   "files": 0,
+   "bytes": 0
+  },
+  "dataverse": {
+   "records": 3,
+   "tier_a": 1,
+   "files": 6,
+   "bytes": 732198
+  },
+  "agridata": {
+   "records": 5,
+   "tier_a": 0,
+   "files": 0,
+   "bytes": 0
+  }
+ },
+ "outputs": {
+  "web_records.csv": 31,
+  "web_files.csv": 21,
+  "web_records_tier_a.csv": 16,
+  "files": 21
+ },
+ "papers": {
+  "records": 25,
+  "files": 25,
+  "bytes": 29995106,
+  "note": "开放获取论文 PDF（Zenodo/DOAJ 可直链部分）；出处见 paper_records.csv"
+ }
+}

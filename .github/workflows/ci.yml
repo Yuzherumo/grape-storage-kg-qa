@@ -24,11 +24,17 @@ jobs:
           pip install "ruff==0.17.6" "coverage==7.17.4" "pytest-cov==7.1.0"
 
       - name: Lint (ruff)
-        # 覆盖面：根目录 app.py + app/ scripts/ tests/，与本地 `ruff check .` 口径一致
+        # 覆盖面：根目录 app.py + app/ scripts/ tests/ tools/，与本地 `ruff check .` 口径一致
         # （pyproject.toml 的 exclude 已排除 docs/data/graph/.tmp 等）。
         # 注意：`ruff format --check` 未纳入门禁 —— 全仓一次性重排风险大，避免刷屏式 diff；
         #       格式化留待后续专项处理，当前只做 lint 门禁。
-        run: ruff check app.py app scripts tests
+        run: ruff check app.py app scripts tests tools
+
+      - name: Canonical stats (data is the single source of truth)
+        run: python scripts/report_stats.py
+
+      - name: Docs numbers consistency (README/docs vs data)
+        run: python scripts/check_docs_consistency.py
 
       - name: Validate graph data (10 checks)
         run: python scripts/validate_data.py
@@ -81,7 +87,15 @@ jobs:
           print(f"UTF-8 BOM OK: {len(files)} files")
 
       - name: Offline test suite with coverage (no API key, no network)
-        run: python -m pytest tests -q --cov=app --cov-report=term-missing
+        run: python -m pytest tests -q --cov=app --cov-report=term-missing --cov-fail-under=80
+
+      - name: Validate external data exports (only if raw batches are present)
+        if: hashFiles('data/external/agridata/files/**') != ''
+        run: python scripts/validate_agridata_export.py
+
+      - name: Validate web literature exports (only if raw batches are present)
+        if: hashFiles('data/external/web_grape_storage/files/**') != ''
+        run: python scripts/validate_web_grape_export.py
 
       - name: Generate eval report (offline mode)
         run: python scripts/eval_qa.py

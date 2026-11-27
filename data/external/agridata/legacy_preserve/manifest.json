@@ -1,0 +1,20 @@
+{
+ "dataset": "农产品贮藏保鲜技术数据库",
+ "table_id": 102,
+ "source_site": "http://www.agridata.ac.cn",
+ "source_page": "http://www.agridata.ac.cn/DataList/DataShow?databasename=%E5%86%9C%E4%BA%A7%E5%93%81%E8%B4%AE%E8%97%8F%E4%BF%9D%E9%B2%9C%E6%8A%80%E6%9C%AF%E6%95%B0%E6%8D%AE%E5%BA%93&ID=102",
+ "columns": [
+  "果蔬类别",
+  "果蔬名称",
+  "贮藏特性",
+  "贮藏方法",
+  "主要贮藏病害及防治",
+  "上市质量标准"
+ ],
+ "fetched_at": "2026-11-27 15:43:16+0800",
+ "total_pages": 13,
+ "records_total": 187,
+ "grape_records": 1,
+ "caveat": "该库为 2005 年前后建立的旧版专题库，条目为面向生产的贮藏保鲜技术描述，不含原始试验观测数据；引用请以网站原文为准。",
+ "note": "旧站 8888 端口的 advanced_search.aspx 已不可用（HTTP 500），本数据取自同一机构的 80 端口站点。"
+}

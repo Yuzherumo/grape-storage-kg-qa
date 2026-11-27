@@ -1,0 +1,276 @@
+{
+ "title": "国家农业科学数据中心（www.agridata.cn）鲜食葡萄采后贮藏相关数据抓取",
+ "generated_at": "2026-11-27 15:45:05+0800",
+ "source_site": "http://www.agridata.cn",
+ "api_endpoints": [
+  "/api/app/dataset/search/list",
+  "/api/app/dataset/detail/{resource_type}/{gid}"
+ ],
+ "robots": "Disallow: /console/（其余路径允许；本抓取未访问 /console/）",
+ "policy": {
+  "rate_limit": "约每 1 秒 1 次请求，带 0-0.5 秒随机抖动",
+  "login": "未登录、未注册、未提交下载申请",
+  "download_scope": "仅 download_way∈{0,5} 且站点直接给出实体 URL 的公开文件，单文件 ≤40MB，最多 15 个"
+ },
+ "queries": {
+  "葡萄": {
+   "group": "grape",
+   "total": 137,
+   "requests": 2
+  },
+  "鲜食葡萄": {
+   "group": "grape",
+   "total": 690,
+   "requests": 6
+  },
+  "提子": {
+   "group": "grape",
+   "total": 1753,
+   "requests": 10
+  },
+  "葡萄 贮藏": {
+   "group": "grape_postharvest",
+   "total": 307,
+   "requests": 14
+  },
+  "葡萄 储藏": {
+   "group": "grape_postharvest",
+   "total": 347,
+   "requests": 18
+  },
+  "葡萄 保鲜": {
+   "group": "grape_postharvest",
+   "total": 1012,
+   "requests": 28
+  },
+  "葡萄 采后": {
+   "group": "grape_postharvest",
+   "total": 2153,
+   "requests": 38
+  },
+  "葡萄 冷藏": {
+   "group": "grape_postharvest",
+   "total": 302,
+   "requests": 42
+  },
+  "葡萄 预冷": {
+   "group": "grape_postharvest",
+   "total": 371,
+   "requests": 46
+  },
+  "葡萄 气调": {
+   "group": "grape_postharvest",
+   "total": 1380,
+   "requests": 56
+  },
+  "葡萄 二氧化硫": {
+   "group": "grape_postharvest",
+   "total": 2245,
+   "requests": 66
+  },
+  "葡萄 货架期": {
+   "group": "grape_postharvest",
+   "total": 1076,
+   "requests": 76
+  },
+  "葡萄 冷链": {
+   "group": "grape_postharvest",
+   "total": 305,
+   "requests": 80
+  },
+  "葡萄 耐贮": {
+   "group": "grape_postharvest",
+   "total": 379,
+   "requests": 84
+  },
+  "葡萄 保鲜剂": {
+   "group": "grape_postharvest",
+   "total": 1398,
+   "requests": 94
+  },
+  "葡萄 贮藏保鲜": {
+   "group": "grape_postharvest",
+   "total": 1118,
+   "requests": 104
+  },
+  "葡萄 采后生理": {
+   "group": "grape_postharvest",
+   "total": 4242,
+   "requests": 114
+  },
+  "葡萄 腐烂": {
+   "group": "grape_postharvest",
+   "total": 246,
+   "requests": 117
+  },
+  "葡萄 落粒": {
+   "group": "grape_postharvest",
+   "total": 871,
+   "requests": 126
+  },
+  "鲜食葡萄 贮藏": {
+   "group": "grape_postharvest",
+   "total": 823,
+   "requests": 135
+  },
+  "鲜食葡萄 保鲜": {
+   "group": "grape_postharvest",
+   "total": 1366,
+   "requests": 145
+  },
+  "葡萄 冰温": {
+   "group": "grape_postharvest",
+   "total": 741,
+   "requests": 153
+  },
+  "葡萄 熏硫": {
+   "group": "grape_postharvest",
+   "total": 315,
+   "requests": 157
+  },
+  "葡萄 保鲜纸": {
+   "group": "grape_postharvest",
+   "total": 1020,
+   "requests": 167
+  },
+  "葡萄 果梗": {
+   "group": "grape_postharvest",
+   "total": 1153,
+   "requests": 177
+  },
+  "葡萄 穗轴": {
+   "group": "grape_postharvest",
+   "total": 376,
+   "requests": 181
+  },
+  "葡萄 灰霉病": {
+   "group": "grape_postharvest",
+   "total": 1005,
+   "requests": 191
+  },
+  "果实 采后": {
+   "group": "postharvest_general",
+   "total": 3054,
+   "requests": 194
+  },
+  "果蔬 保鲜": {
+   "group": "postharvest_general",
+   "total": 1821,
+   "requests": 197
+  },
+  "贮藏保鲜": {
+   "group": "postharvest_general",
+   "total": 1012,
+   "requests": 200
+  },
+  "二氧化硫 保鲜": {
+   "group": "postharvest_general",
+   "total": 2683,
+   "requests": 203
+  },
+  "保鲜剂": {
+   "group": "postharvest_general",
+   "total": 1297,
+   "requests": 206
+  },
+  "冷链物流": {
+   "group": "postharvest_general",
+   "total": 3224,
+   "requests": 209
+  },
+  "货架期": {
+   "group": "postharvest_general",
+   "total": 960,
+   "requests": 212
+  },
+  "预冷": {
+   "group": "postharvest_general",
+   "total": 236,
+   "requests": 215
+  },
+  "阳光玫瑰": {
+   "group": "cultivar",
+   "total": 871
+  },
+  "夏黑": {
+   "group": "cultivar",
+   "total": 440
+  },
+  "巨峰": {
+   "group": "cultivar",
+   "total": 119
+  },
+  "红地球": {
+   "group": "cultivar",
+   "total": 2299
+  },
+  "美人指": {
+   "group": "cultivar",
+   "total": 1437
+  },
+  "克瑞森": {
+   "group": "cultivar",
+   "total": 347
+  },
+  "无核白": {
+   "group": "cultivar",
+   "total": 1046
+  },
+  "火焰无核": {
+   "group": "cultivar",
+   "total": 495
+  },
+  "妮娜皇后": {
+   "group": "cultivar",
+   "total": 803
+  },
+  "蓝宝石葡萄": {
+   "group": "cultivar",
+   "total": 441
+  }
+ },
+ "search_requests": 253,
+ "unique_hits": 5408,
+ "tier_counts": {
+  "A": 1,
+  "B": 71,
+  "C": 39,
+  "D": 5297
+ },
+ "record_kind_counts": {
+  "project": 922,
+  "dataset": 4486
+ },
+ "tier_by_kind": {
+  "A": {
+   "project": 1
+  },
+  "B": {
+   "project": 11,
+   "dataset": 60
+  },
+  "C": {
+   "project": 1,
+   "dataset": 38
+  },
+  "D": {
+   "project": 909,
+   "dataset": 4388
+  }
+ },
+ "tier_a_dataset_count": 0,
+ "details_fetched": 154,
+ "details_failed": 0,
+ "files_downloaded": 6,
+ "files_failed": 0,
+ "outputs": {
+  "datasets_all_hits.csv": 5408,
+  "datasets_grape_postharvest.csv": 111,
+  "datasets_relevant_only.csv": 98,
+  "projects_literature_relevant.csv": 13,
+  "datasets_tier_a.csv": 1,
+  "search_hit_pairs.csv": 24322,
+  "details": 154,
+  "files": 6
+ }
+}

@@ -1,0 +1,1320 @@
+{
+  "generated_at": "2026-11-27 21:12:52",
+  "backend": "local",
+  "graph_stats": {
+    "backend": "local",
+    "nodes": 63,
+    "rels": 125,
+    "varieties": 8,
+    "conditions": 35,
+    "indicators": 13,
+    "diseases": 7,
+    "sources": 45,
+    "unresolved_edges": 0,
+    "data_files": [
+      "triples_shine_muscat.csv",
+      "triples.csv"
+    ]
+  },
+  "summary": {
+    "total": 28,
+    "passed": 28,
+    "failed": 0,
+    "failed_ids": [],
+    "answer_rows": 19,
+    "refuse_rows": 9,
+    "intent_accuracy": 1.0,
+    "refusal_accuracy": 1.0,
+    "refusal_intent_accuracy": 1.0,
+    "primary_entity_coverage": 1.0,
+    "primary_entity_rows": 17,
+    "citation_valid_rate": 1.0,
+    "number_consistency_rate": 1.0,
+    "keyword_pass_rate": 1.0,
+    "keyword_rows": 19,
+    "predicate_coverage_rate": 1.0,
+    "variant_total": 12,
+    "variant_intent_passed": 12,
+    "variant_intent_accuracy": 1.0,
+    "variant_entity_accuracy": 1.0,
+    "variant_intent_floor": 10,
+    "intent_coverage": {
+      "temperature": 3,
+      "humidity": 1,
+      "atmosphere": 1,
+      "shelf_life": 2,
+      "disease_control": 3,
+      "disease_risk": 2,
+      "quality_indicator": 2,
+      "variety_compare": 2,
+      "contraindication": 2,
+      "general": 10
+    },
+    "by_kind": {
+      "core": {
+        "total": 18,
+        "passed": 18
+      },
+      "probe": {
+        "total": 1,
+        "passed": 1
+      },
+      "refuse": {
+        "total": 9,
+        "passed": 9
+      }
+    },
+    "hard_failures": [],
+    "variant_floor_ok": true,
+    "ok": true
+  },
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "阳光玫瑰放冷库该调到多少度？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "temperature",
+      "actual_intent": "temperature",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 5,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "shine_muscat"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 sm_req_cold_neg1 与 a_kyoho_cold_neg1（REQUIRES）；期望给出温度区间与≤3 步动作"
+    },
+    {
+      "id": "Q2",
+      "question": "冷库里葡萄长白毛了怎么办？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "disease_control",
+      "actual_intent": "disease_control",
+      "intent_ok": true,
+      "expected_predicate": "PREVENTED_BY",
+      "predicates": [
+        "INDUCED_BY",
+        "PREVENTED_BY"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "gray_mold"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 e_gray_* 的 PREVENTED_BY；白毛为灰霉病口语症状"
+    },
+    {
+      "id": "Q3",
+      "question": "葡萄发软掉粒是咋回事？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "quality_indicator",
+      "actual_intent": "quality_indicator",
+      "intent_ok": true,
+      "expected_predicate": "AFFECTS",
+      "predicates": [
+        "AFFECTS"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 4,
+      "cited_n": 4,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "firmness",
+        "berry_drop"
+      ],
+      "steps_n": 2,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 c_cold0_berrydrop 与 c_roomtemp_berrydrop（AFFECTS 落粒率）"
+    },
+    {
+      "id": "Q4",
+      "question": "用 SO₂ 熏阳光玫瑰行不行？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "contraindication",
+      "actual_intent": "contraindication",
+      "intent_ok": true,
+      "expected_predicate": "CONTRA_INDICATED_FOR",
+      "predicates": [
+        "ALTERNATIVE_TO",
+        "CONTRA_INDICATED_FOR"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 2,
+      "cited_n": 2,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "shine_muscat",
+        "so2_fumigation"
+      ],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 b_shine_contra_so2 的 CONTRA_INDICATED_FOR；期望同时给出替代方案"
+    },
+    {
+      "id": "Q5",
+      "question": "阳光玫瑰和巨峰哪个更能放？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "variety_compare",
+      "actual_intent": "variety_compare",
+      "intent_ok": true,
+      "expected_predicate": "HAS_INDICATOR_VALUE",
+      "predicates": [
+        "CONTRA_INDICATED_FOR",
+        "HAS_INDICATOR_VALUE",
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 13,
+      "cited_n": 9,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "shine_muscat",
+        "kyoho"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 i_muscat_hamburg_shelf 与 i_kyoho_shelf（HAS_INDICATOR_VALUE）；证据须覆盖≥2 个品种"
+    },
+    {
+      "id": "Q6",
+      "question": "-18℃ 冻起来能存一年吗？",
+      "kind": "probe",
+      "expected_status": "answer",
+      "expected_intent": "temperature",
+      "actual_intent": "temperature",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "out_of_range（预期）",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 1,
+      "warnings": [
+        "out_of_range"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "越界探针：图谱仅覆盖 -1~0℃ 与 0±0.5℃；期望 out_of_range 且不得出现证据外温度或「可存一年」"
+    },
+    {
+      "id": "Q7",
+      "question": "冷库湿度多少合适？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "humidity",
+      "actual_intent": "humidity",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 4,
+      "cited_n": 4,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 a_muscat_rh 与 sm_req_rh（REQUIRES 相对湿度 90~95%）"
+    },
+    {
+      "id": "Q8",
+      "question": "气调贮藏氧气浓度多少？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "atmosphere",
+      "actual_intent": "atmosphere",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 2,
+      "cited_n": 2,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "ca_o2"
+      ],
+      "steps_n": 2,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 sm_req_ca_o2（REQUIRES 气调 O₂ 3~5%）"
+    },
+    {
+      "id": "Q9",
+      "question": "阳光玫瑰能放多久？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "shelf_life",
+      "actual_intent": "shelf_life",
+      "intent_ok": true,
+      "expected_predicate": "HAS_INDICATOR_VALUE",
+      "predicates": [
+        "AFFECTS",
+        "HAS_INDICATOR_VALUE"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "shine_muscat"
+      ],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 i_muscat_hamburg_shelf 的耐贮性 2~4 月"
+    },
+    {
+      "id": "Q10",
+      "question": "巨峰能贮藏几个月？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "shelf_life",
+      "actual_intent": "shelf_life",
+      "intent_ok": true,
+      "expected_predicate": "HAS_INDICATOR_VALUE",
+      "predicates": [
+        "AFFECTS",
+        "HAS_INDICATOR_VALUE"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "kyoho"
+      ],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 i_kyoho_shelf 的耐贮性 3~4 月"
+    },
+    {
+      "id": "Q11",
+      "question": "葡萄青霉病怎么防治？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "disease_control",
+      "actual_intent": "disease_control",
+      "intent_ok": true,
+      "expected_predicate": "PREVENTED_BY",
+      "predicates": [
+        "INDUCED_BY",
+        "PREVENTED_BY"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "blue_mold"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 e_blue_* 的 PREVENTED_BY（青霉病）"
+    },
+    {
+      "id": "Q12",
+      "question": "灰霉病是怎么引起的？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "disease_risk",
+      "actual_intent": "disease_risk",
+      "intent_ok": true,
+      "expected_predicate": "INDUCED_BY",
+      "predicates": [
+        "INDUCED_BY",
+        "SUSCEPTIBLE_TO"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "gray_mold"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 f_gray_wound 的 INDUCED_BY；问因不要求处置方案"
+    },
+    {
+      "id": "Q13",
+      "question": "葡萄为什么会长白毛？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "disease_risk",
+      "actual_intent": "disease_risk",
+      "intent_ok": true,
+      "expected_predicate": "INDUCED_BY",
+      "predicates": [
+        "INDUCED_BY",
+        "SUSCEPTIBLE_TO"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 6,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "gray_mold"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 f_*_wound 的 INDUCED_BY 与口语症状「白毛」；期望归因于伤口/常温等诱因"
+    },
+    {
+      "id": "Q14",
+      "question": "哪些条件会让葡萄掉粒？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "quality_indicator",
+      "actual_intent": "quality_indicator",
+      "intent_ok": true,
+      "expected_predicate": "AFFECTS",
+      "predicates": [
+        "AFFECTS"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 3,
+      "cited_n": 3,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "berry_drop"
+      ],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 c_cold0_berrydrop 与 c_roomtemp_berrydrop（AFFECTS 落粒率）"
+    },
+    {
+      "id": "Q15",
+      "question": "巨峰和红地球哪个耐贮？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "variety_compare",
+      "actual_intent": "variety_compare",
+      "intent_ok": true,
+      "expected_predicate": "HAS_INDICATOR_VALUE",
+      "predicates": [
+        "CONTRA_INDICATED_FOR",
+        "HAS_INDICATOR_VALUE",
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 9,
+      "cited_n": 8,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "kyoho",
+        "red_globe"
+      ],
+      "steps_n": 2,
+      "warnings": [
+        "single_source"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 i_kyoho_shelf 与 i_redglobe_shelf；单来源告警可接受但不放宽证据要求"
+    },
+    {
+      "id": "Q16",
+      "question": "玫瑰香能用SO2熏吗？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "contraindication",
+      "actual_intent": "contraindication",
+      "intent_ok": true,
+      "expected_predicate": "CONTRA_INDICATED_FOR",
+      "predicates": [
+        "ALTERNATIVE_TO",
+        "CONTRA_INDICATED_FOR"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 2,
+      "cited_n": 2,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "muscat_hamburg",
+        "so2_fumigation"
+      ],
+      "steps_n": 1,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "依据 b_muscat_contra_so2；期望给出替代方案（焦亚硫酸盐缓释片/1-MCP）"
+    },
+    {
+      "id": "Q17",
+      "question": "葡萄怎么预冷？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "AFFECTS",
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 4,
+      "cited_n": 4,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "precool_fast"
+      ],
+      "steps_n": 0,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "general 兜底意图；依据 sm_req_precool 的快速预冷（12h 内至 0℃）"
+    },
+    {
+      "id": "Q18",
+      "question": "冷藏温度波动多少合适？",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 1,
+      "cited_n": 1,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "temp_fluctuation"
+      ],
+      "steps_n": 0,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "general 兜底意图；依据 sm_req_temp_fluct 的 ±0.5℃"
+    },
+    {
+      "id": "Q19",
+      "question": "苹果冷藏温度多少合适？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_domain",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "离域果品（非葡萄）应拒答；T1 修复后已返回 out_of_domain+no_evidence 并归 general（回归位）"
+    },
+    {
+      "id": "Q20",
+      "question": "梨冷藏温度多少？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_domain",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "离域果品（非葡萄）应拒答；T1 修复后已返回 out_of_domain+no_evidence 并归 general（回归位）"
+    },
+    {
+      "id": "Q21",
+      "question": "香蕉能放多久？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_domain",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "离域果品（非葡萄）应拒答并归 general；T1 修复后已返回 out_of_domain+no_evidence（Q19~Q21 回归位）"
+    },
+    {
+      "id": "Q22",
+      "question": "龙眼怎么贮藏？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_domain",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "离域果品（非葡萄）应拒答；当前已正确 no_evidence"
+    },
+    {
+      "id": "Q23",
+      "question": "葡萄农残限量是多少？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_scope",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "图谱未收录农残限量；期望 no_evidence 而不是拿温度证据凑答案"
+    },
+    {
+      "id": "Q24",
+      "question": "葡萄运输温度多少？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "图谱只有冷链运输/防腐条件、无运输温度数值；期望明确拒答"
+    },
+    {
+      "id": "Q25",
+      "question": "葡萄霜霉病怎么防治？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "disease_control",
+      "actual_intent": "disease_control",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "图谱只收录 7 种采后病害、不含霜霉病；期望 no_evidence"
+    },
+    {
+      "id": "Q26",
+      "question": "葡萄什么时候采收？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "图谱未收录采收期；期望 no_evidence"
+    },
+    {
+      "id": "Q27",
+      "question": "妮娜皇后冷藏温度多少？",
+      "kind": "refuse",
+      "expected_status": "refuse",
+      "expected_intent": "general",
+      "actual_intent": "general",
+      "intent_ok": true,
+      "expected_predicate": "",
+      "predicates": [],
+      "predicate_ok": null,
+      "mode": "template",
+      "evidence_n": 0,
+      "cited_n": 0,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": false,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": null,
+      "primary_entities": [],
+      "steps_n": 0,
+      "warnings": [
+        "out_of_scope",
+        "no_evidence"
+      ],
+      "verdict": "通过",
+      "pass": true,
+      "note": "未收录品种必须拒答，不得用其他品种温度顶替；T1 修复后返回 out_of_scope+no_evidence 并归 general"
+    },
+    {
+      "id": "Q28",
+      "question": "阳光玫瑰放冷库几度",
+      "kind": "core",
+      "expected_status": "answer",
+      "expected_intent": "temperature",
+      "actual_intent": "temperature",
+      "intent_ok": true,
+      "expected_predicate": "REQUIRES",
+      "predicates": [
+        "REQUIRES"
+      ],
+      "predicate_ok": true,
+      "mode": "template",
+      "evidence_n": 5,
+      "cited_n": 5,
+      "citation_ok": true,
+      "number_ok": true,
+      "number_detail": "通过",
+      "keyword_ok": true,
+      "keyword_applicable": true,
+      "missing_keywords": [],
+      "forbidden_hit": [],
+      "primary_entity_ok": true,
+      "primary_entities": [
+        "shine_muscat"
+      ],
+      "steps_n": 3,
+      "warnings": [],
+      "verdict": "通过",
+      "pass": true,
+      "note": "已收录品种对照题：验证未收录品种拒答守卫不误伤正常温度题；依据 sm_req_cold_neg1 等 REQUIRES"
+    }
+  ],
+  "variants": [
+    {
+      "id": "u01",
+      "utterance": "这葡萄放库里得几度啊",
+      "expected_intent": "temperature",
+      "actual_intent": "temperature",
+      "confidence": 1.0,
+      "candidates": [
+        [
+          "temperature",
+          6.5
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [],
+      "expected_entities": [],
+      "entity_ok": true
+    },
+    {
+      "id": "u02",
+      "utterance": "搁冷库能存到过年不",
+      "expected_intent": "shelf_life",
+      "actual_intent": "shelf_life",
+      "confidence": 0.833,
+      "candidates": [
+        [
+          "shelf_life",
+          6.0
+        ],
+        [
+          "temperature",
+          1.2
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [],
+      "expected_entities": [],
+      "entity_ok": true
+    },
+    {
+      "id": "u03",
+      "utterance": "白毛是不是没救了",
+      "expected_intent": "disease_control",
+      "actual_intent": "disease_control",
+      "confidence": 0.899,
+      "candidates": [
+        [
+          "disease_control",
+          7.1
+        ],
+        [
+          "disease_risk",
+          0.8
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "gray_mold"
+      ],
+      "expected_entities": [
+        "gray_mold"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u04",
+      "utterance": "放两个月还行不行",
+      "expected_intent": "shelf_life",
+      "actual_intent": "shelf_life",
+      "confidence": 1.0,
+      "candidates": [
+        [
+          "shelf_life",
+          1.8
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [],
+      "expected_entities": [],
+      "entity_ok": true
+    },
+    {
+      "id": "u05",
+      "utterance": "阳光玫瑰搁多少度合适啊",
+      "expected_intent": "temperature",
+      "actual_intent": "temperature",
+      "confidence": 0.855,
+      "candidates": [
+        [
+          "temperature",
+          7.1
+        ],
+        [
+          "variety_compare",
+          0.8
+        ],
+        [
+          "shelf_life",
+          0.4
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "shine_muscat"
+      ],
+      "expected_entities": [
+        "shine_muscat"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u06",
+      "utterance": "香印青提库里头湿度得调到多少",
+      "expected_intent": "humidity",
+      "actual_intent": "humidity",
+      "confidence": 0.723,
+      "candidates": [
+        [
+          "humidity",
+          4.7
+        ],
+        [
+          "variety_compare",
+          0.8
+        ],
+        [
+          "temperature",
+          0.6
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "shine_muscat"
+      ],
+      "expected_entities": [
+        "shine_muscat"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u07",
+      "utterance": "巨峰跟红提哪个耐放些",
+      "expected_intent": "variety_compare",
+      "actual_intent": "variety_compare",
+      "confidence": 0.656,
+      "candidates": [
+        [
+          "variety_compare",
+          6.1
+        ],
+        [
+          "shelf_life",
+          2.6
+        ],
+        [
+          "temperature",
+          0.6
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "kyoho",
+        "red_globe"
+      ],
+      "expected_entities": [
+        "kyoho",
+        "red_globe"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u08",
+      "utterance": "打SO2对晴王是不是不好使啊",
+      "expected_intent": "contraindication",
+      "actual_intent": "contraindication",
+      "confidence": 0.397,
+      "candidates": [
+        [
+          "contraindication",
+          2.7
+        ],
+        [
+          "atmosphere",
+          2.0
+        ],
+        [
+          "variety_compare",
+          0.8
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "shine_muscat",
+        "so2_fumigation"
+      ],
+      "expected_entities": [
+        "shine_muscat"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u09",
+      "utterance": "灰霉病咋防啊搁冷库里",
+      "expected_intent": "disease_control",
+      "actual_intent": "disease_control",
+      "confidence": 0.75,
+      "candidates": [
+        [
+          "disease_control",
+          6.0
+        ],
+        [
+          "temperature",
+          1.2
+        ],
+        [
+          "disease_risk",
+          0.8
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "gray_mold"
+      ],
+      "expected_entities": [
+        "gray_mold"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u10",
+      "utterance": "葡萄掉粒软塌塌的还能要不",
+      "expected_intent": "quality_indicator",
+      "actual_intent": "quality_indicator",
+      "confidence": 1.0,
+      "candidates": [
+        [
+          "quality_indicator",
+          10.4
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "berry_drop"
+      ],
+      "expected_entities": [
+        "berry_drop"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u11",
+      "utterance": "气调库O2调到3个点中不中",
+      "expected_intent": "atmosphere",
+      "actual_intent": "atmosphere",
+      "confidence": 0.893,
+      "candidates": [
+        [
+          "atmosphere",
+          6.7
+        ],
+        [
+          "contraindication",
+          0.5
+        ],
+        [
+          "disease_control",
+          0.3
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "ca_o2"
+      ],
+      "expected_entities": [
+        "ca_o2"
+      ],
+      "entity_ok": true
+    },
+    {
+      "id": "u12",
+      "utterance": "阳光玫瑰糖度多少才算好",
+      "expected_intent": "quality_indicator",
+      "actual_intent": "quality_indicator",
+      "confidence": 0.64,
+      "candidates": [
+        [
+          "quality_indicator",
+          3.2
+        ],
+        [
+          "variety_compare",
+          0.8
+        ],
+        [
+          "temperature",
+          0.6
+        ]
+      ],
+      "intent_ok": true,
+      "entities": [
+        "shine_muscat",
+        "ssc"
+      ],
+      "expected_entities": [
+        "shine_muscat",
+        "ssc"
+      ],
+      "entity_ok": true
+    }
+  ],
+  "known_defects": [
+    "包装×禁忌组合在 local 后端 0 证据：如「包装前SO2熏蒸有什么禁忌」走 contraindication，但禁忌检索按 condition_ids 过滤（SO2 熏蒸与包装容重无交集），属数据/模板缺口而非路由缺陷",
+    "无上下文追问仍走 temperature 全库例外：「那多少度」在无上文时返回全库温度证据（有上下文时已正确继承，见多轮测试）",
+    "Neo4j 服务端仍未实跑：双后端一致性用例默认 skip（缺 neo4j 驱动/运行中服务），本地后端与 CSV 一致",
+    "LLM 语义级忠实度仍靠规则启发式校验（引用/数值/关键词/字面相关），不是 NLI 语义蕴含判定"
+  ]
+}

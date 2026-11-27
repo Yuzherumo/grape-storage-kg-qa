@@ -3,7 +3,7 @@
 > 数据口径：**不编造**。每条三元组的 `source_ids/locator/quote` 可追到下表；拿不到原文页码的一律 `status=anchor` 并在 `triples.csv` 的 `note` 写明待核验点。
 > 升级为 `verified` 的流程：拿到原文 → 补 `locator`（条款号/图号/页码）+ 抄录 `quote` → 人工核对数值 → 改 `status=verified` 并重跑 `scripts/validate_data.py` 与 `scripts/gen_cypher.py --check`。
 
-## 1. 来源表（`data/sources.csv`，19 条）
+## 1. 来源表（`data/sources.csv`，45 条）
 
 | id | 题名 | 类型 | 年 | 检索途径 | 在图谱中的用途 | 可获取性 |
 |---|---|---|---|---|---|---|
@@ -26,12 +26,15 @@
 | `moa_storage_2023` | 葡萄贮藏保鲜操作规程 | 行业资料 | 2023 | 农业农村部官网 scs.moa.gov.cn（2023-02-03） | 温度/湿度、预冷 12h、SO₂ 伤害、包装、出库期、SO₂×红地球 | **已获取网页全文** |
 | `moa_quality_2023` | 葡萄全程质量安全风险管控指南 | 行业资料 | 2023 | 农业农村部官网 jgs.moa.gov.cn（2023-06-30） | 全流程管控；贮藏/包装/运输要求（本轮引用其品种温度分类与包装口径） | **已获取网页全文** |
 | `paper_kyoho_temp_2018` | 贮藏温度对巨峰葡萄采后生理和贮藏品质的影响 | 论文 | 2018 | 食品研究与开发, 39(21): 192-197；DOI 10.3969/j.issn.1005-6521.2018.21.032 | 0/5/10/25℃ 对照：失重率、落粒率、腐烂率、呼吸强度（7 条 AFFECTS/预冷依据） | **已获取网页全文** |
+| `agridata_legacy_2005` | 葡萄贮藏保鲜技术（农产品贮藏保鲜技术数据库旧版专题页） | 行业资料 | 2005 | 国家农业科学数据中心/AgriData 旧版专题页；同时登记 datasets_grape_postharvest.csv 目录 | 旧版 SO₂ 抑菌/过量伤害描述；4 条 anchor 关系（不当作现行规范） | **已获取网页文本**；旧版内容需复核 |
+
+> 另有 25 篇开放获取文献（`web_*`）：题录、DOI、许可、本地 PDF 与 sha256 见 `data/external/web_grape_storage/paper_records.csv`。本轮抽取了 5 个处理条件和 6 条 AFFECTS 关系，全部作为 anchor；其中部分论文用作背景/方法参照，未逐篇生成事实。
 
 ## 2. 证据强度与分组规则
 
 - **B 组**（`CONTRA_INDICATED_FOR`）、**G 组**（`ALTERNATIVE_TO`）、**H 组**（`INDICATES`）每条 **≥2 个来源**，否则 `note` 必须写「单来源，建议后续实验验证」，UI 显示「单来源」徽标。
-- 当前 115 条中 B/G/H 组均 ≥2 来源，或在 `note` 声明「单来源，建议后续实验验证」：新增 `SO₂×红地球` 为农业农村部单来源，已按规则声明，UI 显示「单来源」。
-- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **69 条 `verified`**（其中 `source_ids` 含国标 `gbt16862_2026` 的 53 条、仅其他来源的 16 条；§2.2 的 10 条综述原文 verified 中有 2 条同时含国标来源；§2.3 为新增 MOA/2018 来源 8 条）、**46 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
+- 当前 125 条中 B/G/H 组均 ≥2 来源，或在 `note` 声明「单来源，建议后续实验验证」：新增 `SO₂×红地球` 为农业农村部单来源，已按规则声明，UI 显示「单来源」。
+- `status`：`anchor`＝按公开描述/摘要入图、原文条级未核；`verified`＝已拿到原文并抄录 locator/quote。当前 **69 条 `verified`**（其中 `source_ids` 含国标 `gbt16862_2026` 的 53 条、仅其他来源的 16 条；§2.2 的 10 条综述原文 verified 中有 2 条同时含国标来源；§2.3 为新增 MOA/2018 来源 8 条）、**56 条 `anchor`**（诚实策略；校验器强制 verified 必须有 quote，anchor 空 quote 必须在 note 写「待核验」）。
 - `confidence`：0.50~0.95，按来源等级（国标 > 综述 > 论文 > 行业资料）与一致性人工设定。
 
 ## 2.1 国标条文引用（53 条 verified，按 `source_ids` 计）

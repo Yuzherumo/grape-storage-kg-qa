@@ -1,6 +1,6 @@
 [project]
 name = "grape-storage-kg-qa"
-version = "0.1.0"
+version = "1.4.1"
 description = "鲜食葡萄储藏知识图谱 × DeepSeek 问答（农客松 2026 主赛道方向二）"
 requires-python = ">=3.10"
 dependencies = [
@@ -9,6 +9,16 @@ dependencies = [
   "pandas==3.1.1",
   "python-dotenv==1.2.4",
 ]
+
+[project.optional-dependencies]
+# 跑测试：pip install -e ".[dev]"
+dev = ["pytest==9.2.0"]
+# 可选：嵌入式 openCypher 引擎，仅 scripts/verify_cypher_engine.py 使用
+kuzu = ["kuzu==0.11.3"]
+
+[project.urls]
+Repository = "https://github.com/Yuzherumo/grape-storage-kg-qa"
+Demo = "https://yuzherumo-grape-storage-kg-qa.ms.show"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
